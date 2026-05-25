@@ -1,0 +1,267 @@
+# ARCS — Adaptive Routing & Correction System
+
+> A self-improving multi-LLM pipeline that routes each query to the right specialist model, verifies the answer before delivery, and learns from every failure — by figuring out *which component failed* before retraining anything.
+
+**Status: In active development** 
+
+---
+
+## What ARCS Is
+
+ARCS is a multi-LLM orchestration system built around one idea that most systems skip entirely: **attribution before retraining**.
+
+When a user signals that an answer was wrong, most systems either ignore the signal or feed it back to every component equally. But which component actually failed? Was it the router that sent the query to the wrong specialist? The specialist that got the answer wrong? Or the verifier that approved a bad answer before it reached the user?
+
+If you don't know, you retrain the wrong thing. The system trains on noise and degrades over time while appearing to improve.
+
+ARCS solves this by treating failure attribution as a first-class architectural concern — a prerequisite for retraining, not an afterthought.
+
+---
+
+## How It Works
+
+A query arrives. The router classifies it and dispatches it to the appropriate specialist. Before the answer reaches the user, a verification layer checks it — deterministically for code, probabilistically for natural language. Every component leaves an evidence trail. When something goes wrong, an attribution engine reads that trail and assigns blame to exactly one component. Only that component trains on the failure.
+
+```
+User query
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  Preprocessor                       │
+│  safety check · assign query_id     │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│  Router — DistilBERT classifier     │
+│  domain label + confidence score    │
+└──────────────────┬──────────────────┘
+                   │
+    ┌──────────────┴──────────────┐
+    │ confidence > 0.75           │ confidence < 0.75
+    ▼                             ▼
+Specialist model           Generalist fallback
+(CodeLlama / BioMistral    (Mistral 7B Instruct)
+ / Mistral-Legal)
+    │                             │
+    └──────────────┬──────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│  Spec Generator                     │
+│  builds expected answer checklist   │
+└──────────────────┬──────────────────┘
+                   │
+    ┌──────────────┴──────────────┐
+    │ executable                  │ non-executable
+    ▼                             ▼
+Sandbox                     Verifier — Judge LLM
+(Docker · retry ×3)         (spec coverage · confidence)
+    │                             │
+    └──────────────┬──────────────┘
+                   │
+                   ▼
+          Answer delivered to user
+                   │
+                   ▼  (async — user does not wait)
+┌─────────────────────────────────────┐
+│  Feedback Layer                     │
+│  explicit · requery detection ·     │
+│  follow-up implication analysis ·   │
+│  autonomous evaluator LLM           │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│  Attribution Engine                 │
+│  5-step blame assignment            │
+│  ROUTER · VERIFIER · SPECIALIST ·   │
+│  AMBIGUOUS (discarded, not trained) │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+     Targeted retraining queue
+     (only the component that failed)
+```
+
+---
+
+## The Five Components
+
+### 1. Router
+A fine-tuned DistilBERT classifier. Reads the raw query and outputs a domain label (`CODING`, `MEDICAL`, `LEGAL`, `GENERAL`) and a calibrated confidence score. Below 0.75 confidence, the query routes to the generalist fallback rather than risking a wrong specialist dispatch. The full score distribution across all four classes is logged — not just the winner. Attribution needs the full picture.
+
+### 2. Specialist Pool
+
+| Specialist | Model | Domain |
+|---|---|---|
+| Coding | CodeLlama 7B | `CODING` |
+| Medical | BioMistral 7B | `MEDICAL` |
+| Legal | Mistral 7B Instruct (prompted) | `LEGAL` |
+| Generalist | Mistral 7B Instruct | `GENERAL` / low-confidence fallback |
+
+Every specialist is prompted to append an `UNCERTAINTY` section to its answer — a list of specific claims it is not confident about. This is mandatory input to the attribution engine, not optional metadata.
+
+### 3. Spec Generator
+Before verification runs, a separate model (different family from the specialists, to avoid correlated blind spots) generates a checklist of what a correct answer *must* contain for the given query. Verification then checks coverage against this spec — shifting from the subjective "is this good?" to the auditable "does this cover the required points?"
+
+### 4. Verification Layer
+
+**Executable answers** (code, math, SQL) → Docker Sandbox. Code runs against test cases generated by a *separate model* from the one that wrote the code. Up to three retry rounds with error feedback. Binary, deterministic result.
+
+**Non-executable answers** (medical, legal, general) → Judge LLM. Cross-references the answer against the spec checklist and retrieved chunks from a trusted corpus via ChromaDB. Outputs a multi-dimensional verdict — factuality, coverage, groundedness, reasoning — plus a calibrated confidence score that feeds directly into attribution.
+
+### 5. Attribution Engine
+The core research contribution. A 5-step rule-based system that reads the evidence trail and assigns blame to exactly one component before any retraining occurs.
+
+```
+Step 1: Sandbox failure?
+        YES → SPECIALIST  (deterministic proof — code was wrong)
+
+Step 2: Verifier confident > 0.80 AND user unhappy?
+        YES → VERIFIER  (it approved a bad answer confidently)
+
+Step 3: Router confidence < 0.60 AND user unhappy?
+        YES → ROUTER  (uncertain dispatch likely sent to wrong specialist)
+
+Step 4: Specialist flagged uncertainty AND user unhappy?
+        YES → SPECIALIST  (it knew it was shaky)
+
+Step 5: None of the above
+        → AMBIGUOUS  (discarded — not trained on)
+```
+
+AMBIGUOUS is not a failure. A clean dataset of 400 attributed failures trains better than a noisy dataset of 1200 mixed ones.
+
+---
+
+## The Log Record
+
+Every component writes evidence to a central PostgreSQL record at the time it runs. This is what the attribution engine reads. If it is not here, attribution cannot use it.
+
+```json
+{
+  "query_id":               "q-7f3a",
+  "query_text":             "What is the maximum safe dose of acetaminophen?",
+  "router_domain":          "MEDICAL",
+  "router_confidence":       0.88,
+  "router_all_scores":      { "MEDICAL": 0.88, "LEGAL": 0.07, "CODING": 0.03, "GENERAL": 0.02 },
+  "specialist_used":        "BioMistral-7B",
+  "specialist_uncertainty":  false,
+  "verifier_verdict":       "PASS",
+  "verifier_confidence":     0.82,
+  "spec_coverage_score":     0.20,
+  "evaluator_score":         0.31,
+  "user_signal":            "NEGATIVE",
+  "attribution":            "VERIFIER",
+  "retraining_queue":       "VERIFIER"
+}
+```
+
+---
+
+## Research Questions
+
+### RQ1 — Attribution-filtered retraining *(primary)*
+
+> Does training the router only on failures attributed to the router produce a more accurate classifier than training on all negative feedback?
+
+**Run A (baseline):** Router retrains on every negative user signal.
+**Run B (attributed):** Router retrains only on records where `attribution == ROUTER`.
+
+Both runs start from the same checkpoint and are evaluated against the same held-out test set across retraining cycles.
+
+If Run B converges faster, it is evidence that attribution filtering is worth the engineering cost — and that any team building multi-component LLM systems should implement it. If both runs perform equivalently at small scale, that is also a publishable finding: don't invest in attribution overhead until data volume justifies it. Either result answers a question without a clean answer in the literature.
+
+**Metrics:**
+
+| Metric | Method | Target |
+|---|---|---|
+| Routing accuracy | Held-out test set (500+ labelled queries), every N retraining steps | > 85% at convergence |
+| Convergence rate | Steps to reach 80% accuracy threshold | Run B faster |
+| Verifier calibration | Agreement with human labels | > 75% |
+| Attribution precision | % confirmed correct by ablation | > 70% |
+
+### RQ2 — Specialist ensemble vs. large generalist *(future work)*
+
+> Can an ensemble of small specialist models match or exceed a large generalist model at lower inference cost?
+
+Four 7B specialists routed intelligently may recover the quality gap of a 70B generalist through domain specificity, at a fraction of the cost. Natural sequel to RQ1.
+
+---
+
+## Roadmap
+
+### Multi-domain query decomposition *(planned: Week 9–10)*
+
+Single-pass routing has one known hard limit: queries that span multiple domains. Planned architecture:
+
+```
+"Explain tachycardia and write a Python heart rate monitor"
+                        │
+                        ▼
+          Domain overlap detected pre-routing
+                        │
+          ┌─────────────┴─────────────┐
+          ▼                           ▼
+  Medical sub-query            Coding sub-query
+  → BioMistral                 → CodeLlama
+  → Verified independently     → Verified independently
+          │                           │
+          └─────────────┬─────────────┘
+                        ▼
+              Synthesis layer
+              (combined into one response)
+```
+
+A new attribution category — `SYNTHESIS` — handles cases where individual specialist answers were correct but the combined response was poor.
+
+### Bayesian attribution *(future research)*
+
+The attribution engine is intentionally rule-based — rules are debuggable and explainable at MVP scale. At larger data volumes (~10K+ labelled failures), a probabilistic attribution model that learns from confirmed attributions becomes viable.
+
+### Verifier ensemble *(future research)*
+
+Multiple judge LLMs scoring the same answer, with agreement used as a confidence proxy. Reduces single-judge miscalibration at scale.
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Router | DistilBERT (HuggingFace fine-tuning) |
+| Specialists | CodeLlama 7B · BioMistral 7B · Mistral 7B Instruct |
+| Spec Generator | Separate LLM (different family from specialists) |
+| Verifier | Judge LLM + ChromaDB retrieval grounding |
+| Sandbox | Docker (isolated · no network · time-limited) |
+| Prompt optimization | DSPy (batch, benchmarked before deployment) |
+| Logging | PostgreSQL |
+| Experiment tracking | MLflow + Weights & Biases |
+| Orchestration | LangGraph + FastAPI |
+
+---
+
+
+## Related Work
+
+ARCS builds on and extends several lines of prior work:
+
+- **Switch Transformers** (Fedus et al., 2021) — top-1 sparse routing at the weight level. ARCS applies the routing principle at the system level, between independent models.
+- **RouteLLM** (LMSYS, 2024) — routing between strong and weak models based on query difficulty. ARCS extends this with domain specificity and, critically, attribution before retraining.
+- **Self-Consistency** (Wang et al., 2022) — consistency sampling as a confidence signal. Used in the ARCS verifier layer for non-executable answers.
+- **RLHF** (Christiano et al., 2017) — training from human feedback. ARCS implements a component-level variant: feedback is attributed before training so each component receives only the signal that belongs to it.
+
+---
+
+## Known Limitations
+
+- **Attribution misfire** — the attribution engine is a heuristic. Misattributions corrupt the signal it is meant to clean. The AMBIGUOUS category minimises this by discarding uncertain cases rather than forcing them.
+- **API-accessed specialists** — if specialists are accessed via external API, their weights cannot be updated directly. Specialist improvement is limited to prompt optimization via DSPy.
+- **Feedback sparsity** — meaningful retraining requires approximately 500 attributed failures per component. At low query volume, convergence will be slow.
+- **Verifier miscalibration** — a verifier that confidently passes bad answers is the most dangerous failure mode. Periodic recalibration against human labels is a maintenance requirement, not a one-time step.
+
+---
+
+*
+*Questions or ideas: aayush1234434@gmail.com*
