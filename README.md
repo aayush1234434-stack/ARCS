@@ -263,5 +263,5 @@ ARCS builds on and extends several lines of prior work:
 
 ---
 
-*
+
 *Questions or ideas: aayush1234434@gmail.com*
