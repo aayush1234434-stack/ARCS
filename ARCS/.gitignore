@@ -6,6 +6,9 @@ router-model/
 router-checkpoints/
 logs/
 
+# Secrets
+.env
+
 # OS / editor
 .DS_Store
 __pycache__/

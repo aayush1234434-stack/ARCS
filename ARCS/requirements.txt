@@ -1,0 +1,10 @@
+pandas
+numpy
+torch
+datasets
+transformers>=4.0
+accelerate>=1.1.0
+scikit-learn
+matplotlib
+groq
+python-dotenv
