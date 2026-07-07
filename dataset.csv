@@ -1,0 +1,1007 @@
+text,label
+"write a function that reverses a string in Python",CODING
+"implement binary search in JavaScript",CODING
+"how do I sort a list in Python",CODING
+"write a SQL query to get all users from a table",CODING
+"create a class in Java with a constructor",CODING
+"how do I loop through an array in JavaScript",CODING
+"write a function to check if a number is prime",CODING
+"implement a stack using Python",CODING
+"write a SQL JOIN query for two tables",CODING
+"how do I read a file in Python",CODING
+"create a REST API endpoint in Node.js",CODING
+"write a recursive function for factorial",CODING
+"how do I connect to a MySQL database in Python",CODING
+"implement merge sort in C++",CODING
+"write a function to find duplicates in a list",CODING
+"how do I use fetch API in JavaScript",CODING
+"create a simple Flask web server",CODING
+"write a SQL query with GROUP BY and COUNT",CODING
+"implement a linked list in Java",CODING
+"how do I handle exceptions in Python",CODING
+"write a function to flatten a nested array",CODING
+"how do I use async await in JavaScript",CODING
+"create a binary tree in C++",CODING
+"write a regex to validate email addresses",CODING
+"how do I use list comprehensions in Python",CODING
+"implement quicksort in Python",CODING
+"write a function to count word frequency",CODING
+"how do I make a POST request with axios",CODING
+"create a login form with HTML and CSS",CODING
+"write a SQL query to find duplicate rows",CODING
+"how do I use decorators in Python",CODING
+"implement a queue using JavaScript",CODING
+"write a function to check balanced parentheses",CODING
+"how do I paginate results in SQL",CODING
+"create a React component with state",CODING
+"write a function to find the longest common subsequence",CODING
+"how do I use lambda functions in Python",CODING
+"implement depth first search in Java",CODING
+"write a script to scrape a webpage with BeautifulSoup",CODING
+"how do I use localStorage in JavaScript",CODING
+"create a many-to-many relationship in SQL",CODING
+"write a function to convert Roman numerals to integers",CODING
+"how do I use generators in Python",CODING
+"implement a hash map from scratch in C++",CODING
+"write a function to detect a cycle in a linked list",CODING
+"how do I filter an array in JavaScript",CODING
+"create a Dockerfile for a Python app",CODING
+"write a SQL query using window functions",CODING
+"how do I use threading in Python",CODING
+"implement a priority queue in Java",CODING
+"write a function that finds all permutations of a string",CODING
+"how do I use the map function in JavaScript",CODING
+"create a Django model with relationships",CODING
+"write a function to serialize a binary tree",CODING
+"how do I use context managers in Python",CODING
+"implement breadth first search in Python",CODING
+"write a SQL stored procedure",CODING
+"how do I use promises in JavaScript",CODING
+"create an index in a database table",CODING
+"write a function to calculate Fibonacci using memoization",CODING
+"how do I use argparse in Python",CODING
+"implement Dijkstra's algorithm in C++",CODING
+"write a function to rotate a matrix 90 degrees",CODING
+"how do I use the spread operator in JavaScript",CODING
+"create a GraphQL resolver in Node.js",CODING
+"write a script to automate file renaming in Python",CODING
+"how do I use SQL subqueries",CODING
+"implement a trie data structure in Java",CODING
+"write a function to check if a string is a palindrome",CODING
+"how do I use useState hook in React",CODING
+"create a middleware function in Express.js",CODING
+"write a SQL trigger for audit logging",CODING
+"how do I use multiprocessing in Python",CODING
+"implement a LRU cache in JavaScript",CODING
+"write a function to find the kth largest element",CODING
+"how do I use CSS flexbox",CODING
+"create a type in TypeScript with generics",CODING
+"write a function to merge two sorted arrays",CODING
+"how do I handle CORS in a Node.js API",CODING
+"implement a graph using adjacency list in Python",CODING
+"write a SQL query to calculate running totals",CODING
+"how do I use the reduce function in JavaScript",CODING
+"create a Python class that inherits from another",CODING
+"write a function to validate a credit card number using Luhn",CODING
+"how do I use environment variables in Node.js",CODING
+"implement a min heap in C++",CODING
+"write a function to parse a CSV file in Python",CODING
+"how do I create a custom hook in React",CODING
+"write a SQL query to find the second highest salary",CODING
+"how do I use pytest to write unit tests in Python",CODING
+"implement an AVL tree in Java",CODING
+"write a function to check if two strings are anagrams",CODING
+"how do I use grid layout in CSS",CODING
+"create a Python decorator that logs function calls",CODING
+"write a function to find the median of a stream of numbers",CODING
+"how do I use WebSockets in Node.js",CODING
+"implement a bloom filter in Python",CODING
+"write a SQL query to pivot rows into columns",CODING
+"how do I set up JWT authentication in Express",CODING
+"my code keeps throwing a TypeError and I don't know why",CODING
+"why is my loop running one too many times",CODING
+"can you review this Python function I wrote",CODING
+"what is wrong with my SQL query",CODING
+"I'm getting a KeyError in my dictionary code",CODING
+"IndexError on line 4 when I run this",CODING
+"help me fix this broken function",CODING
+"something is wrong with my script",CODING
+"why is my API call returning undefined",CODING
+"can you check why this isn't working",CODING
+"my for loop in JavaScript only runs once",CODING
+"this function returns None when it shouldn't",CODING
+"getting a NullPointerException in Java",CODING
+"my regex isn't matching what I expect",CODING
+"why does my recursive function hit max recursion depth",CODING
+"can you tell me what this code does",CODING
+"explain how this sorting algorithm works",CODING
+"what does this SQL query actually return",CODING
+"I don't understand what this function is doing",CODING
+"explain the difference between shallow and deep copy",CODING
+"how does this async function work exactly",CODING
+"what does yield do in Python",CODING
+"explain what this class method is doing",CODING
+"I have a memory leak somewhere in my C++ code",CODING
+"my database query is super slow how do I fix it",CODING
+"sort this list without using built in functions",CODING
+"connect to a database and fetch all records",CODING
+"read a JSON file and parse it",CODING
+"make this code faster",CODING
+"fix the bug in this code",CODING
+"make this function work for edge cases",CODING
+"optimize this nested loop",CODING
+"remove duplicates from this array",CODING
+"how do I convert this to work asynchronously",CODING
+"this query takes forever to run",CODING
+"my CSS is not working on mobile",CODING
+"the button click event isn't firing",CODING
+"my app crashes when the list is empty",CODING
+"getting 404 on all my API routes",CODING
+"CORS is blocking my frontend requests",CODING
+"why is my state not updating in React",CODING
+"my JWT token keeps expiring immediately",CODING
+"the database connection drops randomly",CODING
+"why is my Python script using 100% CPU",CODING
+"getting a segfault in C++ code I can't find",CODING
+"my merge is causing git conflicts in the code files",CODING
+"the tests pass locally but fail in CI",CODING
+"my Docker container won't start",CODING
+"why is npm install failing",CODING
+"getting module not found error in Node",CODING
+"my environment variables aren't loading",CODING
+"why is the TypeScript compiler complaining about this type",CODING
+"explain what a closure is in JavaScript",CODING
+"what's the difference between == and === in JS",CODING
+"how does garbage collection work in Python",CODING
+"what is the time complexity of this algorithm",CODING
+"can you review my whole project structure",CODING
+"explain this error message to me",CODING
+"what does this stack trace mean",CODING
+"is my approach to this problem correct",CODING
+"what would be a cleaner way to write this",CODING
+"am I using the right data structure here",CODING
+"should I use a list or a dictionary here",CODING
+"is this the most efficient way to do it",CODING
+"my function works but feels wrong somehow",CODING
+"what are edge cases I'm missing in this function",CODING
+"I think there's a race condition in my code",CODING
+"my unit test is passing but the integration test fails",CODING
+"why is this working in dev but not in production",CODING
+"I inherited this codebase and have no idea what it does",CODING
+"something is off with my authentication logic",CODING
+"write a SQL query to pull all patients who were prescribed a drug more than once",CODING
+"build a function to calculate a patient's BMI from a health records table",CODING
+"write a Python script to parse medical billing codes from a CSV",CODING
+"SQL query to find all insurance claims that were denied in the last 30 days",CODING
+"I need to join a medications table with a diagnoses table in SQL",CODING
+"write a script to extract drug names from unstructured doctor notes",CODING
+"create a database schema for storing electronic health records",CODING
+"write a SQL query to flag patients with abnormal lab values",CODING
+"build an NLP pipeline to classify symptoms from patient intake forms",CODING
+"write a function to calculate average hospital stay duration from a dataset",CODING
+"SQL to find duplicate patient records based on name and date of birth",CODING
+"write a Python script to process FHIR JSON health data",CODING
+"build a model to predict patient readmission from structured data",CODING
+"create a REST API that returns medication interaction data",CODING
+"write code to anonymize patient names in a dataset",CODING
+"SQL query to list all court cases filed within a specific date range",CODING
+"write a Python script to extract clauses from a contract PDF",CODING
+"build a text classifier to categorize legal documents by type",CODING
+"write a function to parse structured data from a court filing",CODING
+"SQL to join a defendants table with a charges table",CODING
+"write code to redact sensitive information from legal text",CODING
+"create a schema for a case management database",CODING
+"build a search index over a corpus of legal documents",CODING
+"write a regex to extract case numbers from legal filings",CODING
+"Python script to calculate statute of limitations dates from case data",CODING
+"SQL to find all contracts expiring in the next 60 days",CODING
+"write a script to summarize terms from a legal document",CODING
+"build an API endpoint that returns jurisdiction-based case law data",CODING
+"write a function to compare two versions of a legal contract",CODING
+"SQL query that ranks lawyers by number of cases won",CODING
+"explain what an API is and how it works in code",CODING
+"how does a neural network work in terms of actual code",CODING
+"what is a pointer in C++ and why does it cause bugs",CODING
+"explain how HTTP requests work under the hood",CODING
+"what actually happens when you call a function recursively",CODING
+"how does indexing speed up a database query",CODING
+"explain how OAuth works in terms of implementation",CODING
+"what is the difference between TCP and UDP when building networked apps",CODING
+"how does a hash table handle collisions in code",CODING
+"explain how a browser renders JavaScript",CODING
+"what exactly is a race condition and how do I reproduce it",CODING
+"how does token-based auth work at the code level",CODING
+"explain what the event loop in Node.js actually does",CODING
+"what is memoization and when should I use it in code",CODING
+"how does version control track file diffs internally",CODING
+"write code to analyze trends in financial transaction data",CODING
+"build a script to detect anomalies in server log data",CODING
+"SQL query to calculate month over month revenue growth",CODING
+"write a function that processes satellite image metadata",CODING
+"build a data pipeline to ingest and clean climate sensor data",CODING
+"write code to scrape and analyze public opinion data",CODING
+"SQL query to compute churn rate from a subscriptions table",CODING
+"build a feature extraction pipeline for tabular survey data",CODING
+"write a Python script to map coordinates from a geospatial dataset",CODING
+"SQL to query education outcomes data by demographic group",CODING
+"write a Python script to process census microdata by age group",CODING
+"build a dashboard component in React that shows real-time stock prices",CODING
+"SQL to find top selling products in each category using window functions",CODING
+"write a script to parse XML feed data from a government open data portal",CODING
+"build a cron job that archives old database records",CODING
+"my pandas dataframe merge is producing way more rows than expected",CODING
+"write a function to diff two JSON objects and return changed keys",CODING
+"getting an out of memory error when loading a large CSV into Python",CODING
+"build a rate limiter middleware for an Express API",CODING
+"write a SQL query to calculate percentile ranks for student test scores",CODING
+"implement a retry mechanism with exponential backoff in Python",CODING
+"my React component is re-rendering too many times",CODING
+"write a function to deep clone a nested object in JavaScript",CODING
+"SQL to find gaps in a sequence of order IDs",CODING
+"build a command line tool in Python using argparse and subcommands",CODING
+"write a webhook handler that verifies HMAC signatures",CODING
+"getting a deadlock in my database transactions how do I debug it",CODING
+"write a script to batch resize images in a folder using Pillow",CODING
+"implement an event emitter class from scratch in JavaScript",CODING
+"SQL query to calculate a 7-day rolling average from time series data",CODING
+"write a function to convert a flat array into a nested tree structure",CODING
+"my Python virtual environment is not activating properly",CODING
+"build a simple key-value store using a hash map in C++",CODING
+"write code to validate and sanitize user input before inserting into a database",CODING
+"explain how dependency injection works with a real code example",CODING
+
+"what happens if I take ibuprofen with blood thinners",MEDICAL
+"signs of type 2 diabetes in adults",MEDICAL
+"how much ibuprofen can I take in a day",MEDICAL
+"what happens during an MRI scan",MEDICAL
+"is it safe to eat eggs every day",MEDICAL
+"symptoms of anxiety disorder",MEDICAL
+"what is depression and how is it treated",MEDICAL
+"what causes chest pain on the left side",MEDICAL
+"early signs of a heart attack",MEDICAL
+"what are the side effects of metformin",MEDICAL
+"how long does it take for antibiotics to work",MEDICAL
+"what is a normal blood pressure reading",MEDICAL
+"symptoms of low blood sugar",MEDICAL
+"what causes migraines",MEDICAL
+"is 37.8 a fever in adults",MEDICAL
+"what is the difference between type 1 and type 2 diabetes",MEDICAL
+"how do statins work",MEDICAL
+"what causes high cholesterol",MEDICAL
+"symptoms of a blood clot in the leg",MEDICAL
+"what is a normal resting heart rate",MEDICAL
+"side effects of long term ibuprofen use",MEDICAL
+"what is the treatment for high blood pressure",MEDICAL
+"can stress cause physical symptoms",MEDICAL
+"what are symptoms of a stroke",MEDICAL
+"how does chemotherapy work",MEDICAL
+"what is the difference between a cold and the flu",MEDICAL
+"symptoms of hypothyroidism",MEDICAL
+"what causes kidney stones",MEDICAL
+"how is celiac disease diagnosed",MEDICAL
+"what are the early signs of Alzheimer's",MEDICAL
+"is it safe to take melatonin every night",MEDICAL
+"what causes acid reflux",MEDICAL
+"symptoms of appendicitis",MEDICAL
+"what is a normal A1C level",MEDICAL
+"how does insulin work in the body",MEDICAL
+"what are symptoms of iron deficiency anemia",MEDICAL
+"can you take paracetamol and ibuprofen together",MEDICAL
+"what is the treatment for a UTI",MEDICAL
+"symptoms of ADHD in adults",MEDICAL
+"what causes chronic fatigue",MEDICAL
+"how long is mono contagious",MEDICAL
+"what is the recommended daily dose of vitamin D",MEDICAL
+"symptoms of a panic attack",MEDICAL
+"what causes night sweats in women",MEDICAL
+"how does the COVID vaccine work",MEDICAL
+"what is a healthy BMI range",MEDICAL
+"symptoms of lupus",MEDICAL
+"what is the treatment for hypothyroidism",MEDICAL
+"can high blood pressure cause headaches",MEDICAL
+"what causes swollen lymph nodes",MEDICAL
+"is it safe to drink alcohol while taking antibiotics",MEDICAL
+"what are the symptoms of PCOS",MEDICAL
+"how do antidepressants work",MEDICAL
+"what causes numbness in hands and feet",MEDICAL
+"symptoms of a herniated disc",MEDICAL
+"what is the treatment for rheumatoid arthritis",MEDICAL
+"how long does food poisoning last",MEDICAL
+"what causes ringing in the ears",MEDICAL
+"symptoms of Crohn's disease",MEDICAL
+"what is a normal white blood cell count",MEDICAL
+"how does the liver process alcohol",MEDICAL
+"what causes restless leg syndrome",MEDICAL
+"symptoms of carpal tunnel syndrome",MEDICAL
+"what is the treatment for asthma",MEDICAL
+"how much water should I drink a day",MEDICAL
+"what causes high blood pressure",MEDICAL
+"symptoms of ovarian cysts",MEDICAL
+"what is the recommended amount of sleep for adults",MEDICAL
+"how do beta blockers work",MEDICAL
+"what causes psoriasis flare ups",MEDICAL
+"symptoms of a concussion",MEDICAL
+"what is the treatment for gout",MEDICAL
+"how does radiation therapy work",MEDICAL
+"what causes vertigo",MEDICAL
+"symptoms of endometriosis",MEDICAL
+"what is a normal platelet count",MEDICAL
+"how do ACE inhibitors work",MEDICAL
+"what causes frequent urination",MEDICAL
+"symptoms of sleep apnea",MEDICAL
+"what is the treatment for eczema",MEDICAL
+"how long does a sprained ankle take to heal",MEDICAL
+"what causes hair loss in women",MEDICAL
+"symptoms of vitamin B12 deficiency",MEDICAL
+"what is the treatment for depression",MEDICAL
+"how does the thyroid gland work",MEDICAL
+"what causes irritable bowel syndrome",MEDICAL
+"symptoms of multiple sclerosis",MEDICAL
+"what is a normal creatinine level",MEDICAL
+"how do blood pressure medications work",MEDICAL
+"what causes gallstones",MEDICAL
+"symptoms of bipolar disorder",MEDICAL
+"what is the treatment for type 2 diabetes",MEDICAL
+"how long does strep throat last without antibiotics",MEDICAL
+"what causes muscle cramps",MEDICAL
+"symptoms of Parkinson's disease",MEDICAL
+"what is the difference between MRI and CT scan",MEDICAL
+"how do corticosteroids work",MEDICAL
+"what causes low sodium levels",MEDICAL
+"symptoms of an overactive thyroid",MEDICAL
+"what is the treatment for insomnia",MEDICAL
+"I've been having chest pains for 3 days should I be worried",MEDICAL
+"my knee keeps swelling after I run",MEDICAL
+"my doctor said I have prediabetes what does that mean",MEDICAL
+"is it normal to feel tired all the time",MEDICAL
+"my 5 year old has a fever of 39 what should I do",MEDICAL
+"I keep feeling dizzy when I stand up",MEDICAL
+"I have a lump under my armpit that doesn't hurt",MEDICAL
+"my urine is really dark is that bad",MEDICAL
+"I wake up every night drenched in sweat",MEDICAL
+"my heart skips a beat sometimes is that dangerous",MEDICAL
+"I've been losing weight without trying is that a bad sign",MEDICAL
+"my 2 year old hasn't been eating for 2 days",MEDICAL
+"I get really short of breath when I climb stairs",CODING
+"I have been having headaches every single day for a week",MEDICAL
+"my back has been killing me for months nothing helps",MEDICAL
+"my doctor put me on lisinopril is that a serious drug",MEDICAL
+"is it normal for a cut to be swollen and warm",MEDICAL
+"my elderly mom keeps forgetting things is it dementia",MEDICAL
+"I have a rash that won't go away",MEDICAL
+"my stomach hurts after every meal",MEDICAL
+"I've been on antidepressants for 2 weeks and feel worse",MEDICAL
+"should I be worried about a mole that changed color",MEDICAL
+"my doctor wants to do a biopsy should I be scared",MEDICAL
+"I keep getting UTIs every month what is wrong with me",MEDICAL
+"my blood pressure reading was 150 over 95 is that dangerous",MEDICAL
+"I have numbness going down my left arm",MEDICAL
+"my 8 year old complains of stomach aches before school every day",MEDICAL
+"I've had diarrhea for 5 days now",MEDICAL
+"my period has been irregular for 6 months",MEDICAL
+"I started a new medication and now I can't sleep",MEDICAL
+"is it normal to have chest tightness with anxiety",MEDICAL
+"my joints are stiff every morning for about an hour",MEDICAL
+"I've been on metformin and my stomach is always upset",MEDICAL
+"my 70 year old father fell and hit his head",MEDICAL
+"I keep getting a weird metallic taste in my mouth",MEDICAL
+"my child has had a cough for 3 weeks",MEDICAL
+"is yellow snot a sign of infection",MEDICAL
+"I took two doses of my antibiotic by accident",MEDICAL
+"my fingers have been turning blue in the cold",MEDICAL
+"I have a sharp pain when I take a deep breath",MEDICAL
+"my doctor said my cholesterol is borderline high do I need medication",MEDICAL
+"I've been having really vivid nightmares since starting this medication",MEDICAL
+"my eye has been twitching for days",MEDICAL
+"is it safe to exercise with high blood pressure",MEDICAL
+"my teenager has been very withdrawn and sleeping all day",MEDICAL
+"I keep forgetting words mid sentence is that normal",MEDICAL
+"my calves cramp up badly at night",MEDICAL
+"I have a throbbing headache behind one eye",MEDICAL
+"my doctor said I need a colonoscopy at 40 is that normal",MEDICAL
+"I've been spotting between periods for 3 months",MEDICAL
+"my newborn has jaundice is that serious",MEDICAL
+"I feel nauseous every morning but I'm not pregnant",MEDICAL
+"my hands shake when I try to hold things",MEDICAL
+"my doctor wants me to get an echocardiogram what is that",MEDICAL
+"I've been having really bad brain fog lately",MEDICAL
+"my 3 year old has had a high fever for 2 days",MEDICAL
+"I have a pain in my lower right abdomen that comes and goes",MEDICAL
+"my skin has been turning yellow",MEDICAL
+"I feel my heartbeat in my neck is that normal",MEDICAL
+"my doctor found a nodule on my thyroid",MEDICAL
+"I've been on steroids for a week and I can't sleep",MEDICAL
+"my son has a rash that looks like a bullseye",MEDICAL
+"I get dizzy spells that last about 30 seconds",MEDICAL
+"my doctor is recommending surgery for my herniated disc should I get a second opinion",MEDICAL
+"my feet have been swelling at the end of each day",MEDICAL
+"I have been really thirsty lately and peeing a lot",MEDICAL
+"my 6 year old has been complaining of headaches",MEDICAL
+"I have tingling in my face is that serious",MEDICAL
+"my blood test showed elevated liver enzymes what does that mean",MEDICAL
+"I've been having very heavy periods lately",MEDICAL
+"my doctor said my kidney function is slightly low",MEDICAL
+"I cough up a small amount of blood when I blow my nose",MEDICAL
+"I've been on birth control for a month and feel really moody",MEDICAL
+"my toddler swallowed a small coin",MEDICAL
+"I have a pain in my upper right abdomen after eating fatty food",MEDICAL
+"is the standard of care for sepsis really just antibiotics and fluids",MEDICAL
+"what is the clinical definition of metabolic syndrome",MEDICAL
+"is oxycodone physically addictive after just a few days",MEDICAL
+"what are the clinical symptoms of early stage liver disease",MEDICAL
+"can I take sertraline if I have a history of seizures",MEDICAL
+"what does it mean when a tumor is described as stage 3",MEDICAL
+"is it medically necessary to take statins if your LDL is 160",MEDICAL
+"what is the first line treatment for community acquired pneumonia",MEDICAL
+"my hospital discharge summary says I had a myocardial infarction what is that",MEDICAL
+"is it safe to take ozempic if I have a history of pancreatitis",MEDICAL
+"what does a high CRP level indicate",MEDICAL
+"is benzodiazepine dependence the same as addiction",MEDICAL
+"what is the clinical significance of a prolonged QT interval",MEDICAL
+"can I take NSAIDs if I have chronic kidney disease",MEDICAL
+"what is the standard protocol for treating anaphylaxis",MEDICAL
+"my lab results show low ferritin but normal hemoglobin what does that mean",MEDICAL
+"is it safe to get a flu shot while on immunosuppressants",MEDICAL
+"what is the difference between palliative care and hospice",MEDICAL
+"can methotrexate be used for something other than cancer",MEDICAL
+"my doctor ordered a HbA1c test what is it measuring",MEDICAL
+"is prediabetes reversible with diet alone",MEDICAL
+"what are the long term effects of untreated sleep apnea",MEDICAL
+"how much sodium per day is safe for someone with heart failure",MEDICAL
+"is it dangerous to stop taking SSRIs suddenly",MEDICAL
+"what is the relationship between gut bacteria and mental health",MEDICAL
+"is chronic inflammation linked to heart disease",MEDICAL
+"what does it mean if my PSA levels are elevated",MEDICAL
+"can vitamin D deficiency cause depression",MEDICAL
+"is it safe to intermittent fast if you are diabetic",MEDICAL
+"what are the risks of long term proton pump inhibitor use",MEDICAL
+"my MRI report mentions a white matter lesion what does that mean",MEDICAL
+"can untreated high blood pressure cause dementia",MEDICAL
+"is adderall safe to take if I have a heart condition",MEDICAL
+"what is the connection between autoimmune disease and leaky gut",MEDICAL
+"can low testosterone cause depression in men",MEDICAL
+"what is considered a dangerous level of potassium in blood",MEDICAL
+"my doctor mentioned watchful waiting for my prostate cancer is that safe",MEDICAL
+"is it safe to take magnesium supplements every day",MEDICAL
+"what are the risks of general anesthesia in elderly patients",MEDICAL
+"can birth control pills cause blood clots",MEDICAL
+"what is the medical reason behind why alcohol damages the liver",MEDICAL
+"is fibromyalgia a real diagnosis or just a catch all",MEDICAL
+"what does it mean when kidney GFR is below 60",MEDICAL
+"can high cortisol levels cause weight gain",MEDICAL
+"is it dangerous to have high triglycerides even if cholesterol is normal",MEDICAL
+"what is the medical difference between a virus and a bacterial infection",MEDICAL
+"can antidepressants cause weight gain long term",MEDICAL
+"is it safe to get pregnant while taking thyroid medication",MEDICAL
+"what are the health risks of being underweight",MEDICAL
+"I get really short of breath when I climb stairs",MEDICAL
+"my doctor keeps dismissing my symptoms and I don't know what to do",MEDICAL
+"I've been on the same medication for 10 years is it safe to stay on it that long",MEDICAL
+"my cholesterol came back high but I eat really healthy how is that possible",MEDICAL
+"can stress actually cause hair loss or is that just a myth",MEDICAL
+"I have a family history of heart disease how worried should I be",MEDICAL
+"my doctor wants to put my 8 year old on ADHD medication is that safe",MEDICAL
+"I've been getting heart palpitations every time I drink coffee",MEDICAL
+"is it safe to take melatonin and antidepressants at the same time",MEDICAL
+"my iron levels are always low no matter how much iron rich food I eat",MEDICAL
+"I get a really bad headache every time I exercise is that normal",MEDICAL
+"can you become dependent on nasal spray if you use it every day",MEDICAL
+"my blood sugar spikes really high after eating white rice",MEDICAL
+"I have been taking ibuprofen every day for a month for back pain is that dangerous",MEDICAL
+"my doctor said my ECG was slightly abnormal but not to worry should I get a second opinion",MEDICAL
+"is it safe to take ashwagandha every day long term",MEDICAL
+"I get extremely tired after eating is that a sign of something",MEDICAL
+"my 4 year old grinds their teeth at night is that a medical problem",MEDICAL
+"can anxiety cause chest tightness that lasts for days",MEDICAL
+"I have been having floating stools for a few weeks is that serious",MEDICAL
+"my hands are always cold even when it is warm outside what could cause that",MEDICAL
+"is it safe to drink protein shakes every day if I am not a professional athlete",MEDICAL
+"my doctor found a cyst on my ovary and said to just monitor it should I be concerned",MEDICAL
+"can lack of sleep cause high blood pressure",MEDICAL
+"I have been bruising really easily lately and I don't know why",MEDICAL
+"is it normal for my heart rate to go above 170 when I do cardio",MEDICAL
+"my teenager has been losing weight rapidly without dieting what could cause that",MEDICAL
+
+"can my employer fire me without notice in India",LEGAL
+"is a verbal contract legally binding",LEGAL
+"what happens if I get a first time DUI in the US",LEGAL
+"can my landlord enter my flat without permission in the UK",LEGAL
+"how does divorce work in India",LEGAL
+"what is child custody and how is it decided",LEGAL
+"can someone use my photo without my permission",LEGAL
+"what are my rights if a product I bought is faulty",LEGAL
+"how do I file a consumer complaint in India",LEGAL
+"what is the notice period law in India",LEGAL
+"can my employer deduct salary without reason",LEGAL
+"what happens if I break a rental agreement early",LEGAL
+"how long does a divorce take in the US",LEGAL
+"what is the difference between civil and criminal law",LEGAL
+"can I sue someone for defamation on social media",LEGAL
+"what are my rights during a police arrest in India",LEGAL
+"how does bail work in the US",LEGAL
+"what is a non-disclosure agreement",LEGAL
+"can my employer make me work overtime without pay in India",LEGAL
+"what is the legal age of consent in India",LEGAL
+"how do I trademark a business name in India",LEGAL
+"what is the process for filing an FIR in India",LEGAL
+"can a landlord evict a tenant without a court order in India",LEGAL
+"what are my rights as an employee in the UK",LEGAL
+"how does small claims court work in the US",LEGAL
+"what is the difference between a will and a trust",LEGAL
+"can I record a phone call without telling the other person in India",LEGAL
+"what is the punishment for drunk driving in India",LEGAL
+"how does copyright law work for creative work",LEGAL
+"what is a power of attorney and how do I get one",LEGAL
+"can my landlord increase rent without notice in the UK",LEGAL
+"what are the grounds for divorce in India",LEGAL
+"how does child support work in the US",LEGAL
+"what is the right to silence during police questioning",LEGAL
+"can I be fired for posting on social media in the US",LEGAL
+"what is the legal process for adopting a child in India",LEGAL
+"how do I register a company in India",LEGAL
+"what are my rights if I am made redundant in the UK",LEGAL
+"what is the punishment for cheque bounce in India",LEGAL
+"how does alimony work in India",LEGAL
+"what is the difference between a sole trader and a limited company in the UK",LEGAL
+"can my employer change my job role without my consent",LEGAL
+"what is the legal notice period for eviction in the US",LEGAL
+"how does the GDPR affect businesses in the UK",LEGAL
+"what is a legal heir certificate in India",LEGAL
+"can I use someone else's music in my YouTube video",LEGAL
+"what are my rights if I am wrongfully terminated in the US",LEGAL
+"how does the consumer protection act work in India",LEGAL
+"what is the process for getting a legal separation in the UK",LEGAL
+"can a company use my personal data without permission",LEGAL
+"what is the punishment for theft under IPC in India",LEGAL
+"how do I challenge an unfair dismissal in the UK",LEGAL
+"what is at-will employment in the US",LEGAL
+"can my landlord withhold my security deposit without reason",LEGAL
+"what is the law on maternity leave in India",LEGAL
+"how does plea bargaining work in the US",LEGAL
+"what are my rights as a shareholder in a private company",LEGAL
+"what is the legal process for property registration in India",LEGAL
+"can I be denied a job because of my religion",LEGAL
+"how does the right to information act work in India",LEGAL
+"what is the statute of limitations for filing a civil suit in India",LEGAL
+"can my employer access my personal emails on a work device",LEGAL
+"what are the legal requirements for a valid contract",LEGAL
+"how do I file for bankruptcy in the US",LEGAL
+"what is the process for registering a trademark in the UK",LEGAL
+"can a minor enter into a legally binding contract",LEGAL
+"what is the punishment for domestic violence under Indian law",LEGAL
+"how does inheritance law work when there is no will in India",LEGAL
+"what are my rights if a flight is cancelled in the EU",LEGAL
+"can my employer force me to sign an NDA after I resign",LEGAL
+"what is the legal process for divorce in the UK",LEGAL
+"how does workers compensation work in the US",LEGAL
+"what is the POCSO act in India",LEGAL
+"can I sue a company for data breach in the US",LEGAL
+"what are the rules around non-compete clauses in employment contracts",LEGAL
+"how does the Insolvency and Bankruptcy Code work in India",LEGAL
+"what is the law around wrongful death suits in the US",LEGAL
+"can a landlord ban pets in a rental property in the UK",LEGAL
+"what is the legal process for getting a restraining order in the US",LEGAL
+"how is property divided in a divorce in India",LEGAL
+"what are my rights if police stop and search me in the UK",LEGAL
+"can I be held liable for an accident on my property",LEGAL
+"what is the difference between a patent and a trademark",LEGAL
+"how does the Motor Vehicles Act apply to accidents in India",LEGAL
+"what are the rules around sick leave in India",LEGAL
+"can my boss reduce my salary without telling me in the UK",LEGAL
+"what is the legal process for name change in India",LEGAL
+"how do I contest a will in the US",LEGAL
+"what is the prevention of sexual harassment act in India",LEGAL
+"can I get a refund on a non-refundable ticket under UK consumer law",LEGAL
+"what are my rights if I am arrested without warrant in India",LEGAL
+"how does joint custody work in the US",LEGAL
+"what is the legal drinking age in different countries",LEGAL
+"can a company sue me for a negative review online",LEGAL
+"what is the process for filing a case in consumer court in India",LEGAL
+"how does the right to fair trial work",LEGAL
+"what are the laws around drug possession in the UK",LEGAL
+"can I legally work two jobs at the same time in India",LEGAL
+"my landlord is refusing to return my security deposit",LEGAL
+"I just got served a legal notice what do I do",LEGAL
+"my employer hasn't paid my salary for 2 months in India",LEGAL
+"can my boss really do this to me",LEGAL
+"I was fired without any reason or warning is that allowed",LEGAL
+"my neighbour is playing loud music every night is there a law against that",LEGAL
+"do I have the right to see a lawyer before police questioning in India",LEGAL
+"my landlord entered my flat without telling me is that legal",LEGAL
+"I signed a contract under pressure can I cancel it",LEGAL
+"my company is not giving me my gratuity after 5 years is that legal in India",LEGAL
+"my ex is not letting me see my kids what can I do legally",LEGAL
+"I bought a phone online and it stopped working in a week what are my rights",LEGAL
+"my employer is forcing me to resign instead of firing me is that legal",LEGAL
+"can they fire me while I am on sick leave in the UK",LEGAL
+"in India can my employer withhold my relieving letter",LEGAL
+"under IPC section 420 what exactly can I file a case for",LEGAL
+"my business partner is stealing from the company what do I do",LEGAL
+"I received a legal notice from my ex employer for breach of contract",LEGAL
+"my tenant has not paid rent for 3 months how do I evict them in India",LEGAL
+"someone is using my brand name without permission what can I do",LEGAL
+"can my parents disown me legally in India",LEGAL
+"I got into a minor car accident and the other driver is threatening to sue me",LEGAL
+"my boss keeps making inappropriate comments is that a legal issue",LEGAL
+"can a private school expel my child without proper process",LEGAL
+"I lent money to a friend with no written agreement can I get it back legally",LEGAL
+"my company changed my work location without asking me is that allowed in India",LEGAL
+"is it legal to run a home business in a residential area in the UK",LEGAL
+"can my internet provider share my browsing history with police",LEGAL
+"I was not given a written employment contract in India what are my rights",LEGAL
+"my landlord is threatening to cut off electricity to force me out",LEGAL
+"can the police search my phone without a warrant in India",LEGAL
+"my startup was copied by a bigger company what legal options do I have",LEGAL
+"I ordered something online and it never arrived what are my legal rights in India",LEGAL
+"can my employer make me work on public holidays without extra pay",LEGAL
+"I was defamed in a WhatsApp group can I take legal action in India",LEGAL
+"my name was used in a news article without permission is that legal",LEGAL
+"can a debt collector call me at any time of day in the US",LEGAL
+"my contractor abandoned the project halfway through what can I do",LEGAL
+"is it legal to record a conversation with my employer in India",LEGAL
+"can my housing society ban me from selling my flat to a certain community",LEGAL
+"I am being harassed by my manager but HR is doing nothing",LEGAL
+"my landlord raised rent by 40 percent overnight can he do that in India",LEGAL
+"can my employer read my work WhatsApp messages",LEGAL
+"I need to know if I can get out of this lease agreement",LEGAL
+"my business partner wants to dissolve the partnership without my consent",LEGAL
+"can a hospital detain me if I can't pay my bill in India",LEGAL
+"I was not paid for my notice period after resigning is that legal",LEGAL
+"my employer is asking for my original degree certificates to keep is that allowed",LEGAL
+"can police arrest me based on an anonymous complaint in India",LEGAL
+"my neighbour built a wall on my property boundary what are my options",LEGAL
+"can a bank auction my property without going to court in India",LEGAL
+"I was given a zero hours contract in the UK what rights do I have",LEGAL
+"my employer keeps changing my shift without notice is that legal in the UK",LEGAL
+"I need to know if my non-compete clause is actually enforceable",LEGAL
+"can my daughter inherit property equally with my sons under Indian law",LEGAL
+"my company fired me by email without any prior performance warning",LEGAL
+"is it legal to film someone in a public place in India",LEGAL
+"can my ISP throttle my internet speed and is that legal",LEGAL
+"I am being bullied at work and HR is ignoring me what are my legal options",LEGAL
+"my freelance client is refusing to pay the agreed amount",LEGAL
+"can I get a court order to stop my neighbour from building",LEGAL
+"my employer enrolled me in a pension scheme without asking me in the UK is that allowed",LEGAL
+"can a school legally stop my child from appearing in exams over fee dues in India",LEGAL
+"I got a CCJ in the UK what does that mean for me",LEGAL
+"my property was acquired by the government was I entitled to more compensation",LEGAL
+"can my employer force me to take annual leave on specific days in the UK",LEGAL
+"a doctor performed a surgery on me that I didn't consent to what are my legal options",LEGAL
+"is a hospital legally liable if a patient gets an infection during their stay",LEGAL
+"can I sue a pharmaceutical company if their drug gave me serious side effects",LEGAL
+"what are the legal consequences of a doctor prescribing the wrong medication",LEGAL
+"is it legal for a company to collect my health data through an app without telling me",LEGAL
+"can my employer legally require me to take a drug test in India",LEGAL
+"what is the legal liability of a hospital if a patient dies due to staff negligence",LEGAL
+"is it legal for an employer to fire someone for refusing the covid vaccine in the US",LEGAL
+"can a hospital legally share my medical records with my employer",LEGAL
+"what are the legal implications of signing a medical consent form under pressure",LEGAL
+"is it legal to collect user data without a cookie consent banner under GDPR",LEGAL
+"can my employer monitor my laptop and keystrokes while I work from home",LEGAL
+"what are the legal consequences of a data breach for a company in India",LEGAL
+"is it illegal to share someone's private photos without their consent in India",LEGAL
+"can an app legally sell my location data to third parties",LEGAL
+"what are the laws around using AI generated content commercially",LEGAL
+"is it legal for a school to use facial recognition on students in the UK",LEGAL
+"what are the legal obligations of a company after a data breach in the US",LEGAL
+"can my employer legally track my location using my work phone in India",LEGAL
+"is it legal for a website to store my passwords in plain text",LEGAL
+"what is the legal definition of medical negligence in India",LEGAL
+"can I take legal action if a doctor refused to treat me in an emergency",LEGAL
+"is a fitness app legally allowed to share my heart rate data with insurers",LEGAL
+"what are the legal implications of an incorrect diagnosis that led to wrong treatment",LEGAL
+"can police use CCTV footage as evidence without a warrant in India",LEGAL
+"is it legal for a company to use my face in their advertising without consent",LEGAL
+"what are the laws around employee monitoring software in the UK",LEGAL
+"can an insurance company legally deny my claim based on a pre-existing condition",LEGAL
+"what is the legal process for filing a medical negligence case in India",LEGAL
+"is it legal to scrape data from a public website for commercial use",LEGAL
+"can my bank legally close my account without giving a reason in India",LEGAL
+"what are the legal obligations of a therapist if I tell them I want to harm someone",LEGAL
+"is it legal for an employer to ask for my social media passwords during hiring",LEGAL
+"what is the legal position on euthanasia in India",LEGAL
+"can a private company legally run a background check on me without my permission in India",LEGAL
+"is it legal to use someone else's trademark in a comparative advertisement",LEGAL
+"what are the liability laws for self-driving car accidents in the US",LEGAL
+"can a gym legally hold me to a 12 month contract if I have a medical condition preventing me from going",LEGAL
+"is it legal for a landlord to install cameras inside a rented property in the UK",LEGAL
+"what are the legal obligations of a company that uses AI to make hiring decisions",LEGAL
+"can my employer legally use my biometric data for attendance tracking in India",LEGAL
+"is it legal to deny someone a job based on their credit history in the US",LEGAL
+"what happens legally if a clinical trial causes permanent harm to a participant",LEGAL
+"can a school legally share my child's data with third party apps in India",LEGAL
+"is it legal for police to access my deleted WhatsApp messages in India",LEGAL
+"what are the legal rights of a surrogate mother in India",LEGAL
+"can a company legally terminate my contract because I became pregnant",LEGAL
+"what is the law around cyberbullying in India and can I file a case",LEGAL
+"is it legal for an employer to pay men and women differently for the same job in the UK",LEGAL
+"my employer is not contributing to my provident fund in India is that legal",LEGAL
+"can a private company blacklist me from getting jobs in my industry",LEGAL
+"what is the legal process for filing a cheating case under IPC 420 in India",LEGAL
+"my landlord is asking for 6 months rent in advance is that legal in the UK",LEGAL
+"can my employer enforce a garden leave clause without my agreement",LEGAL
+"what are my rights if a courier company loses my parcel in India",LEGAL
+"is it legal for a school to expel a student without a disciplinary hearing in the UK",LEGAL
+"can a society or RWA ban me from using common areas in my apartment complex in India",LEGAL
+"what is the legal process for recovering money from a business partner who cheated me",LEGAL
+"can my employer legally ask me to repay my training costs if I resign in the UK",LEGAL
+"is it legal for a company to use unpaid interns in India",LEGAL
+"what are my legal rights if a builder delays possession of my flat in India",LEGAL
+"can a bank legally share my financial data with third party apps without my consent",LEGAL
+"what is the legal position on live-in relationships in India",LEGAL
+"can my employer demote me without giving any reason in the US",LEGAL
+"is it legal to resell concert tickets at a higher price in the UK",LEGAL
+"what are my rights if my employer goes bankrupt and owes me salary in India",LEGAL
+"can a landlord legally refuse to rent to someone based on their nationality in the UK",LEGAL
+"what is the legal process for challenging a wrongful termination in India",LEGAL
+"can a company legally terminate a contract over email without a signature",LEGAL
+"is it legal to share someone's salary information with other employees in India",LEGAL
+"what are the legal implications of signing a document without reading it",LEGAL
+"can my employer legally change my employment contract terms after I have signed it",LEGAL
+"what is the legal position on moonlighting in India after the IT company controversies",LEGAL
+"is it legal for a housing society to charge different maintenance fees from owners and tenants in India",LEGAL
+"can I legally refuse to work if my workplace is unsafe in the US",LEGAL
+"what are my rights if a moving company damages my belongings in India",LEGAL
+"is it legal for an employer to ask about my previous salary during hiring in India",LEGAL
+"can a school legally stop a student from wearing a hijab in India",LEGAL
+"what are the legal rights of an unmarried partner if the other person dies without a will in the UK",LEGAL
+"is it legal to operate a food business from home in India",LEGAL
+"can a credit card company sue me personally if I default in India",LEGAL
+"what is the legal process for getting a succession certificate in India",LEGAL
+"can my employer legally put me on a performance improvement plan just before my appraisal",LEGAL
+"is it legal for a company to use a probation period to avoid paying notice in the UK",LEGAL
+"what are my legal options if a doctor shares my diagnosis with my family without my permission",LEGAL
+"can a landlord legally increase rent every year without a cap in India",LEGAL
+"is it legal to record a meeting with my manager without telling them in the UK",LEGAL
+
+"what year did World War 2 end",GENERAL
+"what is the capital of Australia",GENERAL
+"how does photosynthesis work",GENERAL
+"what is the Fibonacci sequence",GENERAL
+"write a short poem about the ocean",GENERAL
+"suggest a recipe for a simple pasta dinner",GENERAL
+"what books should I read if I liked Atomic Habits",GENERAL
+"good movies to watch when you are feeling sad",GENERAL
+"how do I learn a new language fast",GENERAL
+"tips for sleeping better at night",GENERAL
+"what is inflation and why does it happen",GENERAL
+"what is climate change explained simply",GENERAL
+"who was Julius Caesar",GENERAL
+"what is the largest country in the world by area",GENERAL
+"how does gravity work",GENERAL
+"what is the speed of light",GENERAL
+"who wrote Pride and Prejudice",GENERAL
+"what are the seven wonders of the world",GENERAL
+"how do volcanoes form",GENERAL
+"what is the difference between weather and climate",GENERAL
+"who was the first person to walk on the moon",GENERAL
+"what causes earthquakes",GENERAL
+"what is the population of China",GENERAL
+"how far is the moon from the Earth",GENERAL
+"what is the theory of evolution",GENERAL
+"who invented the telephone",GENERAL
+"what is the periodic table",GENERAL
+"how do tides work",GENERAL
+"what was the Renaissance",GENERAL
+"what is the Pythagorean theorem",GENERAL
+"suggest some good podcasts for self improvement",GENERAL
+"what are the best ways to reduce stress",GENERAL
+"how do I start meditating",GENERAL
+"what are some easy exercises I can do at home",GENERAL
+"how do I write a good CV",GENERAL
+"tips for a first job interview",GENERAL
+"how do I budget my money as a student",GENERAL
+"what is compound interest and how does it work",GENERAL
+"how do I start investing with a small amount of money",GENERAL
+"what are the best ways to improve my memory",GENERAL
+"how do I stop procrastinating",GENERAL
+"what are some tips for public speaking",GENERAL
+"how do I make friends as an adult",GENERAL
+"what should I pack for a two week trip to Europe",GENERAL
+"what are the best places to visit in Japan",GENERAL
+"how do I learn to cook from scratch",GENERAL
+"suggest a good morning routine",GENERAL
+"how do I deal with a difficult coworker",GENERAL
+"what is the best way to learn guitar as a beginner",GENERAL
+"how does the stock market work",GENERAL
+"what caused the French Revolution",GENERAL
+"who was Nikola Tesla",GENERAL
+"what is the difference between a democracy and a republic",GENERAL
+"how does the human digestive system work",GENERAL
+"what is quantum physics in simple terms",GENERAL
+"who built the pyramids",GENERAL
+"what is the difference between African and Asian elephants",GENERAL
+"how do planes stay in the air",GENERAL
+"what is the water cycle",GENERAL
+"what happened during the Cold War",GENERAL
+"what is the difference between a meteor and a meteorite",GENERAL
+"how do I start a journal",GENERAL
+"what are some good habits for a productive day",GENERAL
+"how do I learn to draw",GENERAL
+"suggest a 7 day meal plan for a beginner",GENERAL
+"what are the best documentaries on Netflix",GENERAL
+"how do I write a short story",GENERAL
+"what is the best way to apologize to someone",GENERAL
+"how do I negotiate a higher salary",GENERAL
+"what are the best ways to save money on groceries",GENERAL
+"how do I get better at maths",GENERAL
+"what is the difference between introverts and extroverts",GENERAL
+"how does the immune system work",GENERAL
+"what is stoicism",GENERAL
+"who was Mahatma Gandhi",GENERAL
+"what is the difference between mitosis and meiosis",GENERAL
+"how do black holes form",GENERAL
+"what is the Big Bang theory",GENERAL
+"who was Cleopatra",GENERAL
+"what is GDP and how is it calculated",GENERAL
+"what caused the 2008 financial crisis",GENERAL
+"how do I improve my English writing skills",GENERAL
+"what is mindfulness",GENERAL
+"how do solar panels work",GENERAL
+"what is the difference between a virus and a bacteria",GENERAL
+"how do I build self confidence",GENERAL
+"what is the best way to learn a skill quickly",GENERAL
+"what are some good TED talks to watch",GENERAL
+"how do I start a small business",GENERAL
+"what is the difference between a CV and a resume",GENERAL
+"what is dark matter",GENERAL
+"how does memory work in the human brain",GENERAL
+"what is the difference between sympathy and empathy",GENERAL
+"who was Albert Einstein",GENERAL
+"what is the philosophy of existentialism",GENERAL
+"what are the best ways to stay motivated",GENERAL
+"how do I deal with failure",GENERAL
+"what are some good habits to build in your 20s",GENERAL
+"what is machine learning explained simply",GENERAL
+"what is blockchain and how does it work",GENERAL
+"what is the difference between AI and machine learning",GENERAL
+"how does the internet work",GENERAL
+"what is diabetes in simple terms",GENERAL
+"what is a contract in simple terms",GENERAL
+"what is an algorithm",GENERAL
+"what is the cloud in computing",GENERAL
+"what is cryptocurrency",GENERAL
+"how does GPS work",GENERAL
+"what is a neural network in simple terms",GENERAL
+"what is the difference between a virus and malware",GENERAL
+"what is big data",GENERAL
+"how does facial recognition technology work",GENERAL
+"what is quantum computing",GENERAL
+"what is the metaverse",GENERAL
+"how do self driving cars work",GENERAL
+"what is the difference between AR and VR",GENERAL
+"what is 5G and how is it different from 4G",GENERAL
+"how does wi-fi work",GENERAL
+"what is an operating system",GENERAL
+"what is open source software",GENERAL
+"what is a data breach",GENERAL
+"how does encryption work",GENERAL
+"what is two factor authentication",GENERAL
+"what is the difference between HTTP and HTTPS",GENERAL
+"what is a VPN and why do people use it",GENERAL
+"what is artificial intelligence",GENERAL
+"how do recommendation algorithms work",GENERAL
+"what is deep learning",GENERAL
+"how does a search engine work",GENERAL
+"what is the Internet of Things",GENERAL
+"what is a microchip",GENERAL
+"how does Bluetooth work",GENERAL
+"what is a server",GENERAL
+"what is the difference between hardware and software",GENERAL
+"what is automation and how does it affect jobs",GENERAL
+"what is a digital footprint",GENERAL
+"how does social media algorithm decide what I see",GENERAL
+"what is the dark web",GENERAL
+"how do streaming services like Netflix work",GENERAL
+"what is a startup",GENERAL
+"what is venture capital",GENERAL
+"what is the gig economy",GENERAL
+"what is a gene and how does DNA work",GENERAL
+"how does the brain store memories",GENERAL
+"what is CRISPR in simple terms",GENERAL
+"what is the placebo effect",GENERAL
+"how do vaccines work in simple terms",GENERAL
+"what is mental health",GENERAL
+"what is cognitive bias",GENERAL
+"how does the nervous system work",GENERAL
+"what is the difference between a psychologist and a psychiatrist",GENERAL
+"what is addiction",GENERAL
+"what is the subconscious mind",GENERAL
+"how does sleep affect the brain",GENERAL
+"what is evolution in simple terms",GENERAL
+"how do stem cells work",GENERAL
+"what is the difference between a calorie and a kilocalorie",GENERAL
+"how does the heart pump blood",GENERAL
+"what is the microbiome",GENERAL
+"what is emotional intelligence",GENERAL
+"how does the endocrine system work",GENERAL
+"what is neuroplasticity",GENERAL
+"what is the fight or flight response",GENERAL
+"how does the body regulate temperature",GENERAL
+"what is the difference between a symptom and a sign in general",GENERAL
+"what is a pandemic versus an epidemic",GENERAL
+"how does inheritance work in genetics",GENERAL
+"what is the philosophy of mind",GENERAL
+"what is consciousness",GENERAL
+"what is natural selection",GENERAL
+"what is climate science",GENERAL
+"how does nuclear energy work",GENERAL
+"what is the difference between renewable and non renewable energy",GENERAL
+"how do electric cars work",GENERAL
+"what is carbon footprint",GENERAL
+"what is the ozone layer",GENERAL
+"how do wind turbines generate electricity",GENERAL
+"what is biodiversity",GENERAL
+"how does the economy work",GENERAL
+"what is a recession",GENERAL
+"what is supply and demand",GENERAL
+"what is the difference between a law and a theory in science",GENERAL
+"what is logic and how do logical fallacies work",GENERAL
+"what is ethics in simple terms",GENERAL
+"what is democracy",GENERAL
+"can you explain tachycardia and also tell me what a for loop is",GENERAL
+"what are both the medical and legal risks of having surgery",GENERAL
+"is cryptocurrency legal and how does it work technically",GENERAL
+"what are the health and legal implications of recreational drug use",GENERAL
+"tell me about how AI is being used in healthcare",GENERAL
+"what are the ethical and legal issues around genetic engineering",GENERAL
+"explain climate change and also what should governments do about it legally",GENERAL
+"what are the psychological and legal aspects of addiction",GENERAL
+"how does AI work and is there any law regulating it",GENERAL
+"what are both the health risks and the legal implications of vaping",GENERAL
+"explain what a data breach is and what are my rights when it happens",GENERAL
+"what is the science behind vaccines and why is there debate around mandating them",GENERAL
+"what are the mental health effects of social media and are there any laws around it",GENERAL
+"how does machine learning work and what are the ethical concerns",GENERAL
+"what is the difference between legal insanity and a mental health diagnosis",GENERAL
+"explain both how blockchain works and whether it is regulated",GENERAL
+"what are the tech and privacy issues with smart home devices",GENERAL
+"tell me about CRISPR and whether editing human genes is legal",GENERAL
+"what are the health effects and legal status of cannabis globally",GENERAL
+"how does predictive policing software work and is it ethical",GENERAL
+"what are the financial and emotional effects of divorce",GENERAL
+"explain what a pandemic is and how governments respond legally",GENERAL
+"what is the science of climate change and who is legally responsible for it",GENERAL
+"how does the human brain respond to trauma and are there any legal protections for trauma survivors",GENERAL
+"what are the business and ethical implications of using AI to make hiring decisions",GENERAL
+"what is the psychology of persuasion and is manipulative advertising legal",GENERAL
+"explain what end of life care is and what legal documents I need",GENERAL
+"what are both the technical and legal risks of using public wi-fi",GENERAL
+"how do antidepressants work and can an employer ask if you are on them",GENERAL
+"what are the ethical issues of autonomous weapons and are there international laws",GENERAL
+"explain mental health stigma and whether discrimination based on it is illegal",GENERAL
+"what is the relationship between poverty and health outcomes",GENERAL
+"how does social media affect teenage mental health and what are parents legally allowed to do",GENERAL
+"what is informed consent in both a medical and a general ethical sense",GENERAL
+"explain what a startup is and what kind of legal structure it should have",GENERAL
+"what are both the health and environmental risks of ultra processed food",GENERAL
+"how does the gig economy work and are gig workers entitled to any legal protections",GENERAL
+"what are the psychological and practical effects of unemployment",GENERAL
+"is it safe to use AI therapy apps and are there regulations around them",GENERAL
+"explain what gene therapy is and whether there are laws governing it",GENERAL
+"what are the privacy and mental health concerns with constant smartphone use",GENERAL
+"how does addiction work scientifically and what are the legal consequences of drug use",GENERAL
+"tell me about the ethics and science of animal testing",GENERAL
+"what are the technical and ethical concerns with deepfake technology",GENERAL
+"explain both what a recession is and how it affects everyday people",GENERAL
+"how does sleep deprivation affect the body and are there workplace laws about rest periods",GENERAL
+"what are the environmental and economic impacts of fast fashion",GENERAL
+"explain what surrogacy is from both a medical and legal perspective",GENERAL
+"what is the psychology of cult behavior and are cults illegal",GENERAL
+"how do lie detectors work and are they legally admissible in court",GENERAL
+"what are the health and cultural arguments for and against circumcision",GENERAL
+"explain what whistleblowing is and what legal protections exist for whistleblowers",GENERAL
+"what are the social and economic causes of homelessness",GENERAL
+"explain what nuclear weapons are and whether there are international laws banning them",GENERAL
+"how does the placebo effect work and are there ethical issues with using it in medicine",GENERAL
+"what is the psychology behind conspiracy theories and is spreading them illegal",GENERAL
+"explain what carbon trading is and whether it actually works scientifically",GENERAL
+"what are the health and ethical concerns around cosmetic surgery tourism",GENERAL
+"how does the bail system work and what are the psychological effects of pretrial detention",GENERAL
+"what is the science of aging and are there any legal protections for elderly people against discrimination",GENERAL
+"explain what food security means and who is legally responsible for ensuring it",GENERAL
+"what are the mental health and legal consequences of cyberbullying",GENERAL
+"how does biometric data collection work and what are the privacy laws around it",GENERAL
+"what are the scientific and ethical arguments around the death penalty",GENERAL
+"explain what refugee status means and how the asylum process works in simple terms",GENERAL
+"what are the psychological effects of solitary confinement and is it considered legal under human rights law",GENERAL
