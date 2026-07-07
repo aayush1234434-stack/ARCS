@@ -201,6 +201,7 @@ def _build_result(
     stderr: str = "",
 ) -> dict[str, Any]:
     result = dict(RESULT_TEMPLATE)
+    result["model"] = f"sandbox/{DOCKER_IMAGE}"
     result["execution_success"] = execution_success
     result["tests_passed"] = tests_passed
     result["tests_failed"] = tests_failed

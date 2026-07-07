@@ -228,7 +228,9 @@ def _call_judge(
 
     raw = response.choices[0].message.content or ""
     parsed = _extract_json(raw)
-    return _normalize_result(parsed)
+    result = _normalize_result(parsed)
+    result["model"] = model
+    return result
 
 
 def run(

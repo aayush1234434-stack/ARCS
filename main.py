@@ -18,12 +18,18 @@ import argparse
 import json
 import re
 import sys
+import time
 
+import logger
 import progress
 
 FALLBACK_SPECIALIST_NAME = "GENERAL"
 
 _components: dict | None = None
+
+
+def _elapsed_ms(started: float) -> int:
+    return int(round((time.perf_counter() - started) * 1000))
 
 
 def _load_components() -> dict:
@@ -122,9 +128,13 @@ def run_pipeline(query: str) -> dict:
         "specification": {},
         "verification": {},
     }
+    timing: dict[str, int] = {}
+    pipeline_start = time.perf_counter()
 
     with progress.step("Route query (local router)"):
+        step_start = time.perf_counter()
         state["route"] = components["router"].route(query)
+        timing["route_ms"] = _elapsed_ms(step_start)
         route = state["route"]
         fallback_note = " → using GENERAL fallback" if route.get("use_fallback") else ""
         progress.log(
@@ -134,13 +144,17 @@ def run_pipeline(query: str) -> dict:
 
     specialist_module, specialist_name = _select_specialist(state["route"], components)
     with progress.step(f"Generate answer ({specialist_name} specialist via Groq API)"):
+        step_start = time.perf_counter()
         state["specialist"] = specialist_module.run(query)
+        timing["specialist_ms"] = _elapsed_ms(step_start)
         answer_preview = state["specialist"].get("answer", "").replace("\n", " ")[:80]
         if answer_preview:
             progress.log(f"  Answer preview: {answer_preview}...")
 
     with progress.step("Build specification (Qwen via Groq API)"):
+        step_start = time.perf_counter()
         state["specification"] = components["spec_generator"].run(query)
+        timing["specification_ms"] = _elapsed_ms(step_start)
         required = len(state["specification"].get("required_elements", []))
         progress.log(f"  {required} required element(s) in spec")
 
@@ -150,6 +164,7 @@ def run_pipeline(query: str) -> dict:
         else "LLM judge"
     )
     with progress.step(f"Verify answer ({verifier})"):
+        step_start = time.perf_counter()
         state["verification"] = _verify(
             query=query,
             route_result=state["route"],
@@ -157,10 +172,14 @@ def run_pipeline(query: str) -> dict:
             specification=state["specification"],
             components=components,
         )
+        timing["verification_ms"] = _elapsed_ms(step_start)
         verdict = state["verification"].get("verdict", "UNKNOWN")
         score = state["verification"].get("score")
         score_note = f", score {score:.2f}" if isinstance(score, (int, float)) else ""
         progress.log(f"  Verdict: {verdict}{score_note}")
+
+    timing["total_ms"] = _elapsed_ms(pipeline_start)
+    state["timing"] = timing
 
     progress.log("Pipeline complete.")
     return state
@@ -194,6 +213,7 @@ def main() -> None:
         progress.log(f"Pipeline error: {exc}")
         raise
 
+    logger.log(state)
     print(json.dumps(state, indent=2))
 
 

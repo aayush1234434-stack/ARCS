@@ -82,7 +82,13 @@ def _encode(query: str, model_dir: str) -> dict:
     )
 
 
-def _result_from_logits(logits: list[float], id2label: dict[int, str]) -> dict:
+def _result_from_logits(
+    logits: list[float],
+    id2label: dict[int, str],
+    *,
+    model: str,
+    backend: str,
+) -> dict:
     probs = _softmax(logits)
     pred_id = max(range(len(probs)), key=probs.__getitem__)
     domain = id2label[pred_id]
@@ -94,7 +100,23 @@ def _result_from_logits(logits: list[float], id2label: dict[int, str]) -> dict:
         "confidence": float(confidence),
         "all_scores": all_scores,
         "use_fallback": confidence < CONFIDENCE_THRESHOLD,
+        "model": model,
+        "backend": backend,
     }
+
+
+def _router_model_label(model_dir: str, backend: str) -> str:
+    config_path = Path(model_dir) / "config.json"
+    base = "distilbert-base-uncased"
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            base = config.get("_name_or_path") or f"{config.get('model_type', 'distilbert')}-classifier"
+        except (OSError, json.JSONDecodeError):
+            pass
+    if backend == "onnx":
+        return f"{base} (onnx)"
+    return f"{base} (pytorch)"
 
 
 def _load_onnx(model_dir: str):
@@ -135,7 +157,12 @@ def _route_onnx(query: str, model_dir: str) -> dict:
         },
     )[0][0]
 
-    return _result_from_logits(logits.tolist(), id2label)
+    return _result_from_logits(
+        logits.tolist(),
+        id2label,
+        model=_router_model_label(model_dir, "onnx"),
+        backend="onnx",
+    )
 
 
 def _load_torch(model_dir: str):
@@ -175,7 +202,12 @@ def _route_torch(query: str, model_dir: str) -> dict:
         logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
         logits_list = logits.squeeze(0).cpu().tolist()
 
-    return _result_from_logits(logits_list, id2label)
+    return _result_from_logits(
+        logits_list,
+        id2label,
+        model=_router_model_label(model_dir, "pytorch"),
+        backend="pytorch",
+    )
 
 
 def _resolve_backend(backend: str, model_dir: str) -> str:
