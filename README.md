@@ -2,7 +2,7 @@
 
 > A modular orchestration architecture that routes each query to a domain-specific processing pipeline, verifies the answer before delivery, and learns from attributed failures.
 
-**Status: In active development**
+**Status: In active development **
 
 ---
 
