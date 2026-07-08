@@ -50,13 +50,20 @@ def _collect_models(state: dict[str, Any]) -> dict[str, str]:
     if router_model:
         models["router"] = str(router_model)
 
-    specialist_model = state.get("specialist", {}).get("specialist")
-    if specialist_model:
-        models["specialist"] = str(specialist_model)
+    specialist = state.get("specialist", {})
+    generator_model = specialist.get("generator_model") or specialist.get("specialist")
+    if generator_model:
+        models["generator"] = str(generator_model)
+        # Keep legacy key for older log consumers.
+        models["specialist"] = str(generator_model)
 
     spec_model = state.get("specification", {}).get("model")
     if spec_model:
         models["spec_generator"] = str(spec_model)
+
+    test_model = state.get("tooling", {}).get("test_generator_model")
+    if test_model:
+        models["test_generator"] = str(test_model)
 
     verification = state.get("verification", {})
     verifier_model = verification.get("model")
@@ -79,17 +86,32 @@ def _collect_metadata(
     specialist = state.get("specialist", {})
     verification = state.get("verification", {})
 
+    pipeline = state.get("pipeline", {})
+    tooling = state.get("tooling", {})
+
     return {
         "query_id": query_id,
         "timestamp": timestamp,
         "domain": route.get("domain"),
+        "pipeline_id": pipeline.get("pipeline_id") or specialist.get("pipeline_id"),
         "specialist_domain": specialist.get("domain"),
         "use_fallback": route.get("use_fallback"),
         "router_confidence": route.get("confidence"),
+        "generator_model": (
+            pipeline.get("generator_model")
+            or specialist.get("generator_model")
+            or specialist.get("specialist")
+        ),
         "verifier_type": verification.get("verification_type"),
         "verdict": verification.get("verdict"),
         "score": verification.get("score"),
         "specialist_uncertainty": specialist.get("specialist_uncertainty"),
+        "sandbox_rounds_used": tooling.get("rounds_used"),
+        "delivery_warning": tooling.get("delivery_warning"),
+        "user_feedback": state.get("user_feedback"),
+        "user_signal": state.get("user_signal"),
+        "feedback": state.get("feedback"),
+        "attribution": state.get("attribution"),
     }
 
 

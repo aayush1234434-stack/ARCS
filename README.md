@@ -1,162 +1,139 @@
 # ARCS — Adaptive Routing & Correction System
 
-> A self-improving multi-LLM pipeline that routes each query to the right specialist model, verifies the answer before delivery, and learns from every failure — by figuring out *which component failed* before retraining anything.
+> A modular orchestration architecture that routes each query to a domain-specific processing pipeline, verifies the answer before delivery, and learns from attributed failures.
 
-**Status: In active development** 
+**Status: In active development**
 
 ---
 
 ## What ARCS Is
 
-ARCS is a multi-LLM orchestration system built around one idea that most systems skip entirely: **attribution before retraining**.
+ARCS is **not** “four separate specialist brains pretending via prompts.” It is an orchestration system built around one idea most systems skip: **attribution before retraining**.
 
-When a user signals that an answer was wrong, most systems either ignore the signal or feed it back to every component equally. But which component actually failed? Was it the router that sent the query to the wrong specialist? The specialist that got the answer wrong? Or the verifier that approved a bad answer before it reached the user?
+A **specialist pipeline** is defined by:
 
-If you don't know, you retrain the wrong thing. The system trains on noise and degrades over time while appearing to improve.
+- prompting strategy
+- structured output contract
+- verification mechanism
+- optional toolchain (e.g. sandbox retries)
 
-ARCS solves this by treating failure attribution as a first-class architectural concern — a prerequisite for retraining, not an afterthought.
+The underlying language model is **interchangeable**. The same orchestration runs with one general-purpose generator today, or a heterogeneous pool of domain models later, without rewriting the pipeline.
+
+When a user signals that an answer was wrong, ARCS assigns blame to a component (router, verifier, specialist/pipeline, or ambiguous) before any retraining occurs.
 
 ---
 
 ## How It Works
-
-A query arrives. The router classifies it and dispatches it to the appropriate specialist. Before the answer reaches the user, a verification layer checks it — deterministically for code, probabilistically for natural language. Every component leaves an evidence trail. When something goes wrong, an attribution engine reads that trail and assigns blame to exactly one component. Only that component trains on the failure.
 
 ```
 User query
     │
     ▼
 ┌─────────────────────────────────────┐
-│  Preprocessor                       │
-│  safety check · assign query_id     │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
 │  Router — DistilBERT classifier     │
 │  domain label + confidence score    │
 └──────────────────┬──────────────────┘
                    │
-    ┌──────────────┴──────────────┐
-    │ confidence > 0.75           │ confidence < 0.75
-    ▼                             ▼
-Specialist model           Generalist fallback
-(CodeLlama / BioMistral    (Mistral 7B Instruct)
- / Mistral-Legal)
-    │                             │
-    └──────────────┬──────────────┘
+                   ▼
+┌─────────────────────────────────────┐
+│  Resolve domain Pipeline            │
+│  prompt · contract · verifier · tools│
+│  (model from config / env override) │
+└──────────────────┬──────────────────┘
                    │
                    ▼
 ┌─────────────────────────────────────┐
-│  Spec Generator                     │
+│  Spec Generator (separate family)   │
 │  builds expected answer checklist   │
 └──────────────────┬──────────────────┘
                    │
     ┌──────────────┴──────────────┐
-    │ executable                  │ non-executable
+    │ CODING                      │ MEDICAL / LEGAL / GENERAL
     ▼                             ▼
-Sandbox                     Verifier — Judge LLM
-(Docker · retry ×3)         (spec coverage · confidence)
+Sandbox                       Judge LLM
+(independent tests ·           (spec coverage · confidence)
+ retry ×3)
     │                             │
     └──────────────┬──────────────┘
                    │
                    ▼
           Answer delivered to user
                    │
-                   ▼  (async — user does not wait)
+                   ▼  (post-inference)
 ┌─────────────────────────────────────┐
-│  Feedback Layer                     │
-│  explicit · requery detection ·     │
-│  follow-up implication analysis ·   │
-│  autonomous evaluator LLM           │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│  Attribution Engine                 │
-│  5-step blame assignment            │
+│  Feedback + Attribution Engine      │
 │  ROUTER · VERIFIER · SPECIALIST ·   │
 │  AMBIGUOUS (discarded, not trained) │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-     Targeted retraining queue
-     (only the component that failed)
+└─────────────────────────────────────┘
 ```
 
 ---
 
-## The Five Components
+## Specialist Pipelines (current MVP)
+
+| Pipeline | Verifier | Toolchain | Default generator |
+|---|---|---|---|
+| `CODING` | Docker / subprocess sandbox | Independent test generator + up to 3 retries | `llama-3.3-70b-versatile` (Groq) |
+| `MEDICAL` | LLM judge | Spec checklist | same (env-overridable) |
+| `LEGAL` | LLM judge | Spec checklist | same (env-overridable) |
+| `GENERAL` | LLM judge | Spec checklist | same (fallback / low confidence) |
+
+Cross-checks deliberately use **different model families** where possible:
+
+| Role | Default |
+|---|---|
+| Domain generator | Llama 3.3 70B (Groq) |
+| Spec generator | Qwen3 32B (Groq) |
+| Coding test generator | Qwen3 32B (Groq) |
+| Judge | Llama 3.1 8B Instruct (NVIDIA) |
+
+Override models without code changes:
+
+```bash
+export ARCS_GENERATOR_MODEL=llama-3.3-70b-versatile
+export ARCS_CODING_MODEL=...      # optional domain override
+export ARCS_SPEC_MODEL=qwen/qwen3-32b
+export ARCS_TEST_GENERATOR_MODEL=qwen/qwen3-32b
+export NVIDIA_JUDGE_MODEL=meta/llama-3.1-8b-instruct
+export ARCS_CODING_MAX_RETRIES=3
+```
+
+When you later host CodeLlama / BioMistral (or other domain models), set `ARCS_CODING_MODEL` / `ARCS_MEDICAL_MODEL` — orchestration stays the same.
+
+---
+
+## Components
 
 ### 1. Router
-A fine-tuned DistilBERT classifier. Reads the raw query and outputs a domain label (`CODING`, `MEDICAL`, `LEGAL`, `GENERAL`) and a calibrated confidence score. Below 0.75 confidence, the query routes to the generalist fallback rather than risking a wrong specialist dispatch. The full score distribution across all four classes is logged — not just the winner. Attribution needs the full picture.
+Fine-tuned DistilBERT (ONNX by default). Outputs domain + confidence + full score distribution. Below 0.75 confidence → `GENERAL` pipeline.
 
-### 2. Specialist Pool
-
-| Specialist | Model | Domain |
-|---|---|---|
-| Coding | CodeLlama 7B | `CODING` |
-| Medical | BioMistral 7B | `MEDICAL` |
-| Legal | Mistral 7B Instruct (prompted) | `LEGAL` |
-| Generalist | Mistral 7B Instruct | `GENERAL` / low-confidence fallback |
-
-Every specialist is prompted to append an `UNCERTAINTY` section to its answer — a list of specific claims it is not confident about. This is mandatory input to the attribution engine, not optional metadata.
+### 2. Pipeline registry (`pipelines.py`)
+Maps each domain to its specialist module, verifier kind, retries, and tools. This is the modular contract; specialists are not hard-wired into `main.py` as “magic models.”
 
 ### 3. Spec Generator
-Before verification runs, a separate model (different family from the specialists, to avoid correlated blind spots) generates a checklist of what a correct answer *must* contain for the given query. Verification then checks coverage against this spec — shifting from the subjective "is this good?" to the auditable "does this cover the required points?"
+Builds a checklist of required / correctness / disqualifying criteria before verification.
 
-### 4. Verification Layer
+### 4. Verification
 
-**Executable answers** (code, math, SQL) → Docker Sandbox. Code runs against test cases generated by a *separate model* from the one that wrote the code. Up to three retry rounds with error feedback. Binary, deterministic result.
+**Executable (`CODING`)** → independent test snippets + sandbox. Up to N rounds with failure feedback back into the coding specialist.
 
-**Non-executable answers** (medical, legal, general) → Judge LLM. Cross-references the answer against the spec checklist and retrieved chunks from a trusted corpus via ChromaDB. Outputs a multi-dimensional verdict — factuality, coverage, groundedness, reasoning — plus a calibrated confidence score that feeds directly into attribution.
+**Non-executable** → Judge LLM against the spec (pass only if score ≥ 0.75 and no missing required / disqualifying items).
 
 ### 5. Attribution Engine
-The core research contribution. A 5-step rule-based system that reads the evidence trail and assigns blame to exactly one component before any retraining occurs.
-
-```
-Step 1: Sandbox failure?
-        YES → SPECIALIST  (deterministic proof — code was wrong)
-
-Step 2: Verifier confident > 0.80 AND user unhappy?
-        YES → VERIFIER  (it approved a bad answer confidently)
-
-Step 3: Router confidence < 0.60 AND user unhappy?
-        YES → ROUTER  (uncertain dispatch likely sent to wrong specialist)
-
-Step 4: Specialist flagged uncertainty AND user unhappy?
-        YES → SPECIALIST  (it knew it was shaky)
-
-Step 5: None of the above
-        → AMBIGUOUS  (discarded — not trained on)
-```
-
-AMBIGUOUS is not a failure. A clean dataset of 400 attributed failures trains better than a noisy dataset of 1200 mixed ones.
+Rule-based blame assignment from the evidence trail (sandbox fail → specialist; high-confidence verifier + negative feedback → verifier; low router confidence → router; etc.). `AMBIGUOUS` is discarded — not trained on.
 
 ---
 
-## The Log Record
+## Run
 
-Every component writes evidence to a central PostgreSQL record at the time it runs. This is what the attribution engine reads. If it is not here, attribution cannot use it.
-
-```json
-{
-  "query_id":               "q-7f3a",
-  "query_text":             "What is the maximum safe dose of acetaminophen?",
-  "router_domain":          "MEDICAL",
-  "router_confidence":       0.88,
-  "router_all_scores":      { "MEDICAL": 0.88, "LEGAL": 0.07, "CODING": 0.03, "GENERAL": 0.02 },
-  "specialist_used":        "BioMistral-7B",
-  "specialist_uncertainty":  false,
-  "verifier_verdict":       "PASS",
-  "verifier_confidence":     0.82,
-  "spec_coverage_score":     0.20,
-  "evaluator_score":         0.31,
-  "user_signal":            "NEGATIVE",
-  "attribution":            "VERIFIER",
-  "retraining_queue":       "VERIFIER"
-}
+```bash
+cd ARCS
+python main.py "Write a Python function that reverses a string."
+python main.py --feedback NEGATIVE "What is the max safe dose of acetaminophen?"
+python main.py --no-feedback --quiet "..."
 ```
+
+Requires `GROQ_API_KEY` and `NVIDIA_API_KEY` in `.env`. Docker is preferred for sandbox isolation; a restricted local subprocess fallback is used if Docker is unavailable.
 
 ---
 
@@ -166,102 +143,38 @@ Every component writes evidence to a central PostgreSQL record at the time it ru
 
 > Does training the router only on failures attributed to the router produce a more accurate classifier than training on all negative feedback?
 
-**Run A (baseline):** Router retrains on every negative user signal.
-**Run B (attributed):** Router retrains only on records where `attribution == ROUTER`.
+**Run A:** retrain on every negative signal.  
+**Run B:** retrain only where `attribution == ROUTER`.
 
-Both runs start from the same checkpoint and are evaluated against the same held-out test set across retraining cycles.
+### RQ2 — Heterogeneous specialists vs one large generalist *(future)*
 
-If Run B converges faster, it is evidence that attribution filtering is worth the engineering cost — and that any team building multi-component LLM systems should implement it. If both runs perform equivalently at small scale, that is also a publishable finding: don't invest in attribution overhead until data volume justifies it. Either result answers a question without a clean answer in the literature.
-
-**Metrics:**
-
-| Metric | Method | Target |
-|---|---|---|
-| Routing accuracy | Held-out test set (500+ labelled queries), every N retraining steps | > 85% at convergence |
-| Convergence rate | Steps to reach 80% accuracy threshold | Run B faster |
-| Verifier calibration | Agreement with human labels | > 75% |
-| Attribution precision | % confirmed correct by ablation | > 70% |
-
-### RQ2 — Specialist ensemble vs. large generalist *(future work)*
-
-> Can an ensemble of small specialist models match or exceed a large generalist model at lower inference cost?
-
-Four 7B specialists routed intelligently may recover the quality gap of a 70B generalist through domain specificity, at a fraction of the cost. Natural sequel to RQ1.
+Only meaningful once domain-specific models (or clearly stronger domain backends) are plugged into the same pipeline slots. Prompt-only cosplay does **not** answer RQ2.
 
 ---
 
-## Roadmap
-
-### Multi-domain query decomposition *(planned: Week 9–10)*
-
-Single-pass routing has one known hard limit: queries that span multiple domains. Planned architecture:
-
-```
-"Explain tachycardia and write a Python heart rate monitor"
-                        │
-                        ▼
-          Domain overlap detected pre-routing
-                        │
-          ┌─────────────┴─────────────┐
-          ▼                           ▼
-  Medical sub-query            Coding sub-query
-  → BioMistral                 → CodeLlama
-  → Verified independently     → Verified independently
-          │                           │
-          └─────────────┬─────────────┘
-                        ▼
-              Synthesis layer
-              (combined into one response)
-```
-
-A new attribution category — `SYNTHESIS` — handles cases where individual specialist answers were correct but the combined response was poor.
-
-### Bayesian attribution *(future research)*
-
-The attribution engine is intentionally rule-based — rules are debuggable and explainable at MVP scale. At larger data volumes (~10K+ labelled failures), a probabilistic attribution model that learns from confirmed attributions becomes viable.
-
-### Verifier ensemble *(future research)*
-
-Multiple judge LLMs scoring the same answer, with agreement used as a confidence proxy. Reduces single-judge miscalibration at scale.
-
----
-
-## Tech Stack
+## Tech stack (as implemented)
 
 | Component | Technology |
 |---|---|
-| Router | DistilBERT (HuggingFace fine-tuning) |
-| Specialists | CodeLlama 7B · BioMistral 7B · Mistral 7B Instruct |
-| Spec Generator | Separate LLM (different family from specialists) |
-| Verifier | Judge LLM + ChromaDB retrieval grounding |
-| Sandbox | Docker (isolated · no network · time-limited) |
-| Prompt optimization | DSPy (batch, benchmarked before deployment) |
-| Logging | PostgreSQL |
-| Experiment tracking | MLflow + Weights & Biases |
-| Orchestration | LangGraph + FastAPI |
+| Router | DistilBERT + ONNX Runtime |
+| Pipelines | `pipelines.py` + domain prompt/contracts |
+| Generator (default) | Groq `llama-3.3-70b-versatile` |
+| Spec / tests | Groq `qwen/qwen3-32b` |
+| Judge | NVIDIA OpenAI-compatible API |
+| Sandbox | Docker (`python:3.11-slim`) with subprocess fallback |
+| Logging | JSONL (`logs/requests.jsonl`) |
+
+Planned / not in this MVP: ChromaDB grounding, DSPy batch prompt optimization, multi-domain query decomposition, autonomous evaluator feedback.
 
 ---
 
+## Known limitations
 
-## Related Work
-
-ARCS builds on and extends several lines of prior work:
-
-- **Switch Transformers** (Fedus et al., 2021) — top-1 sparse routing at the weight level. ARCS applies the routing principle at the system level, between independent models.
-- **RouteLLM** (LMSYS, 2024) — routing between strong and weak models based on query difficulty. ARCS extends this with domain specificity and, critically, attribution before retraining.
-- **Self-Consistency** (Wang et al., 2022) — consistency sampling as a confidence signal. Used in the ARCS verifier layer for non-executable answers.
-- **RLHF** (Christiano et al., 2017) — training from human feedback. ARCS implements a component-level variant: feedback is attributed before training so each component receives only the signal that belongs to it.
+- With one shared generator, domain value comes from **pipeline structure** (contracts + verification + tools), not from invented specialist weights.
+- Attribution is heuristic; `AMBIGUOUS` reduces noisy training.
+- Feedback is currently explicit / interactive only.
+- Verifier miscalibration remains the most dangerous failure mode — recalibrate against human labels periodically.
 
 ---
-
-## Known Limitations
-
-- **Attribution misfire** — the attribution engine is a heuristic. Misattributions corrupt the signal it is meant to clean. The AMBIGUOUS category minimises this by discarding uncertain cases rather than forcing them.
-- **API-accessed specialists** — if specialists are accessed via external API, their weights cannot be updated directly. Specialist improvement is limited to prompt optimization via DSPy.
-- **Feedback sparsity** — meaningful retraining requires approximately 500 attributed failures per component. At low query volume, convergence will be slow.
-- **Verifier miscalibration** — a verifier that confidently passes bad answers is the most dangerous failure mode. Periodic recalibration against human labels is a maintenance requirement, not a one-time step.
-
----
-
 
 *Questions or ideas: aayush1234434@gmail.com*

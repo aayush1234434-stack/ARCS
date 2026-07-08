@@ -1,5 +1,8 @@
 from groq_client import get_client
 
+import config
+from specialist.common import extract_sections, parse_bullets, parse_uncertainty
+
 SYSTEM_PROMPT = """You are an expert medical information specialist. You provide clear, evidence-based health information for educational purposes only.
 
 You are NOT a doctor and cannot diagnose, prescribe, or replace professional medical care. Always encourage users to consult a qualified healthcare provider for personal medical decisions.
@@ -28,96 +31,44 @@ UNCERTAINTY:
 - <or write exactly: None>"""
 
 
-def _parse_bullets(text: str) -> list[str]:
-    """Parse bullet lists in -, •, *, or 1. / (a) formats."""
-    import re
-    items = []
-    for line in text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        # Strip leading bullet or numbering
-        line = re.sub(r"^[-•*]\s+", "", line)
-        line = re.sub(r"^\d+[.)]\s+", "", line)
-        line = re.sub(r"^\([a-zA-Z]\)\s+", "", line)
-        if line:
-            items.append(line)
-    return items
-
-
-def _parse_uncertainty(raw: str) -> list[str]:
-    """
-    Return an empty list when the specialist is fully confident,
-    a list of specific uncertain claims otherwise.
-    Handles both bullet-list and prose responses.
-    """
-    raw = raw.strip()
-    if not raw or raw.lower() == "none" or raw.lower().startswith("none"):
-        return []
-
-    lines = [l.strip() for l in raw.splitlines() if l.strip()]
-
-    # Check whether any line looks like a bullet
-    has_bullets = any(
-        l.startswith(("-", "•", "*")) or (len(l) > 2 and l[0].isdigit() and l[1] in ".)") 
-        for l in lines
-    )
-
-    if has_bullets:
-        parsed = _parse_bullets(raw)
-        # After stripping bullets, a lone "None" still means no uncertainty
-        if len(parsed) == 1 and parsed[0].lower() == "none":
-            return []
-        return parsed
-
-    # Prose uncertainty — wrap as a single item so attribution can use it
-    return [raw]
-
-
 def parse_response(raw: str, model: str) -> dict:
-    sections: dict[str, str] = {}
-    keys = ["ANSWER", "KEY CLAIMS", "CAVEATS", "UNCERTAINTY"]
-
-    for i, key in enumerate(keys):
-        start = raw.find(f"{key}:")
-        if start == -1:
-            sections[key.lower()] = ""
-            continue
-        start += len(f"{key}:")
-        end = len(raw)
-        for next_key in keys[i + 1:]:
-            pos = raw.find(f"{next_key}:", start)
-            if pos != -1:
-                end = pos
-                break
-        sections[key.lower()] = raw[start:end].strip()
-
-    uncertainty = _parse_uncertainty(sections.get("uncertainty", "None"))
-    claims = _parse_bullets(sections.get("key claims", ""))
+    sections = extract_sections(
+        raw,
+        ["ANSWER", "KEY CLAIMS", "CAVEATS", "UNCERTAINTY"],
+    )
+    uncertainty = parse_uncertainty(sections.get("uncertainty", "None"))
+    claims = parse_bullets(sections.get("key claims", ""))
 
     return {
         "answer": sections.get("answer", ""),
         "claims": claims,
         "caveats": sections.get("caveats", ""),
-        # Attribution engine reads these two fields directly
         "specialist_uncertainty": len(uncertainty) > 0,
         "specialist_uncertainty_claims": uncertainty,
         "domain": "MEDICAL",
-        "specialist": model,  # pulled from response, not hardcoded
+        "specialist": model,
+        "pipeline_id": "MEDICAL",
     }
 
 
-def run(query: str) -> dict:
+def run(
+    query: str,
+    *,
+    model: str | None = None,
+    feedback: str | None = None,
+) -> dict:
+    model = model or config.resolve_generator_model("MEDICAL")
+    user_content = query
+    if feedback:
+        user_content = f"{query}\n\nADDITIONAL CONTEXT:\n{feedback.strip()}"
+
     response = get_client().chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": query},
+            {"role": "user", "content": user_content},
         ],
         temperature=0.2,
     )
     raw = response.choices[0].message.content or ""
     return parse_response(raw, model=response.model)
-
-
-

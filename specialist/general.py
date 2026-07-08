@@ -1,5 +1,8 @@
 from groq_client import get_client
 
+import config
+from specialist.common import extract_sections, parse_bullets, parse_uncertainty
+
 SYSTEM_PROMPT = """You are a knowledgeable general-purpose assistant. You handle questions that span multiple domains, are ambiguous between domains, or do not fit cleanly into coding, medical, or legal categories.
 
 You are a fallback — you receive queries when the routing system was uncertain which specialist to use, or when a question genuinely crosses domain boundaries. Acknowledge this when it affects the quality of your answer.
@@ -28,68 +31,13 @@ UNCERTAINTY:
 - <or write exactly: None>"""
 
 
-def _parse_bullets(text: str) -> list[str]:
-    """Parse bullet lists in -, •, *, or 1. / (a) formats."""
-    import re
-    items = []
-    for line in text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        line = re.sub(r"^[-•*]\s+", "", line)
-        line = re.sub(r"^\d+[.)]\s+", "", line)
-        line = re.sub(r"^\([a-zA-Z]\)\s+", "", line)
-        if line:
-            items.append(line)
-    return items
-
-
-def _parse_uncertainty(raw: str) -> list[str]:
-    """
-    Return an empty list when the specialist is fully confident,
-    a list of specific uncertain claims otherwise.
-    Handles both bullet-list and prose responses.
-    """
-    raw = raw.strip()
-    if not raw or raw.lower() == "none" or raw.lower().startswith("none"):
-        return []
-
-    lines = [l.strip() for l in raw.splitlines() if l.strip()]
-
-    has_bullets = any(
-        l.startswith(("-", "•", "*")) or (len(l) > 2 and l[0].isdigit() and l[1] in ".)")
-        for l in lines
-    )
-
-    if has_bullets:
-        parsed = _parse_bullets(raw)
-        if len(parsed) == 1 and parsed[0].lower() == "none":
-            return []
-        return parsed
-
-    return [raw]
-
-
 def parse_response(raw: str, model: str) -> dict:
-    sections: dict[str, str] = {}
-    keys = ["ANSWER", "KEY CLAIMS", "CAVEATS", "UNCERTAINTY"]
-
-    for i, key in enumerate(keys):
-        start = raw.find(f"{key}:")
-        if start == -1:
-            sections[key.lower()] = ""
-            continue
-        start += len(f"{key}:")
-        end = len(raw)
-        for next_key in keys[i + 1:]:
-            pos = raw.find(f"{next_key}:", start)
-            if pos != -1:
-                end = pos
-                break
-        sections[key.lower()] = raw[start:end].strip()
-
-    uncertainty = _parse_uncertainty(sections.get("uncertainty", "None"))
-    claims = _parse_bullets(sections.get("key claims", ""))
+    sections = extract_sections(
+        raw,
+        ["ANSWER", "KEY CLAIMS", "CAVEATS", "UNCERTAINTY"],
+    )
+    uncertainty = parse_uncertainty(sections.get("uncertainty", "None"))
+    claims = parse_bullets(sections.get("key claims", ""))
 
     return {
         "answer": sections.get("answer", ""),
@@ -99,17 +47,28 @@ def parse_response(raw: str, model: str) -> dict:
         "specialist_uncertainty_claims": uncertainty,
         "domain": "GENERAL",
         "specialist": model,
+        "pipeline_id": "GENERAL",
     }
 
 
-def run(query: str) -> dict:
+def run(
+    query: str,
+    *,
+    model: str | None = None,
+    feedback: str | None = None,
+) -> dict:
+    model = model or config.resolve_generator_model("GENERAL")
+    user_content = query
+    if feedback:
+        user_content = f"{query}\n\nADDITIONAL CONTEXT:\n{feedback.strip()}"
+
     response = get_client().chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": query},
+            {"role": "user", "content": user_content},
         ],
-        temperature=0.3,  # slightly higher than domain specialists — general queries benefit from more flexibility
+        temperature=0.3,
     )
     raw = response.choices[0].message.content or ""
     return parse_response(raw, model=response.model)

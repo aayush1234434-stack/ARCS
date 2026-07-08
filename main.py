@@ -1,29 +1,32 @@
 """
-ARCS orchestrator — coordinates the pipeline between independent components.
+ARCS orchestrator — coordinates domain pipelines between independent components.
+
+A specialist pipeline is defined by prompting strategy, structured output
+contract, verification mechanism, and optional toolchain. The underlying
+language model is interchangeable via config without changing orchestration.
 
 Pipeline:
-    query -> router -> specialist -> spec generator -> verifier (sandbox | judge)
-
-This module contains no AI, routing, or verification logic. It only connects
-components and collects their outputs into a shared state dictionary.
+    query -> router -> resolve pipeline -> specialist -> spec -> verify
+    -> feedback (optional) -> log
 
 Usage:
     python main.py "Write a Python function that reverses a string."
-    python main.py --quiet "..."   # suppress progress on stderr
+    python main.py --quiet "..."
+    python main.py --feedback NEGATIVE "..."
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 import time
 
+import feedback
 import logger
+import pipelines
 import progress
-
-FALLBACK_SPECIALIST_NAME = "GENERAL"
+from specialist.common import extract_code_block
 
 _components: dict | None = None
 
@@ -48,8 +51,11 @@ def _load_components() -> dict:
     progress.log("  spec_generator...")
     import spec_generator
 
-    progress.log("  specialists...")
-    from specialist import coding, general, legal, medical
+    progress.log("  test_generator...")
+    import test_generator
+
+    progress.log("  pipelines...")
+    _ = pipelines.get_registry()
 
     progress.log("Pipeline modules loaded.")
 
@@ -58,13 +64,7 @@ def _load_components() -> dict:
         "judge": judge,
         "sandbox": sandbox,
         "spec_generator": spec_generator,
-        "specialists": {
-            "CODING": coding,
-            "MEDICAL": medical,
-            "LEGAL": legal,
-            "GENERAL": general,
-        },
-        "fallback": general,
+        "test_generator": test_generator,
     }
 
 
@@ -75,42 +75,110 @@ def _get_components() -> dict:
     return _components
 
 
-def _select_specialist(route_result: dict, components: dict):
-    """Pick the specialist module based on the router's decision."""
-    if route_result.get("use_fallback"):
-        return components["fallback"], FALLBACK_SPECIALIST_NAME
-    domain = route_result.get("domain", FALLBACK_SPECIALIST_NAME)
-    specialist = components["specialists"].get(domain, components["fallback"])
-    return specialist, domain
+def _sandbox_feedback(verification: dict) -> str:
+    """Summarize sandbox failure for specialist retry."""
+    parts: list[str] = []
+    runtime_error = str(verification.get("runtime_error") or "").strip()
+    if runtime_error:
+        parts.append(f"Runtime error: {runtime_error}")
+    explanation = str(verification.get("explanation") or "").strip()
+    if explanation:
+        parts.append(explanation)
+    issues = verification.get("issues_found") or []
+    if isinstance(issues, list) and issues:
+        parts.append("Issues:\n- " + "\n- ".join(str(item) for item in issues[:8]))
+    if not parts:
+        parts.append("Sandbox verification failed.")
+    return "\n".join(parts)
 
 
-def _extract_code(specialist_result: dict) -> str:
-    """Pull runnable code out of the coding specialist's answer."""
-    answer = specialist_result.get("answer", "")
-    fence = re.search(r"```(?:python)?\s*(.*?)```", answer, re.DOTALL)
-    return (fence.group(1) if fence else answer).strip()
-
-
-def _verify(
+def _run_judge(
     query: str,
-    route_result: dict,
     specialist_result: dict,
     specification: dict,
     components: dict,
 ) -> dict:
-    """Dispatch to the sandbox for code, the judge for everything else."""
-    if route_result.get("domain") == "CODING" and not route_result.get("use_fallback"):
-        code = _extract_code(specialist_result)
-        test_cases = specialist_result.get("test_cases", [])
-        progress.log(f"  Running sandbox ({len(test_cases)} test case(s))...")
-        return components["sandbox"].run(code, test_cases)
-
     progress.log("  Calling LLM judge (NVIDIA API)...")
     return components["judge"].run(
         question=query,
         answer=specialist_result.get("answer", ""),
         specification=specification,
     )
+
+
+def _run_sandbox_pipeline(
+    query: str,
+    pipeline: pipelines.Pipeline,
+    specification: dict,
+    components: dict,
+) -> tuple[dict, dict, dict]:
+    """
+    Coding path: independent tests + generate/verify with retries.
+
+    Returns (specialist_result, verification, tooling_meta).
+    """
+    model = pipeline.resolve_model()
+    progress.log("  Generating independent tests (separate model family)...")
+    test_bundle = components["test_generator"].run(query)
+    test_cases = test_bundle["test_cases"]
+    progress.log(f"  {len(test_cases)} test case(s) from {test_bundle.get('model')}")
+
+    specialist_result: dict = {}
+    verification: dict = {}
+    attempts: list[dict] = []
+    feedback_text: str | None = None
+
+    for round_index in range(1, pipeline.max_retries + 1):
+        progress.log(
+            f"  Coding attempt {round_index}/{pipeline.max_retries} "
+            f"(model={model})..."
+        )
+        specialist_result = pipeline.specialist.run(
+            query,
+            model=model,
+            feedback=feedback_text,
+        )
+        specialist_result["test_cases"] = test_cases
+        specialist_result["pipeline_id"] = pipeline.pipeline_id
+        specialist_result["generator_model"] = model
+
+        code = extract_code_block(specialist_result.get("answer", ""))
+        progress.log(f"  Running sandbox ({len(test_cases)} test case(s))...")
+        verification = components["sandbox"].run(code, test_cases)
+
+        attempts.append(
+            {
+                "round": round_index,
+                "verdict": verification.get("verdict"),
+                "score": verification.get("score"),
+                "issues_found": verification.get("issues_found", []),
+            }
+        )
+
+        if verification.get("verdict") == "PASS":
+            break
+
+        feedback_text = _sandbox_feedback(verification)
+        progress.log(f"  Sandbox FAIL — feeding error back to specialist")
+
+    tooling = {
+        "test_generator_model": test_bundle.get("model"),
+        "test_case_count": len(test_cases),
+        "test_cases": test_cases,
+        "attempts": attempts,
+        "rounds_used": len(attempts),
+        "max_retries": pipeline.max_retries,
+        "verified": verification.get("verdict") == "PASS",
+    }
+    if verification.get("verdict") != "PASS":
+        tooling["delivery_warning"] = (
+            "Code could not be verified after "
+            f"{pipeline.max_retries} sandbox attempt(s)."
+        )
+
+    # Spec is retained for logging / future hybrid checks; sandbox is authoritative.
+    _ = specification
+    return specialist_result, verification, tooling
 
 
 def run_pipeline(query: str) -> dict:
@@ -121,12 +189,14 @@ def run_pipeline(query: str) -> dict:
 
     components = _get_components()
 
-    state = {
+    state: dict = {
         "query": query,
         "route": {},
+        "pipeline": {},
         "specialist": {},
         "specification": {},
         "verification": {},
+        "tooling": {},
     }
     timing: dict[str, int] = {}
     pipeline_start = time.perf_counter()
@@ -136,20 +206,28 @@ def run_pipeline(query: str) -> dict:
         state["route"] = components["router"].route(query)
         timing["route_ms"] = _elapsed_ms(step_start)
         route = state["route"]
-        fallback_note = " → using GENERAL fallback" if route.get("use_fallback") else ""
+        fallback_note = " → GENERAL fallback" if route.get("use_fallback") else ""
         progress.log(
             f"  Domain: {route.get('domain')} "
             f"(confidence {route.get('confidence', 0):.2f}){fallback_note}"
         )
 
-    specialist_module, specialist_name = _select_specialist(state["route"], components)
-    with progress.step(f"Generate answer ({specialist_name} specialist via Groq API)"):
-        step_start = time.perf_counter()
-        state["specialist"] = specialist_module.run(query)
-        timing["specialist_ms"] = _elapsed_ms(step_start)
-        answer_preview = state["specialist"].get("answer", "").replace("\n", " ")[:80]
-        if answer_preview:
-            progress.log(f"  Answer preview: {answer_preview}...")
+    pipeline = pipelines.resolve_pipeline(
+        route.get("domain", "GENERAL"),
+        use_fallback=bool(route.get("use_fallback")),
+    )
+    generator_model = pipeline.resolve_model()
+    state["pipeline"] = {
+        "pipeline_id": pipeline.pipeline_id,
+        "verifier": pipeline.verifier,
+        "tools": list(pipeline.tools),
+        "max_retries": pipeline.max_retries,
+        "generator_model": generator_model,
+    }
+    progress.log(
+        f"  Pipeline: {pipeline.pipeline_id} "
+        f"(verifier={pipeline.verifier}, model={generator_model})"
+    )
 
     with progress.step("Build specification (Qwen via Groq API)"):
         step_start = time.perf_counter()
@@ -158,25 +236,56 @@ def run_pipeline(query: str) -> dict:
         required = len(state["specification"].get("required_elements", []))
         progress.log(f"  {required} required element(s) in spec")
 
-    verifier = (
-        "sandbox"
-        if state["route"].get("domain") == "CODING" and not state["route"].get("use_fallback")
-        else "LLM judge"
-    )
-    with progress.step(f"Verify answer ({verifier})"):
-        step_start = time.perf_counter()
-        state["verification"] = _verify(
-            query=query,
-            route_result=state["route"],
-            specialist_result=state["specialist"],
-            specification=state["specification"],
-            components=components,
-        )
-        timing["verification_ms"] = _elapsed_ms(step_start)
-        verdict = state["verification"].get("verdict", "UNKNOWN")
-        score = state["verification"].get("score")
-        score_note = f", score {score:.2f}" if isinstance(score, (int, float)) else ""
-        progress.log(f"  Verdict: {verdict}{score_note}")
+    if pipeline.verifier == "sandbox":
+        with progress.step(
+            f"Generate + verify ({pipeline.pipeline_id} sandbox, "
+            f"up to {pipeline.max_retries} attempt(s))"
+        ):
+            step_start = time.perf_counter()
+            specialist_result, verification, tooling = _run_sandbox_pipeline(
+                query=query,
+                pipeline=pipeline,
+                specification=state["specification"],
+                components=components,
+            )
+            state["specialist"] = specialist_result
+            state["verification"] = verification
+            state["tooling"] = tooling
+            timing["specialist_ms"] = _elapsed_ms(step_start)
+            timing["verification_ms"] = timing["specialist_ms"]
+            verdict = verification.get("verdict", "UNKNOWN")
+            progress.log(
+                f"  Verdict: {verdict} "
+                f"after {tooling.get('rounds_used', 1)} round(s)"
+            )
+            if tooling.get("delivery_warning"):
+                progress.log(f"  Warning: {tooling['delivery_warning']}")
+    else:
+        with progress.step(
+            f"Generate answer ({pipeline.pipeline_id} via {generator_model})"
+        ):
+            step_start = time.perf_counter()
+            state["specialist"] = pipeline.specialist.run(query, model=generator_model)
+            state["specialist"]["pipeline_id"] = pipeline.pipeline_id
+            state["specialist"]["generator_model"] = generator_model
+            timing["specialist_ms"] = _elapsed_ms(step_start)
+            answer_preview = state["specialist"].get("answer", "").replace("\n", " ")[:80]
+            if answer_preview:
+                progress.log(f"  Answer preview: {answer_preview}...")
+
+        with progress.step("Verify answer (LLM judge)"):
+            step_start = time.perf_counter()
+            state["verification"] = _run_judge(
+                query=query,
+                specialist_result=state["specialist"],
+                specification=state["specification"],
+                components=components,
+            )
+            timing["verification_ms"] = _elapsed_ms(step_start)
+            verdict = state["verification"].get("verdict", "UNKNOWN")
+            score = state["verification"].get("score")
+            score_note = f", score {score:.2f}" if isinstance(score, (int, float)) else ""
+            progress.log(f"  Verdict: {verdict}{score_note}")
 
     timing["total_ms"] = _elapsed_ms(pipeline_start)
     state["timing"] = timing
@@ -193,6 +302,16 @@ def main() -> None:
         "-q",
         action="store_true",
         help="Suppress progress messages (JSON output only)",
+    )
+    parser.add_argument(
+        "--feedback",
+        choices=("POSITIVE", "NEGATIVE"),
+        help="Explicit user feedback signal (skips interactive prompt)",
+    )
+    parser.add_argument(
+        "--no-feedback",
+        action="store_true",
+        help="Skip interactive feedback prompt after the answer is delivered",
     )
     args = parser.parse_args()
 
@@ -213,8 +332,19 @@ def main() -> None:
         progress.log(f"Pipeline error: {exc}")
         raise
 
-    logger.log(state)
-    print(json.dumps(state, indent=2))
+    with progress.step("Collect user feedback"):
+        feedback_signal = feedback.collect(
+            explicit=args.feedback,
+            interactive=not args.quiet and not args.no_feedback and args.feedback is None,
+        )
+        if feedback_signal:
+            progress.log(f"  Signal: {feedback_signal['user_feedback']} ({feedback_signal['source']})")
+        else:
+            progress.log("  No feedback collected")
+
+    log_record = feedback.apply(state, feedback_signal)
+    logger.log(log_record)
+    print(json.dumps(log_record, indent=2))
 
 
 if __name__ == "__main__":

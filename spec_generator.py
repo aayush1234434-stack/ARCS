@@ -13,9 +13,11 @@ import sys
 
 from groq_client import get_client
 
-# Deliberately different model family from the Llama-based specialists.
+import config
+
+# Deliberately different model family from the Llama-based generator by default.
 # Qwen is Alibaba's architecture — correlated blind spots with Meta's Llama are minimal.
-MODEL = "qwen/qwen3-32b"
+MODEL = config.DEFAULT_SPEC_MODEL
 
 SYSTEM_PROMPT = """You are a specification generator. Your job is not to answer questions — it is to define what a correct answer must look like.
 

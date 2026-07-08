@@ -20,10 +20,12 @@ from typing import Any
 
 from dotenv import load_dotenv
 
+import config
+
 load_dotenv()
 
 BASE_URL = "https://integrate.api.nvidia.com/v1"
-DEFAULT_MODEL = os.getenv("NVIDIA_JUDGE_MODEL", "meta/llama-3.1-8b-instruct")
+DEFAULT_MODEL = config.DEFAULT_JUDGE_MODEL
 TIMEOUT_SECONDS = 120
 
 VERIFICATION_TYPE = "LLM_JUDGE"

@@ -19,12 +19,13 @@ import shutil
 import sys
 from pathlib import Path
 
+import config
 import progress
 
 DEFAULT_MODEL_DIR = "./router-model"
 ONNX_FILENAME = "model.onnx"
 MAX_LENGTH = 128
-CONFIDENCE_THRESHOLD = 0.75
+CONFIDENCE_THRESHOLD = config.ROUTER_CONFIDENCE_THRESHOLD
 
 # ONNX backend state
 _onnx_session = None
