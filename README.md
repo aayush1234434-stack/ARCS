@@ -236,6 +236,30 @@ This is **data collection only** — it does not retrain the router or run DSPy.
 
 ---
 
+## Held-out evaluation set (`data/eval_queries.jsonl`)
+
+Fixed eval queries for measuring routing / pipeline quality (used by the
+**Phase 2: Evaluation harness** below). Separate from:
+
+| File | Role |
+|---|---|
+| `data/batch_queries.jsonl` | Data collection / feedback seeding |
+| `data/router/router_train.csv` / `router_test.csv` | DistilBERT router ML split |
+| `data/eval_queries.jsonl` | Held-out Phase 2 eval (this set) |
+
+```bash
+python scripts/validate_eval_queries.py
+python scripts/validate_eval_queries.py --input data/eval_queries.jsonl
+```
+
+Schema (one JSON object per line): `id`, `query`, `expected_domain` (required); optional `notes`, `tags`.
+
+Current set: **48** rows (~12 per domain), including tricky routing cases (e.g. health policy / HIPAA → `LEGAL`, coding described in English → `CODING`). Query text was checked against `batch_queries.jsonl` and router train/test CSVs — **no verbatim overlaps**.
+
+Do not train the router on this file; keep it held out for evaluation.
+
+---
+
 ## Retraining queues
 
 After collecting NEGATIVE feedback, sort failures into per-component piles for repair:
@@ -300,6 +324,74 @@ DSPy sidecars are **never** auto-applied; review and copy into source by hand.
 | Spec generator *(experimental)* | specialist + verifier queues (incomplete specs only) | `scripts/optimize_spec.py` | `artifacts/prompts/spec_optimized.txt` |
 
 Orchestrator entry point: `python scripts/repair.py` (see **Repair orchestrator** below).
+
+---
+
+## Phase 2: Evaluation harness
+
+### Purpose
+
+Measure a **baseline before repair**, re-measure **after repair**, and compare the two.
+This is required for **RQ1** (attribution-filtered retraining): without a fixed held-out
+eval set and saved experiment artifacts, you cannot tell whether a repair helped or hurt.
+
+### Files
+
+| File | Role |
+|---|---|
+| `data/eval_queries.jsonl` | Held-out eval queries (not for training) |
+| `scripts/validate_eval_queries.py` | Schema / domain / count check |
+| `scripts/eval_pipeline.py` | Full pipeline eval → `artifacts/experiments/` |
+| `scripts/eval_router.py` | Router-only eval (+ optional `--eval-queries`) |
+| `scripts/compare_experiments.py` | A vs B metric diff |
+| `scripts/snapshot_baseline.py` | Capture router + pipeline baseline manifest |
+| `artifacts/experiments/` | Saved runs (`experiment.json`, `summary.txt`, manifests) |
+| `arcs/eval/` | Metrics, experiment I/O, compare helpers |
+
+Also still supported: `python -m arcs.router.evaluate` (writes `artifacts/eval-results/`).
+
+### Workflow
+
+1. **Validate** the held-out eval set
+2. **Snapshot baseline** *before* any repair
+3. **Run repairs** (Phase 1: queues → `repair.py` / retrain / DSPy sidecars)
+4. **Re-run eval** with a new `--name` (e.g. `after-router-retrain`)
+5. **Compare** baseline vs after with `compare_experiments.py`
+
+### Example commands
+
+```bash
+# 1. Validate held-out set
+python scripts/validate_eval_queries.py
+
+# 2. Snapshot baseline BEFORE repair (router + pipeline)
+python scripts/snapshot_baseline.py --name baseline-v1 --dry-run
+python scripts/snapshot_baseline.py --name baseline-v1 -q
+# Smoke (limit pipeline rows):
+python scripts/snapshot_baseline.py --name baseline-v1 --pipeline-limit 3 -q
+
+# 3. Repair (Phase 1) — example router path
+python scripts/extract_queues.py
+python scripts/label_router_failures.py --interactive
+python scripts/retrain_router.py
+
+# 4. Re-eval AFTER repair
+python scripts/eval_router.py --name after-router-retrain --eval-queries --skip-train
+python scripts/eval_pipeline.py --name after-router-retrain -q
+
+# 5. Compare (B − A); paths can be run dirs or experiment.json
+python scripts/compare_experiments.py --list
+python scripts/compare_experiments.py \
+  artifacts/experiments/<baseline-v1-router-run> \
+  artifacts/experiments/<after-router-retrain-run>
+
+# Direct router eval (unchanged; also used under the hood by eval_router.py)
+python -m arcs.router.evaluate
+```
+
+Baseline manifests live at `artifacts/experiments/<run_id>_baseline/manifest.json` and
+point at the child router/pipeline experiment dirs. Use those child paths (or later
+eval runs) with `compare_experiments.py` after repair.
 
 ---
 

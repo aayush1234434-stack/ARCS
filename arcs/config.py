@@ -20,6 +20,7 @@ ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 ROUTER_MODEL_DIR = ARTIFACTS_DIR / "router-model"
 ROUTER_CHECKPOINTS_DIR = ARTIFACTS_DIR / "router-checkpoints"
 EVAL_RESULTS_DIR = ARTIFACTS_DIR / "eval-results"
+EXPERIMENTS_DIR = ARTIFACTS_DIR / "experiments"
 LOGS_DIR = PROJECT_ROOT / "logs"
 
 # Generator used by domain pipelines when no domain-specific override is set.

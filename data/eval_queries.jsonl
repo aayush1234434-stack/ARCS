@@ -1,0 +1,48 @@
+{"id": "eval-001", "query": "Write a Python generator that yields Fibonacci numbers up to n", "expected_domain": "CODING", "notes": "implementation", "tags": ["fibonacci", "generator"]}
+{"id": "eval-002", "query": "How do I merge two sorted arrays in O(n) time without extra libraries?", "expected_domain": "CODING", "notes": "algorithm", "tags": ["arrays", "merge"]}
+{"id": "eval-003", "query": "Explain how to debounce a search input handler in JavaScript", "expected_domain": "CODING", "notes": "frontend", "tags": ["javascript", "debounce"]}
+{"id": "eval-004", "query": "Write a SQL query that finds duplicate emails in a users table", "expected_domain": "CODING", "notes": "sql", "tags": ["sql", "duplicates"]}
+{"id": "eval-005", "query": "Implement a thread-safe counter class in Python using a lock", "expected_domain": "CODING", "notes": "concurrency", "tags": ["threading", "lock"]}
+{"id": "eval-006", "query": "Convert a nested JSON object into a flat dictionary with dotted keys", "expected_domain": "CODING", "notes": "data transform", "tags": ["json", "flatten"]}
+{"id": "eval-007", "query": "How do I unit-test an async FastAPI endpoint that returns a streaming response?", "expected_domain": "CODING", "notes": "testing", "tags": ["fastapi", "async", "testing"]}
+{"id": "eval-008", "query": "Write a regex that validates IPv4 addresses but rejects leading zeros", "expected_domain": "CODING", "notes": "regex", "tags": ["regex", "ipv4"]}
+{"id": "eval-009", "query": "Describe how to detect a cycle in a directed graph using DFS colors", "expected_domain": "CODING", "notes": "graphs", "tags": ["dfs", "cycle"]}
+{"id": "eval-010", "query": "Refactor this description into clean code: given a list of ints, return the second-largest unique value", "expected_domain": "CODING", "notes": "tricky: coding described in English", "tags": ["tricky", "coding-in-english"]}
+{"id": "eval-011", "query": "What warning signs suggest a child may have appendicitis?", "expected_domain": "MEDICAL", "notes": "pediatrics", "tags": ["appendicitis", "pediatrics"]}
+{"id": "eval-012", "query": "How is hypothyroidism typically diagnosed and monitored?", "expected_domain": "MEDICAL", "notes": "endocrine", "tags": ["thyroid", "labs"]}
+{"id": "eval-013", "query": "Can SSRIs interact dangerously with migraine medications like triptans?", "expected_domain": "MEDICAL", "notes": "pharmacology", "tags": ["ssri", "drug-interaction"]}
+{"id": "eval-014", "query": "What first-aid steps should I take for a suspected ankle sprain?", "expected_domain": "MEDICAL", "notes": "first aid", "tags": ["sprain", "first-aid"]}
+{"id": "eval-015", "query": "Is it normal for resting heart rate to rise during a fever?", "expected_domain": "MEDICAL", "notes": "vitals", "tags": ["fever", "heart-rate"]}
+{"id": "eval-016", "query": "What lifestyle changes help reduce recurrent kidney stones?", "expected_domain": "MEDICAL", "notes": "urology", "tags": ["kidney-stones"]}
+{"id": "eval-017", "query": "How does continuous glucose monitoring differ from fingerstick testing?", "expected_domain": "MEDICAL", "notes": "diabetes tech", "tags": ["cgm", "diabetes"]}
+{"id": "eval-018", "query": "What are common side effects of short-course oral corticosteroids?", "expected_domain": "MEDICAL", "notes": "pharmacology", "tags": ["steroids", "side-effects"]}
+{"id": "eval-019", "query": "When should someone seek emergency care for a severe allergic reaction?", "expected_domain": "MEDICAL", "notes": "emergency", "tags": ["anaphylaxis", "emergency"]}
+{"id": "eval-020", "query": "What does an elevated CRP blood test usually indicate?", "expected_domain": "MEDICAL", "notes": "labs", "tags": ["crp", "inflammation"]}
+{"id": "eval-021", "query": "What rights does a tenant have if the landlord enters without notice in California?", "expected_domain": "LEGAL", "notes": "housing", "tags": ["landlord", "california"]}
+{"id": "eval-022", "query": "How does fair use work for quoting a short passage from a copyrighted book?", "expected_domain": "LEGAL", "notes": "IP", "tags": ["copyright", "fair-use"]}
+{"id": "eval-023", "query": "Can an employer require employees to sign a non-compete after they already started work?", "expected_domain": "LEGAL", "notes": "employment", "tags": ["non-compete"]}
+{"id": "eval-024", "query": "What is the difference between a will and a living trust for estate planning?", "expected_domain": "LEGAL", "notes": "estate", "tags": ["will", "trust"]}
+{"id": "eval-025", "query": "If a rideshare driver hits my car, whose insurance typically pays first?", "expected_domain": "LEGAL", "notes": "insurance", "tags": ["rideshare", "insurance"]}
+{"id": "eval-026", "query": "What happens legally if I miss a court date for a traffic ticket?", "expected_domain": "LEGAL", "notes": "procedure", "tags": ["traffic", "court"]}
+{"id": "eval-027", "query": "How do HIPAA privacy rules limit what a hospital can share with family?", "expected_domain": "LEGAL", "notes": "tricky: health privacy → LEGAL not MEDICAL", "tags": ["tricky", "hipaa", "privacy"]}
+{"id": "eval-028", "query": "Can a website's terms of service ban class-action lawsuits?", "expected_domain": "LEGAL", "notes": "consumer", "tags": ["arbitration", "tos"]}
+{"id": "eval-029", "query": "What is the statute of limitations for filing a personal injury claim in New York?", "expected_domain": "LEGAL", "notes": "torts", "tags": ["statute-of-limitations", "ny"]}
+{"id": "eval-030", "query": "Does a verbal agreement to sell a used car count as a binding contract?", "expected_domain": "LEGAL", "notes": "contracts", "tags": ["verbal-contract"]}
+{"id": "eval-031", "query": "Why do leaves change color in autumn?", "expected_domain": "GENERAL", "notes": "science", "tags": ["seasons", "biology"]}
+{"id": "eval-032", "query": "How does compound interest grow a savings account over time?", "expected_domain": "GENERAL", "notes": "personal finance basics", "tags": ["compound-interest"]}
+{"id": "eval-033", "query": "What caused the fall of the Western Roman Empire?", "expected_domain": "GENERAL", "notes": "history", "tags": ["rome", "history"]}
+{"id": "eval-034", "query": "Explain how noise-cancelling headphones reduce ambient sound", "expected_domain": "GENERAL", "notes": "consumer tech", "tags": ["anc", "audio"]}
+{"id": "eval-035", "query": "What is the difference between weather and climate?", "expected_domain": "GENERAL", "notes": "science", "tags": ["weather", "climate"]}
+{"id": "eval-036", "query": "How do bees communicate the location of food to the hive?", "expected_domain": "GENERAL", "notes": "biology", "tags": ["bees", "waggle-dance"]}
+{"id": "eval-037", "query": "What are the main arguments for and against daylight saving time?", "expected_domain": "GENERAL", "notes": "civic/general", "tags": ["dst"]}
+{"id": "eval-038", "query": "How does a heat pump warm a house more efficiently than electric resistance heat?", "expected_domain": "GENERAL", "notes": "home energy", "tags": ["heat-pump"]}
+{"id": "eval-039", "query": "What is confirmation bias and how does it affect decision-making?", "expected_domain": "GENERAL", "notes": "psychology", "tags": ["bias"]}
+{"id": "eval-040", "query": "Why do airplanes leave contrails in the sky?", "expected_domain": "GENERAL", "notes": "aviation science", "tags": ["contrails"]}
+{"id": "eval-041", "query": "Should hospitals be required by law to publish negotiated prices for common procedures?", "expected_domain": "LEGAL", "notes": "tricky: health policy → LEGAL not MEDICAL", "tags": ["tricky", "health-policy", "price-transparency"]}
+{"id": "eval-042", "query": "In plain English, walk me through writing a memoizing decorator for expensive functions", "expected_domain": "CODING", "notes": "tricky: coding-in-English → CODING", "tags": ["tricky", "memoize", "decorator"]}
+{"id": "eval-043", "query": "A fitness app wants to sell anonymized heart-rate data — what privacy laws might apply?", "expected_domain": "LEGAL", "notes": "tricky: health data → LEGAL not MEDICAL", "tags": ["tricky", "data-privacy", "wearables"]}
+{"id": "eval-044", "query": "I have a persistent dry cough for three weeks after a cold — what are common causes?", "expected_domain": "MEDICAL", "notes": "clinical", "tags": ["cough", "post-viral"]}
+{"id": "eval-045", "query": "How do solar panels convert sunlight into electricity at a high level?", "expected_domain": "GENERAL", "notes": "science", "tags": ["solar"]}
+{"id": "eval-046", "query": "How can I paginate large PostgreSQL result sets without OFFSET performance issues?", "expected_domain": "CODING", "notes": "database", "tags": ["postgres", "pagination"]}
+{"id": "eval-047", "query": "What vaccines are typically recommended for healthy adults traveling to Southeast Asia?", "expected_domain": "MEDICAL", "notes": "travel medicine", "tags": ["vaccines", "travel"]}
+{"id": "eval-048", "query": "Can I record a phone call with customer support without telling them in a one-party consent state?", "expected_domain": "LEGAL", "notes": "privacy law", "tags": ["call-recording", "consent"]}
