@@ -1,13 +1,12 @@
-# Virtual environment (nested ARCS/ folder)
-ARCS/
-
-# Trained model & training artifacts (too large for GitHub; retrain locally)
-router-model/
-router-checkpoints/
-logs/
+# Virtual environment
+.venv/
 
 # Secrets
 .env
+
+# Generated artifacts and runtime logs
+artifacts/
+logs/
 
 # OS / editor
 .DS_Store
@@ -15,15 +14,3 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 Untitled-1.ipynb
-.venv/
-
-.venv/
-__pycache__/
-*.pyc
-
-.venv/
-.env
-__pycache__/
-*.pyc
-router-model/
-router-checkpoints/

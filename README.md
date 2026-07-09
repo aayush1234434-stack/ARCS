@@ -107,7 +107,7 @@ When you later host CodeLlama / BioMistral (or other domain models), set `ARCS_C
 ### 1. Router
 Fine-tuned DistilBERT (ONNX by default). Outputs domain + confidence + full score distribution. Below 0.75 confidence → `GENERAL` pipeline.
 
-### 2. Pipeline registry (`pipelines.py`)
+### 2. Pipeline registry (`arcs/pipelines/registry.py`)
 Maps each domain to its specialist module, verifier kind, retries, and tools. This is the modular contract; specialists are not hard-wired into `main.py` as “magic models.”
 
 ### 3. Spec Generator
@@ -124,13 +124,54 @@ Rule-based blame assignment from the evidence trail (sandbox fail → specialist
 
 ---
 
+## Project layout
+
+```
+ARCS/
+├── README.md
+├── requirements.txt
+├── .env.example
+├── main.py                        # CLI shim → arcs.main
+│
+├── arcs/                          # main Python package
+│   ├── main.py                    # orchestrator
+│   ├── config.py                  # paths + model defaults
+│   ├── progress.py
+│   ├── router/                    # DistilBERT classifier
+│   ├── pipelines/                 # domain registry + specialists
+│   ├── verification/              # judge, sandbox, spec/test generators
+│   ├── post/                      # feedback, attribution, logger
+│   └── clients/                   # Groq client
+│
+├── data/router/                   # router training CSVs
+├── artifacts/                     # router-model, checkpoints, eval-results
+├── logs/                          # runtime JSONL (gitignored)
+└── scripts/                       # one-off utilities
+```
+
+---
+
 ## Run
 
 ```bash
 cd ARCS
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # add GROQ_API_KEY and NVIDIA_API_KEY
+
 python main.py "Write a Python function that reverses a string."
 python main.py --feedback NEGATIVE "What is the max safe dose of acetaminophen?"
 python main.py --no-feedback --quiet "..."
+```
+
+Equivalent: `python -m arcs.main "..."`
+
+Router training / eval (from project root):
+
+```bash
+python -m arcs.router.train
+python -m arcs.router.evaluate
+python scripts/export_router_onnx.py
 ```
 
 Requires `GROQ_API_KEY` and `NVIDIA_API_KEY` in `.env`. Docker is preferred for sandbox isolation; a restricted local subprocess fallback is used if Docker is unavailable.
@@ -157,7 +198,7 @@ Only meaningful once domain-specific models (or clearly stronger domain backends
 | Component | Technology |
 |---|---|
 | Router | DistilBERT + ONNX Runtime |
-| Pipelines | `pipelines.py` + domain prompt/contracts |
+| Pipelines | `arcs/pipelines/` + domain prompt/contracts |
 | Generator (default) | Groq `llama-3.3-70b-versatile` |
 | Spec / tests | Groq `qwen/qwen3-32b` |
 | Judge | NVIDIA OpenAI-compatible API |
