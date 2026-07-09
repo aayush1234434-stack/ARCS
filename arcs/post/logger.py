@@ -119,7 +119,8 @@ def _collect_metadata(
 
 def _build_entry(state: dict[str, Any]) -> dict[str, Any]:
     """Enrich a pipeline state dict into a log record without mutating input."""
-    query_id = str(uuid4())
+    existing_id = state.get("query_id")
+    query_id = str(existing_id) if existing_id else str(uuid4())
     timestamp = datetime.now(timezone.utc).isoformat()
 
     payload = deepcopy(state)
@@ -139,19 +140,8 @@ def _build_entry(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def log(state: dict) -> str:
-    """Append one enriched state record to ``logs/requests.jsonl``.
-
-    Args:
-        state: Pipeline state (or any JSON-serializable mapping) to persist.
-
-    Returns:
-        Path to the log file as a string.
-
-    Raises:
-        TypeError: If ``state`` is not a dict or contains non-serializable values.
-        OSError: If the log directory or file cannot be written.
-    """
+def log_entry(state: dict) -> dict[str, Any]:
+    """Append one record to the log and return the enriched entry (includes query_id)."""
     if not isinstance(state, dict):
         raise TypeError(f"state must be a dict, got {type(state).__name__}")
 
@@ -169,4 +159,21 @@ def log(state: dict) -> str:
     except OSError as exc:
         raise OSError(f"failed to write log entry to {LOG_FILE}: {exc}") from exc
 
+    return entry
+
+
+def log(state: dict) -> str:
+    """Append one enriched state record to ``logs/requests.jsonl``.
+
+    Args:
+        state: Pipeline state (or any JSON-serializable mapping) to persist.
+
+    Returns:
+        Path to the log file as a string.
+
+    Raises:
+        TypeError: If ``state`` is not a dict or contains non-serializable values.
+        OSError: If the log directory or file cannot be written.
+    """
+    log_entry(state)
     return str(LOG_FILE)

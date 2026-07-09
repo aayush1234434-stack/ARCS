@@ -1,0 +1,20 @@
+{"query": "Write a Python function that reverses a string", "feedback": null, "expected_domain": "CODING"}
+{"query": "Implement binary search on a sorted list in Python", "feedback": null, "expected_domain": "CODING"}
+{"query": "How do I connect to a MySQL database in Python?", "feedback": null, "expected_domain": "CODING"}
+{"query": "Write a recursive function to compute factorial", "feedback": "POSITIVE", "expected_domain": "CODING"}
+{"query": "Create a REST API endpoint in Flask that returns JSON", "feedback": null, "expected_domain": "CODING"}
+{"query": "What are the symptoms of diabetes?", "feedback": null, "expected_domain": "MEDICAL"}
+{"query": "Is it safe to exercise with high blood pressure?", "feedback": null, "expected_domain": "MEDICAL"}
+{"query": "What is the maximum safe dose of acetaminophen for adults?", "feedback": "NEGATIVE", "expected_domain": "MEDICAL"}
+{"query": "My newborn has jaundice — is that serious?", "feedback": null, "expected_domain": "MEDICAL"}
+{"query": "What causes iron-deficiency anemia?", "feedback": null, "expected_domain": "MEDICAL"}
+{"query": "Can a landlord ban pets in a rental property in the UK?", "feedback": null, "expected_domain": "LEGAL"}
+{"query": "What is the difference between a felony and a misdemeanor?", "feedback": null, "expected_domain": "LEGAL"}
+{"query": "My company fired me by email without any prior performance warning", "feedback": "NEGATIVE", "expected_domain": "LEGAL"}
+{"query": "What does 'at-will employment' mean?", "feedback": null, "expected_domain": "LEGAL"}
+{"query": "How does a non-disclosure agreement (NDA) work?", "feedback": null, "expected_domain": "LEGAL"}
+{"query": "Who invented the telephone?", "feedback": null, "expected_domain": "GENERAL"}
+{"query": "What is quantum computing?", "feedback": "POSITIVE", "expected_domain": "GENERAL"}
+{"query": "What are the best ways to save money on groceries?", "feedback": null, "expected_domain": "GENERAL"}
+{"query": "Who was Mahatma Gandhi?", "feedback": null, "expected_domain": "GENERAL"}
+{"query": "Explain the water cycle in simple terms", "feedback": null, "expected_domain": "GENERAL"}

@@ -21,6 +21,7 @@ import argparse
 import json
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from arcs import progress
 from arcs.pipelines import Pipeline, resolve_pipeline
@@ -119,8 +120,18 @@ def _run_sandbox_pipeline(
     Returns (specialist_result, verification, tooling_meta).
     """
     model = pipeline.resolve_model()
-    progress.log("  Generating independent tests (separate model family)...")
-    test_bundle = components["test_generator"].run(query)
+
+    # Test generation and the first code draft are independent (both depend only
+    # on the query), so run them concurrently to save one LLM round-trip.
+    progress.log("  Generating tests + first draft concurrently...")
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        tests_future = executor.submit(components["test_generator"].run, query)
+        draft_future = executor.submit(
+            pipeline.specialist.run, query, model=model, feedback=None
+        )
+        test_bundle = tests_future.result()
+        first_draft: dict | None = draft_future.result()
+
     test_cases = test_bundle["test_cases"]
     progress.log(f"  {len(test_cases)} test case(s) from {test_bundle.get('model')}")
 
@@ -134,11 +145,14 @@ def _run_sandbox_pipeline(
             f"  Coding attempt {round_index}/{pipeline.max_retries} "
             f"(model={model})..."
         )
-        specialist_result = pipeline.specialist.run(
-            query,
-            model=model,
-            feedback=feedback_text,
-        )
+        if round_index == 1 and first_draft is not None:
+            specialist_result = first_draft
+        else:
+            specialist_result = pipeline.specialist.run(
+                query,
+                model=model,
+                feedback=feedback_text,
+            )
         specialist_result["test_cases"] = test_cases
         specialist_result["pipeline_id"] = pipeline.pipeline_id
         specialist_result["generator_model"] = model
@@ -230,14 +244,14 @@ def run_pipeline(query: str) -> dict:
         f"(verifier={pipeline.verifier}, model={generator_model})"
     )
 
-    with progress.step("Build specification (Qwen via Groq API)"):
-        step_start = time.perf_counter()
-        state["specification"] = components["spec_generator"].run(query)
-        timing["specification_ms"] = _elapsed_ms(step_start)
-        required = len(state["specification"].get("required_elements", []))
-        progress.log(f"  {required} required element(s) in spec")
-
     if pipeline.verifier == "sandbox":
+        # On the coding path the sandbox is authoritative and the spec is only
+        # retained for logging, so generate it concurrently with the sandbox
+        # work instead of blocking the answer on it.
+        spec_start = time.perf_counter()
+        spec_pool = ThreadPoolExecutor(max_workers=1)
+        spec_future = spec_pool.submit(components["spec_generator"].run, query)
+
         with progress.step(
             f"Generate + verify ({pipeline.pipeline_id} sandbox, "
             f"up to {pipeline.max_retries} attempt(s))"
@@ -246,7 +260,7 @@ def run_pipeline(query: str) -> dict:
             specialist_result, verification, tooling = _run_sandbox_pipeline(
                 query=query,
                 pipeline=pipeline,
-                specification=state["specification"],
+                specification={},
                 components=components,
             )
             state["specialist"] = specialist_result
@@ -261,7 +275,23 @@ def run_pipeline(query: str) -> dict:
             )
             if tooling.get("delivery_warning"):
                 progress.log(f"  Warning: {tooling['delivery_warning']}")
+
+        try:
+            state["specification"] = spec_future.result()
+        except Exception as exc:  # spec is non-critical on the coding path
+            progress.log(f"  Spec generation failed (non-fatal): {exc}")
+            state["specification"] = {}
+        finally:
+            spec_pool.shutdown(wait=False)
+        timing["specification_ms"] = _elapsed_ms(spec_start)
     else:
+        with progress.step("Build specification (Qwen via Groq API)"):
+            step_start = time.perf_counter()
+            state["specification"] = components["spec_generator"].run(query)
+            timing["specification_ms"] = _elapsed_ms(step_start)
+            required = len(state["specification"].get("required_elements", []))
+            progress.log(f"  {required} required element(s) in spec")
+
         with progress.step(
             f"Generate answer ({pipeline.pipeline_id} via {generator_model})"
         ):
