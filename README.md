@@ -190,7 +190,8 @@ python scripts/run_demo.py
 - If `source .venv/bin/activate` fails, create the venv: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 
 - **Ask** runs the full pipeline and logs to `logs/requests.jsonl`
-- **👍 / 👎** records feedback + attribution (same as CLI `--feedback`)
+- **👍** records positive feedback (unchanged)
+- **👎** records negative feedback + attribution, then optionally asks for the **correct domain** (`CODING` / `MEDICAL` / `LEGAL` / `GENERAL`, or Skip). When set, the log row gets `correct_domain` and `expected_domain` so `extract_queues` → `router_queue.jsonl` → `export_router_examples` can append labeled rows to `router_train.csv`. Attribution rules are unchanged.
 - After collecting NEGATIVE feedback: `python scripts/extract_queues.py`
 
 Router training / eval (from project root):
@@ -258,6 +259,93 @@ Filter and groupby only — attribution already decided blame.
 
 ---
 
+## Phase 1: Repair loops
+
+Closed loop from user feedback → attributed queues → component repair → verify.
+DSPy sidecars are **never** auto-applied; review and copy into source by hand.
+
+### Loop
+
+1. **Collect feedback**
+   - Demo UI: 👍 / 👎 (on 👎, optionally pick `correct_domain` for router labels)
+   - CLI: `python -m arcs.main --feedback NEGATIVE "..."` or `python scripts/run_batch.py`
+2. **Sort failures**
+   ```bash
+   python scripts/extract_queues.py
+   ```
+3. **Plan repairs**
+   ```bash
+   python scripts/repair.py --dry-run
+   ```
+4. **Repair per component** (only queues with rows)
+   - **ROUTER:** `label_router_failures` → `retrain_router`
+   - **SPECIALIST:** `optimize_{medical,coding,legal,general}.py` → manual apply sidecar
+   - **VERIFIER:** `optimize_judge.py` → manual apply sidecar
+   - **AMBIGUOUS:** review only — do not train
+5. **Verify**
+   - Re-run demo (`python scripts/run_demo.py`) and/or router eval (`python -m arcs.router.evaluate`)
+   - Spot-check previously failing queries before committing prompt/model changes
+
+### Checklist
+
+| Component | Queue file | Repair script(s) | Output artifact |
+|---|---|---|---|
+| ROUTER | `logs/queues/router_queue.jsonl` | `scripts/label_router_failures.py` → `scripts/retrain_router.py` | `data/router/router_train.csv` + `artifacts/router-model/` |
+| SPECIALIST (MEDICAL) | `logs/queues/specialist_queue.jsonl` | `scripts/optimize_medical.py` | `artifacts/prompts/medical_optimized.txt` |
+| SPECIALIST (CODING) | `logs/queues/specialist_queue.jsonl` | `scripts/optimize_coding.py` | `artifacts/prompts/coding_optimized.txt` |
+| SPECIALIST (LEGAL) | `logs/queues/specialist_queue.jsonl` | `scripts/optimize_legal.py` | `artifacts/prompts/legal_optimized.txt` |
+| SPECIALIST (GENERAL) | `logs/queues/specialist_queue.jsonl` | `scripts/optimize_general.py` | `artifacts/prompts/general_optimized.txt` |
+| VERIFIER | `logs/queues/verifier_queue.jsonl` | `scripts/optimize_judge.py` | `artifacts/prompts/judge_optimized.txt` |
+| AMBIGUOUS | `logs/queues/ambiguous_queue.jsonl` | *(none — human review)* | — |
+| Spec generator *(experimental)* | specialist + verifier queues (incomplete specs only) | `scripts/optimize_spec.py` | `artifacts/prompts/spec_optimized.txt` |
+
+Orchestrator entry point: `python scripts/repair.py` (see **Repair orchestrator** below).
+
+---
+
+## Repair orchestrator
+
+One entry point that sorts failure queues and dispatches the documented repair path per component. It reuses existing tools (`extract_queues`, `export_router_examples`, `retrain_router`, `optimize_medical`, `optimize_coding`, `optimize_legal`, `optimize_general`, `optimize_judge`, `label_router_failures`) — orchestration only, no new ML logic. DSPy sidecars are **never** auto-applied to source files.
+
+```bash
+# Full plan: extract queues, export/suggest per component (no train / no DSPy)
+python scripts/repair.py --dry-run
+
+# Extract + export ROUTER rows; suggest specialist/verifier/ambiguous next steps
+python scripts/repair.py
+
+# Assume logs/queues/ already exists
+python scripts/repair.py --skip-extract
+
+# ROUTER only: export labeled rows, then retrain DistilBERT
+python scripts/repair.py --component ROUTER --train-router
+
+# SPECIALIST only: run MEDICAL DSPy optimize script (writes sidecar for review)
+python scripts/repair.py --component SPECIALIST --run-dspy --domain MEDICAL
+
+# VERIFIER only: run judge DSPy optimize script
+python scripts/repair.py --component VERIFIER --run-dspy
+
+# Machine-readable summary
+python scripts/repair.py --dry-run --json
+```
+
+| Component | Default action | Optional flags |
+|---|---|---|
+| `ROUTER` | `export_router_examples` → `data/router/router_train.csv` | `--train-router` runs `python -m arcs.router.train` |
+| `SPECIALIST` | Print instructions for domain optimize scripts | `--run-dspy --domain MEDICAL|CODING|LEGAL|GENERAL` |
+| `VERIFIER` | Print instructions for `scripts/optimize_judge.py` | `--run-dspy` executes it |
+| `AMBIGUOUS` | Summary / path only | Never trains |
+
+Label unlabeled router-queue rows before export pays off:
+
+```bash
+python scripts/label_router_failures.py --list
+python scripts/label_router_failures.py --interactive
+```
+
+---
+
 ## Router repair path
 
 Close the DistilBERT retrain loop for ROUTER-attributed failures:
@@ -283,42 +371,100 @@ python scripts/retrain_router.py --skip-extract
 
 Flow: `extract_queues` → `label_router_failures` → `retrain_router`.
 
-- Labels come from `expected_domain` (batch file) or `correct_domain` (manual).
+- Labels come from `expected_domain` (batch file), `correct_domain` (manual / demo 👎 domain picker), or both.
 - Unlabeled router-queue rows are skipped with a warning.
 - Duplicate `(text, label)` pairs are not appended again.
 - This path does **not** use DSPy — DistilBERT retrain only.
 
 ---
 
-## MEDICAL prompt optimization (DSPy)
+## Specialist prompt optimization (DSPy)
 
-Use SPECIALIST-attributed MEDICAL failures to propose a better system prompt.
-DSPy writes a **sidecar file** — it never overwrites `medical.py` automatically.
+SPECIALIST-attributed failures can drive COPRO rewrites of domain system prompts.
+DSPy always writes a **sidecar file** under `artifacts/prompts/` — it never
+overwrites specialist source modules automatically.
 
 ```bash
 pip install -r requirements.txt   # includes dspy==3.2.1
 
-# 1. Collect NEGATIVE feedback + extract queues
+# Collect NEGATIVE feedback + extract queues first
 python scripts/run_batch.py --quiet
 python scripts/extract_queues.py
+```
 
-# 2. Preview which MEDICAL examples would be used
+### MEDICAL
+
+```bash
 python scripts/optimize_medical.py --dry-run --max-examples 20
-
-# 3. Run COPRO (calls Groq + NVIDIA judge; can take a while)
 python scripts/optimize_medical.py --max-examples 20
 ```
 
 Output: `artifacts/prompts/medical_optimized.txt`
 
-### Review and apply manually
+Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/medical.py`, then
+copy by hand if approved. Metric: LLM judge PASS / score (sandbox N/A).
 
-1. Open `artifacts/prompts/medical_optimized.txt`
-2. Compare against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/medical.py`
-3. If the new prompt looks better (clearer structure, safer caveats, better claim format), **copy it by hand** into `SYSTEM_PROMPT`
-4. Re-run a few medical queries and check judge scores before committing
+### CODING
 
-Metric: existing LLM judge (`arcs.verification.judge`) — PASS / score. Sandbox is N/A for MEDICAL.
+Uses CODING rows from `specialist_queue.jsonl` (`pipeline_id == CODING`).
+
+```bash
+python scripts/optimize_coding.py --dry-run --max-examples 20
+python scripts/optimize_coding.py --max-examples 20
+```
+
+Output: `artifacts/prompts/coding_optimized.txt`
+
+Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/coding.py`, then
+copy by hand if approved.
+
+Metric: **sandbox PASS** on regenerated code when the log row has `test_cases`
+(via `extract_code_block` + `sandbox.run`); otherwise LLM judge when a
+specification is present. Empty CODING queue → clear error (collect failures +
+`extract_queues` first).
+
+Or via the repair orchestrator:
+
+```bash
+python scripts/repair.py --component SPECIALIST --run-dspy --domain CODING
+```
+
+### LEGAL
+
+Uses LEGAL rows from `specialist_queue.jsonl` (`pipeline_id == LEGAL`).
+
+```bash
+python scripts/optimize_legal.py --dry-run --max-examples 20
+python scripts/optimize_legal.py --max-examples 20
+```
+
+Output: `artifacts/prompts/legal_optimized.txt`
+
+Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/legal.py`, then
+copy by hand if approved. Metric: LLM judge PASS / score (same as MEDICAL).
+
+```bash
+python scripts/repair.py --component SPECIALIST --run-dspy --domain LEGAL
+```
+
+### GENERAL
+
+Uses GENERAL rows from `specialist_queue.jsonl` (`pipeline_id == GENERAL`).
+
+```bash
+python scripts/optimize_general.py --dry-run --max-examples 20
+python scripts/optimize_general.py --max-examples 20
+```
+
+Output: `artifacts/prompts/general_optimized.txt`
+
+Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/general.py`, then
+copy by hand if approved. Metric: LLM judge PASS / score. Empty GENERAL queue
+→ clear error (collect failures + `extract_queues` first).
+
+```bash
+python scripts/repair.py --component SPECIALIST --run-dspy --domain GENERAL
+```
 
 ---
 
@@ -346,6 +492,26 @@ Output: `artifacts/prompts/judge_optimized.txt`
 4. Re-check a few previously false-PASS cases before committing
 
 Metric: on known-bad answers (`expected_verdict=FAIL`), the optimized judge should return **FAIL** or score &lt; 0.75. Parsing reuses `judge._extract_json` / `_normalize_result`.
+
+---
+
+## Spec generator optimization (DSPy) — experimental
+
+Optional. Only useful when queue rows show **incomplete specifications**
+(few `required_elements`, or judge `missing_required_elements` non-empty).
+Skip when queues are empty or specs already look complete.
+
+```bash
+python scripts/optimize_spec.py --dry-run --max-examples 20
+python scripts/optimize_spec.py --max-examples 20
+```
+
+Output: `artifacts/prompts/spec_optimized.txt` (sidecar — never auto-applies to
+`arcs/verification/spec_generator.py`).
+
+Metric (experimental): predicted spec must have **more** `required_elements`
+than the logged baseline **and** a higher LLM judge score on the same fixed
+`(query, answer)` pair.
 
 ---
 

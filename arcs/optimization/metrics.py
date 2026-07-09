@@ -1,14 +1,17 @@
 """
-Metrics for DSPy optimization — score answers with the existing LLM judge.
+Metrics for DSPy optimization — score answers with the existing LLM judge
+or (for CODING) the sandbox verifier.
 
 Sandbox verification is N/A for MEDICAL (non-executable). Use judge PASS/score.
+CODING prefers sandbox PASS when test cases are available, else judge.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from arcs.verification import judge
+from arcs.pipelines.specialists.common import extract_code_block
+from arcs.verification import judge, sandbox
 
 
 def _example_field(example: Any, key: str, default: Any = None) -> Any:
@@ -108,6 +111,57 @@ def judge_metric(example: Any, prediction: Any, trace: Any = None) -> bool:
     return judge_pass(example, prediction, trace=trace)
 
 
+def sandbox_pass(
+    example: Any,
+    prediction: Any,
+    *,
+    trace: Any = None,
+) -> bool:
+    """Binary metric: True when sandbox.run returns verdict PASS.
+
+    Uses ``example.test_cases`` (or ``example.tests``) and extracts code from
+    the predicted answer via ``extract_code_block``.
+    """
+    del trace
+    answer = _prediction_answer(prediction).strip()
+    if not answer:
+        return False
+
+    test_cases = _example_field(example, "test_cases") or _example_field(example, "tests")
+    if not isinstance(test_cases, list) or not test_cases:
+        return False
+
+    code = extract_code_block(answer).strip() or answer
+    if not code.strip():
+        return False
+
+    try:
+        result = sandbox.run(code, test_cases)
+    except Exception:
+        return False
+
+    return str(result.get("verdict", "")).upper() == "PASS"
+
+
+def coding_metric(example: Any, prediction: Any, trace: Any = None) -> bool:
+    """DSPy metric for CODING specialist optimization.
+
+    Prefer sandbox PASS when the example has test cases. Otherwise fall back
+    to the LLM judge when a specification is present. Returns False if neither
+    path can evaluate the prediction.
+    """
+    del trace
+    test_cases = _example_field(example, "test_cases") or _example_field(example, "tests")
+    if isinstance(test_cases, list) and test_cases:
+        return sandbox_pass(example, prediction)
+
+    specification = _example_field(example, "specification") or _example_field(example, "spec")
+    if isinstance(specification, dict) and specification:
+        return judge_pass(example, prediction)
+
+    return False
+
+
 def _parse_verifier_prediction(prediction: Any) -> dict[str, Any]:
     """Normalize a DSPy judge prediction into a verdict/score dict."""
     raw = ""
@@ -190,3 +244,98 @@ def verifier_false_pass_metric(
         return verdict == "PASS" and score >= 0.75
 
     return verdict == expected
+
+
+def _parse_spec_prediction(prediction: Any) -> dict[str, Any]:
+    """Normalize a DSPy spec-generator prediction into a specification dict."""
+    from arcs.verification import spec_generator
+
+    raw = ""
+    if prediction is None:
+        raw = ""
+    elif isinstance(prediction, str):
+        raw = prediction
+    elif hasattr(prediction, "specification"):
+        value = getattr(prediction, "specification")
+        if isinstance(value, dict):
+            return value
+        raw = str(value or "")
+    elif hasattr(prediction, "answer"):
+        raw = str(getattr(prediction, "answer") or "")
+    elif hasattr(prediction, "get"):
+        value = prediction.get("specification") or prediction.get("answer") or ""
+        if isinstance(value, dict):
+            return value
+        raw = str(value or "")
+    else:
+        raw = str(prediction)
+
+    raw = raw.strip()
+    if not raw:
+        return {}
+
+    try:
+        return spec_generator.parse_response(raw, model="dspy")
+    except Exception:
+        return {}
+
+
+def spec_metric(example: Any, prediction: Any, trace: Any = None) -> bool:
+    """Experimental metric for spec-generator prompt repair.
+
+    Success when the predicted specification has **more** ``required_elements``
+    than the logged baseline *and* the LLM judge scores the same fixed
+    ``(query, answer)`` pair higher under the new spec.
+    """
+    del trace
+    question = str(
+        _example_field(example, "query") or _example_field(example, "question") or ""
+    ).strip()
+    answer = str(
+        _example_field(example, "answer")
+        or _example_field(example, "prior_answer")
+        or ""
+    ).strip()
+    if not question or not answer:
+        return False
+
+    try:
+        baseline_count = int(
+            _example_field(example, "baseline_required_count")
+            or _example_field(example, "required_count")
+            or 0
+        )
+    except (TypeError, ValueError):
+        baseline_count = 0
+
+    try:
+        baseline_score = float(
+            _example_field(example, "baseline_judge_score")
+            or _example_field(example, "prior_judge_score")
+            or 0.0
+        )
+    except (TypeError, ValueError):
+        baseline_score = 0.0
+
+    new_spec = _parse_spec_prediction(prediction)
+    if not isinstance(new_spec, dict) or not new_spec:
+        return False
+
+    required = new_spec.get("required_elements") or []
+    if not isinstance(required, list):
+        return False
+    new_count = len([item for item in required if str(item).strip()])
+    if new_count <= baseline_count:
+        return False
+
+    try:
+        result = judge.run(
+            question=question,
+            answer=answer,
+            specification=new_spec,
+        )
+        new_score = float(result.get("score") or 0.0)
+    except Exception:
+        return False
+
+    return new_score > baseline_score

@@ -70,15 +70,20 @@ class QueryResponse(BaseModel):
     timing_ms: int | None
 
 
+VALID_FEEDBACK_DOMAINS = frozenset({"CODING", "MEDICAL", "LEGAL", "GENERAL"})
+
+
 class FeedbackRequest(BaseModel):
     query_id: str = Field(..., min_length=1)
     signal: Literal["POSITIVE", "NEGATIVE"]
+    correct_domain: Literal["CODING", "MEDICAL", "LEGAL", "GENERAL"] | None = None
 
 
 class FeedbackResponse(BaseModel):
     query_id: str
     signal: str
     attribution: dict[str, Any] | None
+    correct_domain: str | None = None
     message: str
 
 
@@ -153,9 +158,27 @@ def api_feedback(body: FeedbackRequest) -> FeedbackResponse:
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    if body.correct_domain is not None and body.signal != "NEGATIVE":
+        raise HTTPException(
+            status_code=400,
+            detail="correct_domain is only allowed with NEGATIVE feedback",
+        )
+
     signal = feedback.collect(explicit=body.signal)
     enriched = feedback.apply(record, signal)
     enriched["query_id"] = body.query_id
+
+    # Optional router-retrain label. Attribution rules are unchanged.
+    labeled_domain: str | None = None
+    if body.signal == "NEGATIVE" and body.correct_domain is not None:
+        labeled_domain = body.correct_domain.strip().upper()
+        if labeled_domain not in VALID_FEEDBACK_DOMAINS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"correct_domain must be one of {sorted(VALID_FEEDBACK_DOMAINS)}",
+            )
+        enriched["correct_domain"] = labeled_domain
+        enriched["expected_domain"] = labeled_domain
 
     try:
         log_entry(enriched)
@@ -165,7 +188,13 @@ def api_feedback(body: FeedbackRequest) -> FeedbackResponse:
     attr = enriched.get("attribution")
     if body.signal == "NEGATIVE" and isinstance(attr, dict):
         component = attr.get("component", "UNKNOWN")
-        message = f"Thanks — blame assigned to {component}."
+        if labeled_domain:
+            message = (
+                f"Thanks — blame assigned to {component}. "
+                f"Labeled correct domain: {labeled_domain}."
+            )
+        else:
+            message = f"Thanks — blame assigned to {component}."
     elif body.signal == "POSITIVE":
         message = "Thanks for the positive feedback!"
     else:
@@ -175,6 +204,7 @@ def api_feedback(body: FeedbackRequest) -> FeedbackResponse:
         query_id=body.query_id,
         signal=body.signal,
         attribution=attr if isinstance(attr, dict) else None,
+        correct_domain=labeled_domain,
         message=message,
     )
 

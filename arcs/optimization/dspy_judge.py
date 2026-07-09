@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from arcs import config
+from arcs.optimization.dspy_common import extract_instructions, run_copro, save_sidecar_prompt
 from arcs.optimization.metrics import verifier_false_pass_metric
 from arcs.verification.judge import (
     SYSTEM_PROMPT as JUDGE_SYSTEM_PROMPT,
@@ -265,32 +266,17 @@ def load_verifier_examples(
 
 def extract_optimized_instructions(module: Any) -> str:
     """Pull optimized signature instructions from a DSPy judge module."""
-    generate = getattr(module, "generate", None)
-    if generate is None:
-        return JUDGE_SYSTEM_PROMPT
-
-    signature = getattr(generate, "signature", None)
-    if signature is None:
-        return JUDGE_SYSTEM_PROMPT
-
-    instructions = getattr(signature, "instructions", None)
-    if isinstance(instructions, str) and instructions.strip():
-        return instructions.strip()
-    return JUDGE_SYSTEM_PROMPT
+    return extract_instructions(module, JUDGE_SYSTEM_PROMPT)
 
 
 def save_optimized_prompt(text: str, output_path: Path) -> Path:
     """Write sidecar prompt file (does not modify judge.py)."""
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    header = (
-        "# Optimized LLM judge system prompt (DSPy COPRO)\n"
-        "# Review this file, then manually replace SYSTEM_PROMPT in\n"
-        "# arcs/verification/judge.py if it looks better.\n"
-        "# Do not auto-apply without human review.\n"
-        "# " + ("-" * 60) + "\n\n"
+    return save_sidecar_prompt(
+        text,
+        output_path,
+        component_name="LLM judge",
+        source_file="arcs/verification/judge.py",
     )
-    output_path.write_text(header + text.strip() + "\n", encoding="utf-8")
-    return output_path
 
 
 def parse_judge_prediction(raw: str) -> dict[str, Any]:
@@ -356,26 +342,19 @@ def optimize_judge_prompt(
         trainset = examples
         valset = examples
 
-    from dspy.teleprompt import COPRO
-
     student = build_judge_module()
-    optimizer = COPRO(
-        metric=verifier_false_pass_metric,
-        breadth=breadth,
-        depth=depth,
-        init_temperature=1.0,
-        track_stats=True,
-    )
 
     print(
         f"Optimizing judge prompt on {len(trainset)} train / "
         f"{len(valset)} val example(s) (COPRO breadth={breadth}, depth={depth})...",
         file=sys.stderr,
     )
-    optimized = optimizer.compile(
+    optimized = run_copro(
         student,
-        trainset=trainset,
-        eval_kwargs={"num_threads": 1},
+        trainset,
+        verifier_false_pass_metric,
+        breadth=breadth,
+        depth=depth,
     )
 
     prompt_text = extract_optimized_instructions(optimized)

@@ -1,9 +1,9 @@
 """
-DSPy module for optimizing the MEDICAL specialist system prompt.
+DSPy module for optimizing the GENERAL specialist system prompt.
 
 Uses COPRO to rewrite signature instructions (the system prompt). Optimized
-text is written to ``artifacts/prompts/medical_optimized.txt`` — never
-auto-applied to ``medical.py``.
+text is written to ``artifacts/prompts/general_optimized.txt`` — never
+auto-applied to ``general.py``.
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any
 
 from arcs import config
-from arcs.pipelines.specialists.medical import SYSTEM_PROMPT as MEDICAL_SYSTEM_PROMPT
 from arcs.optimization.dspy_common import (
     configure_groq_lm,
     extract_instructions,
@@ -22,42 +21,43 @@ from arcs.optimization.dspy_common import (
     save_sidecar_prompt,
 )
 from arcs.optimization.metrics import judge_metric
+from arcs.pipelines.specialists.general import SYSTEM_PROMPT as GENERAL_SYSTEM_PROMPT
 
 DEFAULT_QUEUE = config.LOGS_DIR / "queues" / "specialist_queue.jsonl"
-DEFAULT_OUTPUT = config.ARTIFACTS_DIR / "prompts" / "medical_optimized.txt"
-VALID_DOMAINS = frozenset({"MEDICAL"})
+DEFAULT_OUTPUT = config.ARTIFACTS_DIR / "prompts" / "general_optimized.txt"
+VALID_DOMAINS = frozenset({"GENERAL"})
 
 
 def configure_lm(*, model: str | None = None) -> Any:
     """Configure DSPy to use Groq via the OpenAI-compatible API."""
-    return configure_groq_lm(model)
+    return configure_groq_lm(model or config.resolve_generator_model("GENERAL"))
 
 
 def _build_signature(instructions: str):
     import dspy
 
-    class MedicalAnswerSignature(dspy.Signature):
-        """Produce a structured medical specialist answer."""
+    class GeneralAnswerSignature(dspy.Signature):
+        """Produce a structured general specialist answer."""
 
-        query: str = dspy.InputField(desc="User medical question")
+        query: str = dspy.InputField(desc="User general or cross-domain question")
         answer: str = dspy.OutputField(
             desc=(
-                "Structured medical answer with ANSWER / KEY CLAIMS / "
+                "Structured general answer with ANSWER / KEY CLAIMS / "
                 "CAVEATS / UNCERTAINTY sections"
             )
         )
 
-    return MedicalAnswerSignature.with_instructions(instructions)
+    return GeneralAnswerSignature.with_instructions(instructions)
 
 
-def build_medical_module(instructions: str | None = None):
-    """Return a dspy.Module that generates medical answers from a query."""
+def build_general_module(instructions: str | None = None):
+    """Return a dspy.Module that generates general answers from a query."""
     import dspy
 
-    prompt = instructions or MEDICAL_SYSTEM_PROMPT
+    prompt = instructions or GENERAL_SYSTEM_PROMPT
     signature = _build_signature(prompt)
 
-    class MedicalSpecialist(dspy.Module):
+    class GeneralSpecialist(dspy.Module):
         def __init__(self):
             super().__init__()
             self.generate = dspy.Predict(signature)
@@ -65,7 +65,7 @@ def build_medical_module(instructions: str | None = None):
         def forward(self, query: str):
             return self.generate(query=query)
 
-    return MedicalSpecialist()
+    return GeneralSpecialist()
 
 
 def _pipeline_id(record: dict[str, Any]) -> str | None:
@@ -83,12 +83,12 @@ def _pipeline_id(record: dict[str, Any]) -> str | None:
     return None
 
 
-def load_medical_examples(
+def load_general_examples(
     queue_path: Path,
     *,
     max_examples: int = 20,
 ) -> list[Any]:
-    """Load MEDICAL specialist-queue rows as dspy.Example objects."""
+    """Load GENERAL specialist-queue rows as dspy.Example objects."""
     import dspy
 
     if not queue_path.exists():
@@ -116,7 +116,7 @@ def load_medical_examples(
                 continue
 
             pipeline_id = _pipeline_id(record)
-            if pipeline_id is not None and pipeline_id not in VALID_DOMAINS:
+            if pipeline_id is None or pipeline_id not in VALID_DOMAINS:
                 skipped += 1
                 continue
 
@@ -155,26 +155,26 @@ def load_medical_examples(
                 break
 
     if skipped:
-        print(f"Skipped {skipped} non-MEDICAL or incomplete row(s).", file=sys.stderr)
+        print(f"Skipped {skipped} non-GENERAL or incomplete row(s).", file=sys.stderr)
     return examples
 
 
 def extract_optimized_instructions(module: Any) -> str:
     """Pull the optimized signature instructions from a DSPy module."""
-    return extract_instructions(module, MEDICAL_SYSTEM_PROMPT)
+    return extract_instructions(module, GENERAL_SYSTEM_PROMPT)
 
 
 def save_optimized_prompt(text: str, output_path: Path) -> Path:
-    """Write sidecar prompt file (does not modify medical.py)."""
+    """Write sidecar prompt file (does not modify general.py)."""
     return save_sidecar_prompt(
         text,
         output_path,
-        component_name="MEDICAL specialist",
-        source_file="arcs/pipelines/specialists/medical.py",
+        component_name="GENERAL specialist",
+        source_file="arcs/pipelines/specialists/general.py",
     )
 
 
-def optimize_medical_prompt(
+def optimize_general_prompt(
     *,
     queue_path: Path | None = None,
     output_path: Path | None = None,
@@ -183,14 +183,14 @@ def optimize_medical_prompt(
     breadth: int = 5,
     depth: int = 2,
 ) -> dict[str, Any]:
-    """Run COPRO on MEDICAL specialist failures and write a sidecar prompt.
+    """Run COPRO on GENERAL specialist failures and write a sidecar prompt.
 
     Returns a summary dict with counts and output path.
     """
     source = queue_path or DEFAULT_QUEUE
     destination = output_path or DEFAULT_OUTPUT
 
-    examples = load_medical_examples(source, max_examples=max_examples)
+    examples = load_general_examples(source, max_examples=max_examples)
     summary: dict[str, Any] = {
         "examples": len(examples),
         "queue": str(source),
@@ -201,14 +201,14 @@ def optimize_medical_prompt(
 
     if not examples:
         raise ValueError(
-            f"No MEDICAL examples in {source}. "
-            "Collect NEGATIVE specialist failures first "
-            "(batch run + extract_queues)."
+            f"No GENERAL examples in {source}. "
+            "Collect NEGATIVE SPECIALIST failures for GENERAL queries first "
+            "(demo/batch run + python scripts/extract_queues.py), then retry."
         )
 
     if dry_run:
         print(
-            f"Dry-run: would optimize on {len(examples)} MEDICAL example(s) "
+            f"Dry-run: would optimize on {len(examples)} GENERAL example(s) "
             f"from {source}",
             file=sys.stderr,
         )
@@ -229,10 +229,10 @@ def optimize_medical_prompt(
         trainset = examples
         valset = examples
 
-    student = build_medical_module()
+    student = build_general_module()
 
     print(
-        f"Optimizing MEDICAL prompt on {len(trainset)} train / "
+        f"Optimizing GENERAL prompt on {len(trainset)} train / "
         f"{len(valset)} val example(s) (COPRO breadth={breadth}, depth={depth})...",
         file=sys.stderr,
     )
@@ -251,7 +251,7 @@ def optimize_medical_prompt(
     print(f"Wrote optimized prompt → {destination}", file=sys.stderr)
     print(
         "Review the file, then manually update SYSTEM_PROMPT in "
-        "arcs/pipelines/specialists/medical.py if approved.",
+        "arcs/pipelines/specialists/general.py if approved.",
         file=sys.stderr,
     )
     return summary

@@ -14,6 +14,7 @@
   const btnPositive = $("btn-positive");
   const btnNegative = $("btn-negative");
   const feedbackMsg = $("feedback-msg");
+  const domainPicker = $("domain-picker");
 
   let currentQueryId = null;
   let feedbackSent = false;
@@ -40,6 +41,14 @@
     btnNegative.disabled = !enabled;
   }
 
+  function hideDomainPicker() {
+    domainPicker.classList.add("hidden");
+  }
+
+  function showDomainPicker() {
+    domainPicker.classList.remove("hidden");
+  }
+
   function formatErrorDetail(data) {
     if (!data || data.detail == null) return "Request failed";
     const detail = data.detail;
@@ -60,6 +69,7 @@
     currentQueryId = null;
     feedbackSent = false;
     feedbackMsg.classList.add("hidden");
+    hideDomainPicker();
     setFeedbackButtons(false);
     submitBtn.disabled = true;
     hideAll();
@@ -103,17 +113,23 @@
     }
   }
 
-  async function sendFeedback(signal) {
+  async function sendFeedback(signal, correctDomain) {
     if (!currentQueryId || feedbackSent) return;
 
     setFeedbackButtons(false);
+    hideDomainPicker();
     feedbackMsg.classList.add("hidden");
+
+    const payload = { query_id: currentQueryId, signal };
+    if (signal === "NEGATIVE" && correctDomain) {
+      payload.correct_domain = correctDomain;
+    }
 
     try {
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query_id: currentQueryId, signal }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -135,10 +151,24 @@
     }
   }
 
+  function onNegativeClick() {
+    if (!currentQueryId || feedbackSent) return;
+    setFeedbackButtons(false);
+    feedbackMsg.classList.add("hidden");
+    showDomainPicker();
+  }
+
   submitBtn.addEventListener("click", ask);
   queryEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) ask();
   });
   btnPositive.addEventListener("click", () => sendFeedback("POSITIVE"));
-  btnNegative.addEventListener("click", () => sendFeedback("NEGATIVE"));
+  btnNegative.addEventListener("click", onNegativeClick);
+
+  domainPicker.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-domain]");
+    if (!btn) return;
+    const domain = btn.getAttribute("data-domain") || null;
+    sendFeedback("NEGATIVE", domain || undefined);
+  });
 })();

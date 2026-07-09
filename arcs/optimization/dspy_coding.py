@@ -1,9 +1,12 @@
 """
-DSPy module for optimizing the MEDICAL specialist system prompt.
+DSPy module for optimizing the CODING specialist system prompt.
 
 Uses COPRO to rewrite signature instructions (the system prompt). Optimized
-text is written to ``artifacts/prompts/medical_optimized.txt`` — never
-auto-applied to ``medical.py``.
+text is written to ``artifacts/prompts/coding_optimized.txt`` — never
+auto-applied to ``coding.py``.
+
+Metric: sandbox PASS when test cases are available; otherwise LLM judge when
+a specification is present.
 """
 
 from __future__ import annotations
@@ -14,50 +17,51 @@ from pathlib import Path
 from typing import Any
 
 from arcs import config
-from arcs.pipelines.specialists.medical import SYSTEM_PROMPT as MEDICAL_SYSTEM_PROMPT
 from arcs.optimization.dspy_common import (
     configure_groq_lm,
     extract_instructions,
     run_copro,
     save_sidecar_prompt,
 )
-from arcs.optimization.metrics import judge_metric
+from arcs.optimization.metrics import coding_metric
+from arcs.pipelines.specialists.coding import SYSTEM_PROMPT as CODING_SYSTEM_PROMPT
 
 DEFAULT_QUEUE = config.LOGS_DIR / "queues" / "specialist_queue.jsonl"
-DEFAULT_OUTPUT = config.ARTIFACTS_DIR / "prompts" / "medical_optimized.txt"
-VALID_DOMAINS = frozenset({"MEDICAL"})
+DEFAULT_OUTPUT = config.ARTIFACTS_DIR / "prompts" / "coding_optimized.txt"
+VALID_DOMAINS = frozenset({"CODING"})
 
 
 def configure_lm(*, model: str | None = None) -> Any:
     """Configure DSPy to use Groq via the OpenAI-compatible API."""
-    return configure_groq_lm(model)
+    return configure_groq_lm(model or config.resolve_generator_model("CODING"))
 
 
 def _build_signature(instructions: str):
     import dspy
 
-    class MedicalAnswerSignature(dspy.Signature):
-        """Produce a structured medical specialist answer."""
+    class CodingAnswerSignature(dspy.Signature):
+        """Produce a structured coding specialist answer."""
 
-        query: str = dspy.InputField(desc="User medical question")
+        query: str = dspy.InputField(desc="User coding problem")
         answer: str = dspy.OutputField(
             desc=(
-                "Structured medical answer with ANSWER / KEY CLAIMS / "
-                "CAVEATS / UNCERTAINTY sections"
+                "Structured coding answer with SOLUTION (prefer a ```python "
+                "fenced block) / EXPLANATION / COMPLEXITY / EDGE CASES / "
+                "UNCERTAINTY sections"
             )
         )
 
-    return MedicalAnswerSignature.with_instructions(instructions)
+    return CodingAnswerSignature.with_instructions(instructions)
 
 
-def build_medical_module(instructions: str | None = None):
-    """Return a dspy.Module that generates medical answers from a query."""
+def build_coding_module(instructions: str | None = None):
+    """Return a dspy.Module that generates coding answers from a query."""
     import dspy
 
-    prompt = instructions or MEDICAL_SYSTEM_PROMPT
+    prompt = instructions or CODING_SYSTEM_PROMPT
     signature = _build_signature(prompt)
 
-    class MedicalSpecialist(dspy.Module):
+    class CodingSpecialist(dspy.Module):
         def __init__(self):
             super().__init__()
             self.generate = dspy.Predict(signature)
@@ -65,7 +69,7 @@ def build_medical_module(instructions: str | None = None):
         def forward(self, query: str):
             return self.generate(query=query)
 
-    return MedicalSpecialist()
+    return CodingSpecialist()
 
 
 def _pipeline_id(record: dict[str, Any]) -> str | None:
@@ -83,12 +87,24 @@ def _pipeline_id(record: dict[str, Any]) -> str | None:
     return None
 
 
-def load_medical_examples(
+def _extract_test_cases(record: dict[str, Any]) -> list[Any]:
+    """Pull test cases from specialist / tooling / top-level log fields."""
+    for container_key in ("specialist", "tooling", None):
+        container = record if container_key is None else record.get(container_key)
+        if not isinstance(container, dict):
+            continue
+        tests = container.get("test_cases") or container.get("tests")
+        if isinstance(tests, list) and tests:
+            return tests
+    return []
+
+
+def load_coding_examples(
     queue_path: Path,
     *,
     max_examples: int = 20,
 ) -> list[Any]:
-    """Load MEDICAL specialist-queue rows as dspy.Example objects."""
+    """Load CODING specialist-queue rows as dspy.Example objects."""
     import dspy
 
     if not queue_path.exists():
@@ -116,7 +132,7 @@ def load_medical_examples(
                 continue
 
             pipeline_id = _pipeline_id(record)
-            if pipeline_id is not None and pipeline_id not in VALID_DOMAINS:
+            if pipeline_id is None or pipeline_id not in VALID_DOMAINS:
                 skipped += 1
                 continue
 
@@ -126,10 +142,14 @@ def load_medical_examples(
                 continue
 
             specification = record.get("specification")
-            if not isinstance(specification, dict) or not specification:
+            if not isinstance(specification, dict):
+                specification = {}
+
+            test_cases = _extract_test_cases(record)
+            if not specification and not test_cases:
                 print(
-                    f"Warning: skipping record without specification "
-                    f"(query_id={record.get('query_id')!r})",
+                    f"Warning: skipping CODING record without specification "
+                    f"or test_cases (query_id={record.get('query_id')!r})",
                     file=sys.stderr,
                 )
                 skipped += 1
@@ -145,6 +165,8 @@ def load_medical_examples(
                 question=query.strip(),
                 specification=specification,
                 spec=specification,
+                test_cases=test_cases,
+                tests=test_cases,
                 prior_answer=prior_answer,
                 user_feedback=record.get("user_feedback") or "NEGATIVE",
                 query_id=record.get("query_id"),
@@ -155,26 +177,26 @@ def load_medical_examples(
                 break
 
     if skipped:
-        print(f"Skipped {skipped} non-MEDICAL or incomplete row(s).", file=sys.stderr)
+        print(f"Skipped {skipped} non-CODING or incomplete row(s).", file=sys.stderr)
     return examples
 
 
 def extract_optimized_instructions(module: Any) -> str:
     """Pull the optimized signature instructions from a DSPy module."""
-    return extract_instructions(module, MEDICAL_SYSTEM_PROMPT)
+    return extract_instructions(module, CODING_SYSTEM_PROMPT)
 
 
 def save_optimized_prompt(text: str, output_path: Path) -> Path:
-    """Write sidecar prompt file (does not modify medical.py)."""
+    """Write sidecar prompt file (does not modify coding.py)."""
     return save_sidecar_prompt(
         text,
         output_path,
-        component_name="MEDICAL specialist",
-        source_file="arcs/pipelines/specialists/medical.py",
+        component_name="CODING specialist",
+        source_file="arcs/pipelines/specialists/coding.py",
     )
 
 
-def optimize_medical_prompt(
+def optimize_coding_prompt(
     *,
     queue_path: Path | None = None,
     output_path: Path | None = None,
@@ -183,14 +205,14 @@ def optimize_medical_prompt(
     breadth: int = 5,
     depth: int = 2,
 ) -> dict[str, Any]:
-    """Run COPRO on MEDICAL specialist failures and write a sidecar prompt.
+    """Run COPRO on CODING specialist failures and write a sidecar prompt.
 
     Returns a summary dict with counts and output path.
     """
     source = queue_path or DEFAULT_QUEUE
     destination = output_path or DEFAULT_OUTPUT
 
-    examples = load_medical_examples(source, max_examples=max_examples)
+    examples = load_coding_examples(source, max_examples=max_examples)
     summary: dict[str, Any] = {
         "examples": len(examples),
         "queue": str(source),
@@ -201,21 +223,22 @@ def optimize_medical_prompt(
 
     if not examples:
         raise ValueError(
-            f"No MEDICAL examples in {source}. "
-            "Collect NEGATIVE specialist failures first "
-            "(batch run + extract_queues)."
+            f"No CODING examples in {source}. "
+            "Collect NEGATIVE SPECIALIST failures for CODING queries first "
+            "(demo/batch run + python scripts/extract_queues.py), then retry."
         )
 
     if dry_run:
         print(
-            f"Dry-run: would optimize on {len(examples)} MEDICAL example(s) "
+            f"Dry-run: would optimize on {len(examples)} CODING example(s) "
             f"from {source}",
             file=sys.stderr,
         )
         for index, example in enumerate(examples, start=1):
             query = getattr(example, "query", "")
             preview = query.replace("\n", " ")[:72]
-            print(f"  [{index}] {preview}", file=sys.stderr)
+            n_tests = len(getattr(example, "test_cases", None) or [])
+            print(f"  [{index}] tests={n_tests}  {preview}", file=sys.stderr)
         return summary
 
     configure_lm()
@@ -229,17 +252,17 @@ def optimize_medical_prompt(
         trainset = examples
         valset = examples
 
-    student = build_medical_module()
+    student = build_coding_module()
 
     print(
-        f"Optimizing MEDICAL prompt on {len(trainset)} train / "
+        f"Optimizing CODING prompt on {len(trainset)} train / "
         f"{len(valset)} val example(s) (COPRO breadth={breadth}, depth={depth})...",
         file=sys.stderr,
     )
     optimized = run_copro(
         student,
         trainset,
-        judge_metric,
+        coding_metric,
         breadth=breadth,
         depth=depth,
     )
@@ -251,7 +274,7 @@ def optimize_medical_prompt(
     print(f"Wrote optimized prompt → {destination}", file=sys.stderr)
     print(
         "Review the file, then manually update SYSTEM_PROMPT in "
-        "arcs/pipelines/specialists/medical.py if approved.",
+        "arcs/pipelines/specialists/coding.py if approved.",
         file=sys.stderr,
     )
     return summary
