@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -108,6 +109,47 @@ def _run_judge(
     )
 
 
+_PYTHON_FENCE_LANGS = {"python", "py", "python3"}
+_FENCE_LANG_RE = re.compile(r"```([a-zA-Z0-9_+#.-]+)")
+
+
+def _is_python_verifiable(answer: str) -> bool:
+    """Whether the Python sandbox can meaningfully verify this answer.
+
+    The sandbox only runs Python. Answers whose only code fences are another
+    language (```javascript, ```sql, ...) or that are pure prose can't be checked
+    by it and should fall back to the LLM judge. A ``python`` fence or a bare
+    ``` fence (assumed Python, matching extract_code_block) stays on the sandbox.
+    """
+    if not answer:
+        return False
+    langs = [lang.lower() for lang in _FENCE_LANG_RE.findall(answer)]
+    if any(lang in _PYTHON_FENCE_LANGS for lang in langs):
+        return True
+    if langs:
+        # Only non-Python language fences were tagged.
+        return False
+    # No language-tagged fence: a bare ``` block is treated as Python; prose is not.
+    return "```" in answer
+
+
+def _empty_code_verification() -> dict:
+    """Synthetic sandbox FAIL for answers that contain no runnable code block."""
+    return {
+        "verification_type": "SANDBOX",
+        "verdict": "FAIL",
+        "execution_success": False,
+        "tests_passed": 0,
+        "tests_failed": 0,
+        "runtime_error": "No fenced code block found in the answer.",
+        "execution_time_ms": 0,
+        "issues_found": ["Answer did not contain a ```python code block."],
+        "score": 0.0,
+        "explanation": "Answer did not contain a runnable code block.",
+        "model": "sandbox/none",
+    }
+
+
 def _run_sandbox_pipeline(
     query: str,
     pipeline: Pipeline,
@@ -129,11 +171,37 @@ def _run_sandbox_pipeline(
         draft_future = executor.submit(
             pipeline.specialist.run, query, model=model, feedback=None
         )
-        test_bundle = tests_future.result()
         first_draft: dict | None = draft_future.result()
+        # A flaky test generator (bad JSON, rate limit, no usable snippets) must
+        # not sink the whole coding query. Fall back to a smoke run (no asserts)
+        # so the specialist answer is still executed and can PASS on syntax.
+        try:
+            test_bundle = tests_future.result()
+        except Exception as exc:  # noqa: BLE001 - degrade gracefully, never abort
+            progress.log(f"  Test generation failed ({exc}); falling back to smoke run")
+            test_bundle = {"test_cases": [], "model": None, "error": str(exc)}
 
     test_cases = test_bundle["test_cases"]
     progress.log(f"  {len(test_cases)} test case(s) from {test_bundle.get('model')}")
+
+    # Non-Python answers (JavaScript, SQL, prose "explain" answers) can't be
+    # verified by the Python sandbox. Defer them to the LLM judge instead of
+    # forcing a guaranteed sandbox FAIL.
+    first_answer = (first_draft or {}).get("answer", "")
+    if first_draft is not None and not _is_python_verifiable(first_answer):
+        progress.log("  Answer is not Python-verifiable — deferring to LLM judge")
+        specialist_result = first_draft
+        specialist_result["test_cases"] = test_cases
+        specialist_result["pipeline_id"] = pipeline.pipeline_id
+        specialist_result["generator_model"] = model
+        tooling = {
+            "test_generator_model": test_bundle.get("model"),
+            "test_case_count": len(test_cases),
+            "test_cases": test_cases,
+            "verifier_fallback": "judge",
+            "fallback_reason": "answer is not Python-verifiable (non-Python code or prose)",
+        }
+        return specialist_result, {}, tooling
 
     specialist_result: dict = {}
     verification: dict = {}
@@ -158,8 +226,14 @@ def _run_sandbox_pipeline(
         specialist_result["generator_model"] = model
 
         code = extract_code_block(specialist_result.get("answer", ""))
-        progress.log(f"  Running sandbox ({len(test_cases)} test case(s))...")
-        verification = components["sandbox"].run(code, test_cases)
+        if not code.strip():
+            # No fenced code to run. Rather than crash the query, record a FAIL
+            # and feed it back so the next attempt emits a real code block.
+            progress.log("  No code block in answer — marking FAIL and retrying")
+            verification = _empty_code_verification()
+        else:
+            progress.log(f"  Running sandbox ({len(test_cases)} test case(s))...")
+            verification = components["sandbox"].run(code, test_cases)
 
         attempts.append(
             {
@@ -284,6 +358,24 @@ def run_pipeline(query: str) -> dict:
         finally:
             spec_pool.shutdown(wait=False)
         timing["specification_ms"] = _elapsed_ms(spec_start)
+
+        # Coding answer wasn't Python-verifiable: use the judge (needs the spec).
+        if tooling.get("verifier_fallback") == "judge":
+            if state["specification"]:
+                with progress.step("Verify (LLM judge — coding fallback)"):
+                    judge_start = time.perf_counter()
+                    verification = _run_judge(
+                        query, specialist_result, state["specification"], components
+                    )
+                    timing["verification_ms"] = _elapsed_ms(judge_start)
+                state["verification"] = verification
+                state["pipeline"]["verifier"] = "llm_judge"
+                progress.log(
+                    f"  Verdict: {verification.get('verdict', 'UNKNOWN')} "
+                    f"(judge fallback, score {verification.get('score', 0):.2f})"
+                )
+            else:
+                progress.log("  No spec for judge fallback — leaving verdict UNKNOWN")
     else:
         with progress.step("Build specification (Qwen via Groq API)"):
             step_start = time.perf_counter()

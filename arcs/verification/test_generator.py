@@ -33,9 +33,22 @@ Example output:
 """
 
 
+def _strip_reasoning(raw: str) -> str:
+    """Remove <think>...</think> blocks emitted by reasoning models (e.g. qwen3).
+
+    These blocks contain free-form prose that breaks JSON parsing. We drop a
+    closed block outright; if the tag is left unclosed (truncated output) we drop
+    everything up to the last opening tag so any trailing JSON survives.
+    """
+    text = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL)
+    if "<think>" in text:
+        text = text[text.rfind("<think>") + len("<think>") :]
+    return text.strip()
+
+
 def _extract_json_list(raw: str) -> list:
     """Parse a JSON array from model output (tolerates fences and trailing text)."""
-    text = raw.strip()
+    text = _strip_reasoning(raw)
     if not text:
         raise ValueError("Test generator returned empty response")
 
