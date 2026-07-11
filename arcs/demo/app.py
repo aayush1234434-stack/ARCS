@@ -52,6 +52,22 @@ def _check_api_keys() -> None:
         )
 
 
+class HealthResponse(BaseModel):
+    status: str
+    groq_configured: bool
+    nvidia_configured: bool
+    router_backend: str
+
+
+def _health_payload() -> HealthResponse:
+    return HealthResponse(
+        status="ok",
+        groq_configured=bool(os.getenv("GROQ_API_KEY", "").strip()),
+        nvidia_configured=bool(os.getenv("NVIDIA_API_KEY", "").strip()),
+        router_backend=config.ROUTER_BACKEND,
+    )
+
+
 class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=4000)
 
@@ -121,9 +137,10 @@ def _summarize_entry(entry: dict[str, Any]) -> QueryResponse:
     )
 
 
-@app.get("/api/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+@app.get("/health", response_model=HealthResponse)
+@app.get("/api/health", response_model=HealthResponse)
+def health() -> HealthResponse:
+    return _health_payload()
 
 
 @app.post("/api/query", response_model=QueryResponse)
@@ -194,7 +211,10 @@ def api_feedback(body: FeedbackRequest) -> FeedbackResponse:
                 f"Labeled correct domain: {labeled_domain}."
             )
         else:
-            message = f"Thanks — blame assigned to {component}."
+            message = (
+                f"Thanks — blame assigned to {component}. "
+                "Pick a domain next time if routing was wrong (feeds router retrain)."
+            )
     elif body.signal == "POSITIVE":
         message = "Thanks for the positive feedback!"
     else:

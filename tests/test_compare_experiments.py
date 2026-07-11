@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from arcs.eval.compare import diff_experiments, format_diff
 
 
@@ -107,6 +109,34 @@ def test_diff_pipeline_metrics():
     text = format_diff(diff)
     assert "pass_rate" in text
     assert "per-domain PASS rate" in text
+
+
+def test_format_orchestration_comparison():
+    from arcs.eval.compare import format_orchestration_comparison, pass_stats
+
+    naive = {
+        "name": "naive-baseline-v1",
+        "kind": "naive_baseline",
+        "pipeline": {
+            "n": 33,
+            "status_counts": {"PASS": 9, "FAIL": 24, "ERROR": 0},
+        },
+    }
+    arcs = {
+        "name": "post-fix-v2-merged",
+        "kind": "pipeline",
+        "pipeline": {
+            "n": 48,
+            "status_counts": {"PASS": 14, "FAIL": 19, "ERROR": 15},
+        },
+    }
+    text = format_orchestration_comparison(naive, arcs)
+    assert "naive-baseline-v1" in text
+    assert "post-fix-v2-merged" in text
+    assert "27.3%" in text
+    assert "42.4%" in text
+    assert "ARCS − naive" in text
+    assert pass_stats(arcs)["pass_pct"] == pytest.approx(42.424, rel=1e-3)
 
 
 def test_diff_tolerates_missing_fields():

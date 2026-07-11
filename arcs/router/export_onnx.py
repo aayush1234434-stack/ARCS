@@ -23,6 +23,20 @@ ONNX_FILENAME = "model.onnx"
 MAX_LENGTH = 128
 
 
+def _consolidate_onnx(onnx_path: Path) -> None:
+    """Merge external ``model.onnx.data`` weights into a single portable file."""
+    data_path = Path(f"{onnx_path}.data")
+    if not data_path.exists():
+        return
+
+    import onnx
+
+    progress.log("Consolidating external ONNX weights into a single file...")
+    model = onnx.load(str(onnx_path), load_external_data=True)
+    onnx.save_model(model, str(onnx_path))
+    data_path.unlink(missing_ok=True)
+
+
 def export(model_dir: str) -> Path:
     model_path = Path(model_dir)
     onnx_path = model_path / ONNX_FILENAME
@@ -56,9 +70,10 @@ def export(model_dir: str) -> Path:
             "attention_mask": {0: "batch", 1: "sequence"},
             "logits": {0: "batch"},
         },
-        opset_version=14,
+        opset_version=18,
     )
 
+    _consolidate_onnx(onnx_path)
     size_mb = onnx_path.stat().st_size / (1024 * 1024)
     progress.log(f"Export complete ({size_mb:.1f} MB). Future runs will skip PyTorch.")
     return onnx_path

@@ -1,0 +1,51 @@
+# Optional end-to-end pipeline smoke test.
+#
+# Requires repository secrets (Settings → Secrets → Actions):
+#   GROQ_API_KEY
+#   NVIDIA_API_KEY
+#
+# Trains the router from data/router/*.csv when no checkpoint is present.
+# Not run on every push — use workflow_dispatch or the nightly schedule.
+
+name: Smoke E2E
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+jobs:
+  smoke-e2e:
+    runs-on: ubuntu-latest
+    # Skip cleanly when secrets are not configured on the fork/repo.
+    if: >-
+      ${{ secrets.GROQ_API_KEY != '' && secrets.NVIDIA_API_KEY != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train router if checkpoint missing
+        run: |
+          if [ ! -f artifacts/router-model/config.json ]; then
+            python -m arcs.router.train --epochs 2
+          fi
+
+      - name: Dry-run smoke plan
+        run: python scripts/smoke_e2e.py --dry-run --json
+
+      - name: Live smoke e2e (5 fixed queries)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          ARCS_ROUTER_BACKEND: torch
+        run: python scripts/smoke_e2e.py --json --quiet

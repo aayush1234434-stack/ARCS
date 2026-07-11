@@ -1,0 +1,32 @@
+# ARCS demo — local production-style run
+#
+# Setup (do not commit real secrets):
+#   cp .env.example .env
+#   # Edit .env with GROQ_API_KEY and NVIDIA_API_KEY
+#
+# Ensure the router checkpoint exists on the host:
+#   artifacts/router-model/  (train locally or copy from backup)
+# Optional ONNX export for faster startup:
+#   python scripts/export_router_onnx.py
+#   ARCS_ROUTER_BACKEND=onnx in .env
+
+services:
+  demo:
+    build: .
+    ports:
+      - "8000:8000"
+    # Use .env (from .env.example template) — never commit .env with real keys
+    env_file:
+      - .env
+    environment:
+      ARCS_ROUTER_BACKEND: ${ARCS_ROUTER_BACKEND:-onnx}
+    volumes:
+      - ./artifacts/router-model:/app/artifacts/router-model:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s

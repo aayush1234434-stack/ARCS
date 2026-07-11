@@ -58,6 +58,14 @@ DOMAIN_MODEL_OVERRIDES: dict[str, str | None] = {
 CODING_MAX_RETRIES = int(os.getenv("ARCS_CODING_MAX_RETRIES", "3"))
 ROUTER_CONFIDENCE_THRESHOLD = float(os.getenv("ARCS_ROUTER_CONFIDENCE", "0.75"))
 
+# Router inference backend: ``torch`` (default, dev-friendly) or ``onnx`` (production).
+_ROUTER_BACKEND_RAW = os.getenv("ARCS_ROUTER_BACKEND", "torch").strip().lower()
+if _ROUTER_BACKEND_RAW not in ("torch", "onnx"):
+    raise ValueError(
+        f"ARCS_ROUTER_BACKEND must be 'torch' or 'onnx', got {_ROUTER_BACKEND_RAW!r}"
+    )
+ROUTER_BACKEND: str = _ROUTER_BACKEND_RAW
+
 
 def resolve_generator_model(domain: str) -> str:
     """Return the generator model for a domain, falling back to the default."""

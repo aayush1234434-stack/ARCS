@@ -4,6 +4,61 @@
 
 **Status: MVP complete — eval harness, post-fix results, RQ1, repair demo.**
 
+| Doc | Purpose |
+|---|---|
+| [docs/RESULTS.md](docs/RESULTS.md) | Paper-style tables and reproduce commands |
+| [docs/PRESENTATION.md](docs/PRESENTATION.md) | 10-minute committee / portfolio outline |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Docker, env vars, health check |
+| [docs/SCORECARD.md](docs/SCORECARD.md) | Honest 1–10 self-ratings for portfolio / committee |
+
+---
+
+## Results (baseline vs post-fix)
+
+Held-out eval: **`data/eval_queries.jsonl`** (*n* = 48). Baseline pipeline run:
+`artifacts/experiments/2026-07-10T07-24-20_baseline-v1-full-pipeline`. Post-fix **FINAL**
+merged snapshot (latest per-domain `post-fix-*-{legal,coding,medical,general}*` runs +
+`post-fix-resume-v1` where present):
+
+`artifacts/experiments/2026-07-11T12-36-52_post-fix-v2-merged`
+
+### Overall (completed rows)
+
+| Run | PASS | FAIL | ERROR | PASS% (completed) |
+|---|---:|---:|---:|---:|
+| Baseline v1 | 16 | 28 | 4 | **36.4%** (16/44) |
+| Post-fix FINAL | 20 | 28 | 0 | **41.7%** (20/48) |
+
+### Per-domain PASS (all rows in domain)
+
+| Domain | *n* | Baseline | Post-fix FINAL | Δ (post − base) |
+|---|---:|---:|---:|---:|
+| CODING | 12 | 25.0% (3/12) | 41.7% (5/12) | **+17 pts** |
+| MEDICAL | 12 | 50.0% (6/12) | 41.7% (5/12) | −8 pts |
+| LEGAL | 13 | 15.4% (2/13) | 46.2% (6/13) | **+31 pts** |
+| GENERAL | 11 | 45.5% (5/11) | 36.4% (4/11) | −9 pts |
+
+Regenerate after new eval runs:
+
+```bash
+python scripts/snapshot_post_fix.py --dry-run   # list inputs (no API calls)
+python scripts/snapshot_post_fix.py             # write newest *_post-fix-v2-merged/
+python scripts/compare_experiments.py \
+  artifacts/experiments/2026-07-10T07-24-20_baseline-v1-full-pipeline \
+  artifacts/experiments/<newest-post-fix-v2-merged>/
+```
+
+If no post-fix domain artifacts exist yet, numbers above are **TBD** — run per-domain
+eval (`scripts/eval_pipeline.py --name post-fix-{legal,coding,medical,general}-v1 …`),
+optionally resume ERROR rows (`--name post-fix-resume-v1 --resume-from …`), then
+`snapshot_post_fix.py`.
+
+<sup>† PASS% (completed) excludes ERROR rows from the denominator. Eval corpus frozen
+2026-07-10; post-fix domain runs and resume dated 2026-07-10 – 2026-07-11. Table
+generated from saved artifacts at git `e60b30e8`.</sup>
+
+Paper-style write-up: [docs/RESULTS.md](docs/RESULTS.md).
+
 ---
 
 ## What ARCS Is
@@ -200,9 +255,44 @@ Router training / eval (from project root):
 python -m arcs.router.train
 python -m arcs.router.evaluate
 python scripts/export_router_onnx.py
+python scripts/smoke_router.py --backend onnx --query "test query"
 ```
 
 Requires `GROQ_API_KEY` and `NVIDIA_API_KEY` in `.env`. Docker is preferred for sandbox isolation; a restricted local subprocess fallback is used if Docker is unavailable.
+
+### ONNX router deployment
+
+Production can skip PyTorch at inference time by exporting the trained DistilBERT router once, then setting `ARCS_ROUTER_BACKEND=onnx`. Benefits: **faster cold start** (no 10–30s torch import), **no PyTorch dependency at runtime** (onnxruntime only), and fewer disk-pressure failures on constrained hosts.
+
+**One-time export** (requires PyTorch; run after train or when copying a checkpoint):
+
+```bash
+# Live model (default)
+python scripts/export_router_onnx.py
+
+# Or a backup checkpoint (e.g. pre-RQ1)
+python scripts/export_router_onnx.py --model-dir artifacts/router-model-pre-rq1
+```
+
+Writes a self-contained `model.onnx` (~256 MB, weights embedded) next to `config.json` and tokenizer files in the model directory. Re-export after every router retrain.
+
+**Run with ONNX:**
+
+```bash
+export ARCS_ROUTER_BACKEND=onnx   # demo, eval_router, main pipeline
+
+# Smoke test (no Groq/NVIDIA keys needed)
+python scripts/smoke_router.py --backend onnx --query "What are the symptoms of diabetes?"
+python scripts/smoke_router.py --backend torch --query "test query"   # dev default
+```
+
+| Setting | Default | Notes |
+|---|---|---|
+| `ARCS_ROUTER_BACKEND` | `torch` | Set to `onnx` in production after export |
+| `--backend` on CLI / `route(..., backend=...)` | env default | Overrides env for one call |
+| Label map | `config.json` → `id2label` | Same for torch and ONNX |
+
+**Dev default stays torch** — local workflows, tests, and RQ1 retrain/eval paths that swap checkpoints continue to use PyTorch unless you opt in via env or `--backend onnx`.
 
 ---
 
@@ -309,8 +399,8 @@ DSPy sidecars are **never** auto-applied; review and copy into source by hand.
    ```
 4. **Repair per component** (only queues with rows)
    - **ROUTER:** `label_router_failures` → `retrain_router`
-   - **SPECIALIST:** `optimize_{medical,coding,legal,general}.py` → manual apply sidecar
-   - **VERIFIER:** `optimize_judge.py` → manual apply sidecar
+   - **SPECIALIST:** `optimize_{medical,coding,legal,general}.py` → review sidecar → `apply_sidecar.py`
+   - **VERIFIER:** `optimize_judge.py` → review sidecar → `apply_sidecar.py`
    - **AMBIGUOUS:** review only — do not train
 5. **Verify**
    - Re-run demo (`python scripts/run_demo.py`) and/or router eval (`python -m arcs.router.evaluate`)
@@ -328,6 +418,7 @@ DSPy sidecars are **never** auto-applied; review and copy into source by hand.
 | VERIFIER | `logs/queues/verifier_queue.jsonl` | `scripts/optimize_judge.py` | `artifacts/prompts/judge_optimized.txt` |
 | AMBIGUOUS | `logs/queues/ambiguous_queue.jsonl` | *(none — human review)* | — |
 | Spec generator *(experimental)* | specialist + verifier queues (incomplete specs only) | `scripts/optimize_spec.py` | `artifacts/prompts/spec_optimized.txt` |
+| *(apply sidecar)* | `artifacts/prompts/*_optimized.txt` | `scripts/apply_sidecar.py` | in-place `SYSTEM_PROMPT` + `<target>.bak` |
 
 Orchestrator entry point: `python scripts/repair.py` (see **Repair orchestrator** below).
 
@@ -348,14 +439,54 @@ eval set and saved experiment artifacts, you cannot tell whether a repair helped
 | `data/eval_queries.jsonl` | Held-out eval queries (not for training) |
 | `scripts/validate_eval_queries.py` | Schema / domain / count check |
 | `scripts/eval_pipeline.py` | Full pipeline eval → `artifacts/experiments/` |
+| `scripts/eval_naive_baseline.py` | Single-LLM naive baseline (same spec+judge) → `kind=naive_baseline` |
+| `scripts/eval_repair_ablation.py` | RQ1-bis router repair ablation (eval_queries routing only) |
 | `scripts/eval_router.py` | Router-only eval (+ optional `--eval-queries`) |
 | `scripts/compare_experiments.py` | A vs B metric diff |
 | `scripts/merge_experiments.py` | Merge partial/resumed runs into one experiment |
 | `scripts/snapshot_baseline.py` | Capture router + pipeline baseline manifest |
+| `scripts/reproduce.sh` | CI-safe reproduce helper (`check`, `eval-baseline`, `rq1-bootstrap`, `merge`) |
 | `artifacts/experiments/` | Saved runs (`experiment.json`, `summary.txt`, manifests) |
+| `docs/RESULTS.md` | Paper-style results summary (tables, RQ1, reproduce) |
 | `arcs/eval/` | Metrics, experiment I/O, compare helpers |
 
 Also still supported: `python -m arcs.router.evaluate` (writes `artifacts/eval-results/`).
+
+### Why orchestration matters
+
+A fair ablation asks: *if we use the same generator model and the same spec+judge verifier, how much does routing + domain specialists add?* `scripts/eval_naive_baseline.py` answers that by skipping the router and specialist pipelines — one Groq call per query (`Answer this question: {query}` with `llama-3.3-70b-versatile`) — then running the **identical** spec generator and LLM judge as the full ARCS pipeline. PASS/FAIL is recorded per row; experiments are saved with `kind: "naive_baseline"`.
+
+**Method.** PASS% is computed over **completed** rows only (PASS + FAIL); infra ERROR rows (rate limits, parse failures) are excluded from the denominator so both arms are compared on answer quality, not uptime.
+
+**Results** (held-out `data/eval_queries.jsonl`, 48 rows):
+
+| Run | PASS | FAIL | ERROR | PASS% (completed) |
+|---|---:|---:|---:|---:|
+| Naive single-LLM (`naive-baseline-v1`) | — | — | — | *run below* |
+| ARCS post-fix-v2 (`post-fix-v2-merged`) | 14 | 19 | 15 | **42.4%** (14/33) |
+
+On the same eval set, orchestration (domain routing, specialist prompts, coding sandbox + retries) is what separates a one-shot generalist answer from a verified pipeline outcome. The naive baseline isolates that gap: generator and judge are held constant, so any PASS-rate difference is attributable to orchestration rather than model or verifier choice.
+
+```bash
+# Naive baseline (no router/specialist; same spec+judge)
+python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1
+
+# Auto-compare against newest post-fix ARCS experiment
+python scripts/eval_naive_baseline.py --name naive-baseline-v1 \
+  --compare-to artifacts/experiments/2026-07-11T10-29-30_post-fix-v2-merged
+
+# Or diff two saved runs (prints orchestration table when naive vs pipeline)
+python scripts/compare_experiments.py \
+  artifacts/experiments/<naive-baseline-v1-run> \
+  artifacts/experiments/2026-07-11T10-29-30_post-fix-v2-merged
+```
+
+Dry-run / subset:
+
+```bash
+python scripts/eval_naive_baseline.py --dry-run
+python scripts/eval_naive_baseline.py --limit 5 --domains CODING,MEDICAL --no-save
+```
 
 ### Workflow
 
@@ -364,6 +495,21 @@ Also still supported: `python -m arcs.router.evaluate` (writes `artifacts/eval-r
 3. **Run repairs** (Phase 1: queues → `repair.py` / retrain / DSPy sidecars)
 4. **Re-run eval** with a new `--name` (e.g. `after-router-retrain`)
 5. **Compare** baseline vs after with `compare_experiments.py`
+
+### Reproduce helper (`scripts/reproduce.sh`)
+
+Safe, CI-friendly entry points that avoid API calls unless you run the printed full-eval commands yourself:
+
+```bash
+./scripts/reproduce.sh check           # pytest + import smoke
+./scripts/reproduce.sh eval-baseline   # print baseline eval commands (dry-run plan)
+./scripts/reproduce.sh rq1-bootstrap   # bootstrap corpus + prepare datasets + rq1_run --dry-run
+./scripts/reproduce.sh merge           # snapshot_post_fix --dry-run
+```
+
+Each subcommand ends with: *Full eval requires GROQ_API_KEY and NVIDIA_API_KEY; not run in CI.*
+
+See [docs/RESULTS.md](docs/RESULTS.md#8-reproduce) for the full manual command list when keys are available.
 
 ### Example commands
 
@@ -451,6 +597,65 @@ python scripts/merge_experiments.py \
 
 The merged experiment recomputes `pipeline_summary` + `router_accuracy` from the
 combined rows, so it is directly comparable with `compare_experiments.py`.
+
+---
+
+## Phase 3: Collect real feedback
+
+Phase 1–2 used synthetic eval-exported negatives for repair demos. **Phase 3**
+collects genuine 👍/👎 signal from the demo UI (and CLI) to power RQ1 v2 on
+real attribution-labeled data.
+
+### Target
+
+**N = 50** total **NEGATIVE** feedback rows (live demo + CLI), with domain
+labels on router misroutes:
+
+| Milestone | Threshold | Purpose |
+|---|---|---|
+| Minimum corpus | **≥40** NEGATIVE rows | RQ1 v2 bootstrap |
+| Router subset | **≥15** ROUTER-attributed negatives | Run B (attribution-filtered retrain) |
+| Stretch goal | **50** NEGATIVE rows | Stable per-domain repair queues |
+
+Check progress anytime:
+
+```bash
+python scripts/feedback_stats.py
+# exit 0 when RQ1 v2 ready (≥40 negatives, ≥15 ROUTER-attributed)
+python scripts/feedback_stats.py --json
+```
+
+### Demo workflow
+
+1. Start the demo: `python scripts/run_demo.py` (or `uvicorn arcs.demo.app:app`)
+2. Ask a query → note **`query_id`** in the page footer after the answer loads
+3. 👍 if helpful; **👎 if not** → **pick the correct domain** when routing was wrong
+   (CODING / MEDICAL / LEGAL / GENERAL). Skip only when the domain was correct
+   but the answer was bad.
+4. For router-queue rows, label from the footer hint or CLI:
+
+```bash
+python scripts/label_router_failures.py --query-id <uuid-from-footer> --correct-domain LEGAL
+```
+
+5. Refresh queues and plan repair:
+
+```bash
+python scripts/repair.py --dry-run
+```
+
+### Files
+
+| File | Role |
+|---|---|
+| `logs/requests.jsonl` | Live demo / CLI feedback (never overwritten by eval export) |
+| `logs/eval_failures.jsonl` | Optional eval-derived bootstrap (Phase 1 demo) |
+| `scripts/feedback_stats.py` | POSITIVE/NEGATIVE counts, queue totals, RQ1 v2 readiness |
+| `scripts/label_router_failures.py` | Set `correct_domain` on router-queue rows |
+| `scripts/repair.py` | Extract merged queues + suggest repair paths |
+
+Attribution rules are unchanged — `correct_domain` on 👎 is stored for router
+retrain export only; it does not override `arcs.post.attribution.attribute`.
 
 ---
 
@@ -573,7 +778,8 @@ Flow: `extract_queues` → `label_router_failures` → `retrain_router`.
 
 SPECIALIST-attributed failures can drive COPRO rewrites of domain system prompts.
 DSPy always writes a **sidecar file** under `artifacts/prompts/` — it never
-overwrites specialist source modules automatically.
+overwrites specialist source modules automatically. After review, apply with
+`scripts/apply_sidecar.py` (see [Apply optimized prompts](#apply-optimized-prompts-apply_sidecarpy) below).
 
 ```bash
 pip install -r requirements.txt   # includes dspy==3.2.1
@@ -582,6 +788,43 @@ pip install -r requirements.txt   # includes dspy==3.2.1
 python scripts/run_batch.py --quiet
 python scripts/extract_queues.py
 ```
+
+### Apply optimized prompts (`apply_sidecar.py`)
+
+Manual workflow for **all** `optimize_*.py` sidecars (human review required before apply):
+
+| Optimize script | Sidecar output | Target module |
+|---|---|---|
+| `scripts/optimize_medical.py` | `artifacts/prompts/medical_optimized.txt` | `arcs/pipelines/specialists/medical.py` |
+| `scripts/optimize_coding.py` | `artifacts/prompts/coding_optimized.txt` | `arcs/pipelines/specialists/coding.py` |
+| `scripts/optimize_legal.py` | `artifacts/prompts/legal_optimized.txt` | `arcs/pipelines/specialists/legal.py` |
+| `scripts/optimize_general.py` | `artifacts/prompts/general_optimized.txt` | `arcs/pipelines/specialists/general.py` |
+| `scripts/optimize_judge.py` | `artifacts/prompts/judge_optimized.txt` | `arcs/verification/judge.py` |
+| `scripts/optimize_spec.py` *(experimental)* | `artifacts/prompts/spec_optimized.txt` | `arcs/verification/spec_generator.py` |
+
+Steps:
+
+1. **Generate** — run the matching `optimize_*.py` (use `--dry-run` first to preview queue rows).
+2. **Review** — open the sidecar; compare against the current `SYSTEM_PROMPT` in the target module.
+3. **Preview diff** — `apply_sidecar.py --dry-run` shows a unified diff without writing.
+4. **Apply** — re-run without `--dry-run`; creates `<target>.py.bak` then updates `SYSTEM_PROMPT`.
+5. **Verify** — spot-check previously failing queries before committing.
+
+```bash
+# Preview replacement (no writes)
+python scripts/apply_sidecar.py \
+  --prompt artifacts/prompts/coding_optimized.txt \
+  --target arcs/pipelines/specialists/coding.py \
+  --dry-run
+
+# Apply after review (writes coding.py.bak)
+python scripts/apply_sidecar.py \
+  --prompt artifacts/prompts/coding_optimized.txt \
+  --target arcs/pipelines/specialists/coding.py
+```
+
+Sidecar files include a `#` comment header from DSPy; `apply_sidecar.py` strips it and
+replaces only the triple-quoted `SYSTEM_PROMPT` assignment.
 
 ### MEDICAL
 
@@ -592,22 +835,33 @@ python scripts/optimize_medical.py --max-examples 20
 
 Output: `artifacts/prompts/medical_optimized.txt`
 
-Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/medical.py`, then
-copy by hand if approved. Metric: LLM judge PASS / score (sandbox N/A).
+Review the sidecar, then apply with `apply_sidecar.py` (see table above). Metric: LLM judge PASS / score (sandbox N/A).
 
 ### CODING
 
 Uses CODING rows from `specialist_queue.jsonl` (`pipeline_id == CODING`).
 
+- **Input:** `logs/queues/specialist_queue.jsonl`
+- **Output:** `artifacts/prompts/coding_optimized.txt`
+
+**Status:** `coding_optimized.txt` is not present in the repo yet. Only a dry-run was executed (5 CODING examples in queue). To generate the sidecar:
+
 ```bash
+# Preview examples (no API calls, no file write)
 python scripts/optimize_coding.py --dry-run --max-examples 20
+
+# Generate sidecar (requires GROQ_API_KEY; COPRO can take several minutes)
 python scripts/optimize_coding.py --max-examples 20
 ```
 
-Output: `artifacts/prompts/coding_optimized.txt`
+Then review and apply:
 
-Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/coding.py`, then
-copy by hand if approved.
+```bash
+python scripts/apply_sidecar.py \
+  --prompt artifacts/prompts/coding_optimized.txt \
+  --target arcs/pipelines/specialists/coding.py \
+  --dry-run
+```
 
 Metric: **sandbox PASS** on regenerated code when the log row has `test_cases`
 (via `extract_code_block` + `sandbox.run`); otherwise LLM judge when a
@@ -631,8 +885,7 @@ python scripts/optimize_legal.py --max-examples 20
 
 Output: `artifacts/prompts/legal_optimized.txt`
 
-Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/legal.py`, then
-copy by hand if approved. Metric: LLM judge PASS / score (same as MEDICAL).
+Review the sidecar, then apply with `apply_sidecar.py`. Metric: LLM judge PASS / score (same as MEDICAL).
 
 ```bash
 python scripts/repair.py --component SPECIALIST --run-dspy --domain LEGAL
@@ -649,8 +902,7 @@ python scripts/optimize_general.py --max-examples 20
 
 Output: `artifacts/prompts/general_optimized.txt`
 
-Review against `SYSTEM_PROMPT` in `arcs/pipelines/specialists/general.py`, then
-copy by hand if approved. Metric: LLM judge PASS / score. Empty GENERAL queue
+Review the sidecar, then apply with `apply_sidecar.py`. Metric: LLM judge PASS / score. Empty GENERAL queue
 → clear error (collect failures + `extract_queues` first).
 
 ```bash
@@ -675,11 +927,11 @@ python scripts/optimize_judge.py --max-examples 20
 
 Output: `artifacts/prompts/judge_optimized.txt`
 
-### Review and apply manually
+### Review and apply
 
-1. Open `artifacts/prompts/judge_optimized.txt`
-2. Compare against `SYSTEM_PROMPT` in `arcs/verification/judge.py`
-3. If the new prompt is stricter on known-bad answers (more FAIL / lower scores), **copy it by hand** into `SYSTEM_PROMPT`
+1. Open `artifacts/prompts/judge_optimized.txt` and compare against `SYSTEM_PROMPT` in `arcs/verification/judge.py`
+2. Preview with `apply_sidecar.py --dry-run --prompt artifacts/prompts/judge_optimized.txt --target arcs/verification/judge.py`
+3. If the new prompt is stricter on known-bad answers (more FAIL / lower scores), apply without `--dry-run`
 4. Re-check a few previously false-PASS cases before committing
 
 Metric: on known-bad answers (`expected_verdict=FAIL`), the optimized judge should return **FAIL** or score &lt; 0.75. Parsing reuses `judge._extract_json` / `_normalize_result`.
@@ -698,7 +950,14 @@ python scripts/optimize_spec.py --max-examples 20
 ```
 
 Output: `artifacts/prompts/spec_optimized.txt` (sidecar — never auto-applies to
-`arcs/verification/spec_generator.py`).
+`arcs/verification/spec_generator.py`). Review, then:
+
+```bash
+python scripts/apply_sidecar.py \
+  --prompt artifacts/prompts/spec_optimized.txt \
+  --target arcs/verification/spec_generator.py \
+  --dry-run
+```
 
 Metric (experimental): predicted spec must have **more** `required_elements`
 than the logged baseline **and** a higher LLM judge score on the same fixed
@@ -756,6 +1015,78 @@ python scripts/rq1_run.py --execute
 python scripts/compare_experiments.py <pre> <run-a>
 python scripts/compare_experiments.py <pre> <run-b>
 ```
+
+### RQ1 v2 (real feedback)
+
+Once live demo/CLI 👎 feedback accumulates in `logs/requests.jsonl`, RQ1 can be re-run on **real feedback only** — no eval export, no `misclassified_test.json`. This uses separate artifact names (`rq1-v2-*`) so bootstrap manifests are never overwritten.
+
+**Readiness gate** (enforced before `--execute --corpus real`):
+
+| Threshold | Minimum |
+|---|---|
+| Total NEGATIVE rows | **≥40** |
+| ROUTER-attributed | **≥15** |
+
+Check status:
+
+```bash
+python scripts/feedback_stats.py --requests-only
+# exit 0 when RQ1 v2 ready
+```
+
+**Reproduce (real corpus).**
+
+```bash
+python scripts/bootstrap_rq1_corpus.py --real-only
+python scripts/rq1_prepare_datasets.py --corpus real
+python scripts/rq1_run.py --execute --corpus real
+```
+
+Outputs:
+
+- Corpus: `data/rq1/feedback_corpus_real.jsonl`
+- Models: `artifacts/router-model-rq1-v2-run-a`, `artifacts/router-model-rq1-v2-run-b`
+- Manifest: `artifacts/experiments/<timestamp>_rq1-v2/manifest.json` with `corpus_kind: "real"` and an `eval_queries_paired_comparison` block (McNemar-style discordant counts on eval-query misroutes fixed vs pre — counts only, no scipy).
+
+**Results.** Not yet run — corpus below readiness thresholds at time of writing. Collect feedback via the Phase 3 demo (`python -m arcs.demo.app`) until `feedback_stats.py --requests-only` exits 0, then run the commands above.
+
+### RQ1-bis — Router repair ablation *(fast)*
+
+Complements RQ1 end-to-end runs and the naive-vs-ARCS **PASS%** ablation (`eval_naive_baseline.py`) with a **router-only** comparison on `data/eval_queries.jsonl`. Each arm routes held-out queries locally (no Groq, no specialist, no judge) — typically seconds for the full set.
+
+| Arm | Checkpoint |
+|---|---|
+| **Arm 0** | Pre-RQ1 backup (`router-model-pre-rq1`) or live production router |
+| **Arm 1** | RQ1 Run A — retrained on all negatives |
+| **Arm 2** | RQ1 Run B — retrained on ROUTER-attributed negatives only |
+
+**Metric:** eval_queries **router accuracy** (predicted_domain == expected_domain).
+
+**Results** (bootstrap RQ1, 48 eval queries — from `2026-07-11T08-38-52_rq1/manifest.json`):
+
+| arm | router_eval_acc | Δ vs arm0 |
+|---|---:|---:|
+| arm0 (pre-RQ1) | 93.75% | — |
+| arm1 (Run A) | 97.92% | +4.17 pts |
+| arm2 (Run B) | 97.92% | +4.17 pts |
+
+Run A and Run B tied on routing accuracy here (same as RQ1), confirming repair helps over the pre-RQ1 baseline but does not separate targeted vs blanket retrain on this corpus.
+
+```bash
+# Plan (default — no model load)
+python scripts/eval_repair_ablation.py
+
+# Full ablation + manifest
+python scripts/eval_repair_ablation.py --execute
+
+# Subset / domain slice
+python scripts/eval_repair_ablation.py --execute --limit 12 --domains LEGAL
+
+# After RQ1 v2 (real feedback) retrain checkpoints
+python scripts/eval_repair_ablation.py --execute --corpus real
+```
+
+Manifest: `artifacts/experiments/<timestamp>_repair_ablation/manifest.json` with `kind: "repair_ablation"` and table `arm | router_eval_acc | delta_vs_arm0`.
 
 ### RQ2 — Heterogeneous specialists vs one large generalist *(future)*
 

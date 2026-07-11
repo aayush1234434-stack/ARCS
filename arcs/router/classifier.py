@@ -1,13 +1,14 @@
 """
 Domain router: classify user queries into CODING, MEDICAL, LEGAL, or GENERAL.
 
-Uses ONNX Runtime by default when router-model/model.onnx exists (fast startup).
-Falls back to PyTorch otherwise.
+Backend is selected by ``ARCS_ROUTER_BACKEND`` (``torch`` default for dev, ``onnx``
+for production). Explicit ``backend=`` on ``route()`` overrides the env default.
 
 Usage:
     python router.py
     python router.py "What are the symptoms of diabetes?"
-    python router.py --backend torch "..."   # force PyTorch
+    python router.py --backend onnx "..."   # force ONNX
+    ARCS_ROUTER_BACKEND=onnx python router.py "..."
 """
 
 from __future__ import annotations
@@ -35,6 +36,18 @@ _id2label = None
 # PyTorch backend state
 _model = None
 _device = None
+_loaded_model_dir: str | None = None
+
+
+def clear_cache() -> None:
+    """Drop cached tokenizer/model so the next ``route()`` loads a new checkpoint."""
+    global _onnx_session, _tokenizer, _id2label, _model, _device, _loaded_model_dir
+    _onnx_session = None
+    _tokenizer = None
+    _id2label = None
+    _model = None
+    _device = None
+    _loaded_model_dir = None
 
 
 def _warn_if_disk_full() -> None:
@@ -167,9 +180,9 @@ def _route_onnx(query: str, model_dir: str) -> dict:
 
 
 def _load_torch(model_dir: str):
-    global _model, _device, _id2label
+    global _model, _device, _id2label, _loaded_model_dir
 
-    if _model is not None:
+    if _model is not None and _loaded_model_dir == model_dir:
         return _model, _device, _id2label
 
     _warn_if_disk_full()
@@ -187,6 +200,7 @@ def _load_torch(model_dir: str):
     _model.to(_device)
     _model.eval()
     _id2label = _load_id2label(model_dir)
+    _loaded_model_dir = model_dir
 
     return _model, _device, _id2label
 
@@ -211,16 +225,25 @@ def _route_torch(query: str, model_dir: str) -> dict:
     )
 
 
-def _resolve_backend(backend: str, model_dir: str) -> str:
-    if backend != "auto":
-        return backend
+def _resolve_backend(backend: str | None, model_dir: str) -> str:
+    resolved = (backend or config.ROUTER_BACKEND).strip().lower()
+    if resolved not in ("torch", "onnx"):
+        raise ValueError(f"Router backend must be 'torch' or 'onnx', got {resolved!r}")
 
-    if (Path(model_dir) / ONNX_FILENAME).exists():
-        return "onnx"
-    return "torch"
+    if resolved == "onnx" and not (Path(model_dir) / ONNX_FILENAME).exists():
+        raise FileNotFoundError(
+            f"ONNX model not found at {Path(model_dir) / ONNX_FILENAME}. "
+            "Run: python scripts/export_router_onnx.py --model-dir "
+            f"{model_dir}"
+        )
+    return resolved
 
 
-def route(query: str, model_dir: str = DEFAULT_MODEL_DIR, backend: str = "auto") -> dict:
+def route(
+    query: str,
+    model_dir: str = DEFAULT_MODEL_DIR,
+    backend: str | None = None,
+) -> dict:
     resolved = _resolve_backend(backend, model_dir)
     if resolved == "onnx":
         return _route_onnx(query, model_dir)
@@ -233,9 +256,12 @@ def main():
     parser.add_argument("--model-dir", default=DEFAULT_MODEL_DIR, help="Path to saved model")
     parser.add_argument(
         "--backend",
-        choices=("auto", "onnx", "torch"),
-        default="auto",
-        help="Inference backend (default: onnx if model.onnx exists, else torch)",
+        choices=("torch", "onnx"),
+        default=None,
+        help=(
+            "Inference backend (default: ARCS_ROUTER_BACKEND env, else torch). "
+            "Use onnx in production after export_router_onnx.py."
+        ),
     )
     parser.add_argument(
         "--quiet",

@@ -46,6 +46,71 @@ def _infer_kind(experiment: dict[str, Any]) -> str:
     return "unknown"
 
 
+def pass_stats(experiment: dict[str, Any]) -> dict[str, Any]:
+    """PASS% over completed rows (PASS+FAIL), excluding infra ERROR rows."""
+    pipeline = experiment.get("pipeline") if isinstance(experiment.get("pipeline"), dict) else {}
+    counts = pipeline.get("status_counts") if isinstance(pipeline.get("status_counts"), dict) else {}
+    passed = int(counts.get("PASS", 0))
+    failed = int(counts.get("FAIL", 0))
+    errors = int(counts.get("ERROR", 0))
+    completed = passed + failed
+    return {
+        "n": pipeline.get("n"),
+        "pass": passed,
+        "fail": failed,
+        "error": errors,
+        "completed": completed,
+        "pass_pct": (100.0 * passed / completed) if completed else None,
+    }
+
+
+def _fmt_pass_pct(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:5.1f}%"
+
+
+def format_orchestration_comparison(
+    naive: dict[str, Any],
+    arcs: dict[str, Any],
+    *,
+    naive_label: str | None = None,
+    arcs_label: str | None = None,
+) -> str:
+    """Human-readable naive-vs-ARCS PASS% table (completed rows only)."""
+    naive_stats = pass_stats(naive)
+    arcs_stats = pass_stats(arcs)
+    naive_name = (naive_label or naive.get("name") or "naive")[:22]
+    arcs_name = (arcs_label or arcs.get("name") or "arcs")[:22]
+
+    lines = [
+        "Orchestration comparison (PASS% over completed rows)",
+        f"{'run':22s} {'PASS':>5s} {'FAIL':>5s} {'ERR':>5s} {'PASS%':>7s}",
+        "-" * 48,
+    ]
+    for name, stats in ((naive_name, naive_stats), (arcs_name, arcs_stats)):
+        lines.append(
+            f"{name:22s} {stats['pass']:>5d} {stats['fail']:>5d} "
+            f"{stats['error']:>5d} {_fmt_pass_pct(stats['pass_pct']):>7s}"
+        )
+
+    n_pct = naive_stats["pass_pct"]
+    a_pct = arcs_stats["pass_pct"]
+    if n_pct is not None and a_pct is not None:
+        delta = a_pct - n_pct
+        lead = "ARCS" if delta > 0 else ("naive" if delta < 0 else "neither")
+        lines.append(
+            f"ARCS − naive: {delta:+.1f} pts  ({lead} higher PASS% on completed rows)"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def is_naive_baseline(experiment: dict[str, Any]) -> bool:
+    kind = _infer_kind(experiment)
+    if kind == "naive_baseline":
+        return True
+    name = str(experiment.get("name") or "").lower()
+    return "naive" in name and "baseline" in name
+
+
 def _router_metric_block(experiment: dict[str, Any]) -> dict[str, Any]:
     """Pull accuracy / F1 from ``metrics`` (router-eval) or ``router`` (pipeline-eval)."""
     metrics = experiment.get("metrics") if isinstance(experiment.get("metrics"), dict) else {}

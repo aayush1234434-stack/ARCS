@@ -4,8 +4,12 @@ Does NOT call any APIs — it only reads previously-saved experiment artifacts a
 stitches them together (reusing the dedupe/merge logic in merge_experiments.py),
 then reports per-domain PASS deltas against a baseline pipeline run.
 
-Default inputs are the latest (by mtime) experiment dir matching each per-domain
-post-fix name; override with --experiments.
+Default inputs:
+  - Every saved run matching ``post-fix-*-{legal,coding,medical,general}*`` (oldest→newest)
+  - Plus ``post-fix-resume-v1`` (or newest ``*post-fix*resume*``) when present, merged last
+    so non-ERROR resume rows replace earlier ERROR rows for the same id.
+
+Override with --experiments.
 
 Writes:
     artifacts/experiments/<ts>_post-fix-v2-merged/experiment.json
@@ -47,46 +51,82 @@ _MERGE_SPEC = importlib.util.spec_from_file_location(
 merge_experiments = importlib.util.module_from_spec(_MERGE_SPEC)
 _MERGE_SPEC.loader.exec_module(merge_experiments)
 
-DEFAULT_NAMES = (
-    "post-fix-legal-v1",
-    "post-fix-coding-v1",
-    "post-fix-medical-v1",
-    "post-fix-general-v1",
-)
 DEFAULT_BASELINE = (
     config.EXPERIMENTS_DIR / "2026-07-10T07-24-20_baseline-v1-full-pipeline"
 )
 MERGED_NAME = "post-fix-v2-merged"
 
+# Per-domain discovery: latest dir whose name contains post-fix + domain tag.
+DOMAIN_TAGS = ("legal", "coding", "medical", "general")
+# Skip combined / non-domain runs when picking per-domain inputs.
+_EXCLUDE_DIR_MARKERS = (
+    "merged",
+    "resume",
+    "baseline",
+    "post-fix-full",
+    "post-fix-clean",
+)
 
-def _latest_matching(name: str) -> Path | None:
-    """Latest experiment dir (by mtime) whose run_id ends with ``_<name>``."""
-    root = config.EXPERIMENTS_DIR
+
+def _experiment_dirs(root: Path) -> list[Path]:
     if not root.exists():
-        return None
-    candidates = [
+        return []
+    return [
         p
         for p in root.iterdir()
-        if p.is_dir()
-        and p.name.endswith(f"_{name}")
-        and (p / "experiment.json").exists()
+        if p.is_dir() and (p / "experiment.json").exists()
+    ]
+
+
+def _matches_domain_dir(name: str, domain_tag: str) -> bool:
+    lower = name.lower()
+    if "post-fix" not in lower:
+        return False
+    if domain_tag not in lower:
+        return False
+    return not any(marker in lower for marker in _EXCLUDE_DIR_MARKERS)
+
+
+def _all_domain_experiments(domain_tag: str) -> list[Path]:
+    """All experiment dirs matching ``post-fix-*-{domain}*``, oldest first."""
+    candidates = [
+        p for p in _experiment_dirs(config.EXPERIMENTS_DIR)
+        if _matches_domain_dir(p.name, domain_tag)
+    ]
+    return sorted(candidates, key=lambda p: p.stat().st_mtime)
+
+
+def _latest_resume_experiment() -> Path | None:
+    """Latest ``*post-fix*resume*`` experiment (e.g. post-fix-resume-v1)."""
+    candidates = [
+        p
+        for p in _experiment_dirs(config.EXPERIMENTS_DIR)
+        if "post-fix" in p.name.lower() and "resume" in p.name.lower()
     ]
     if not candidates:
         return None
     return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
-def _resolve_default_inputs() -> tuple[list[Path], list[str]]:
-    """Return (found dirs, missing names) for the default per-domain runs."""
+def _resolve_default_inputs() -> tuple[list[Path], list[str], Path | None]:
+    """Return (per-domain dirs oldest→newest, missing patterns, optional resume dir).
+
+    Includes every ``post-fix-*-{domain}*`` run (not only the newest) so partial
+    v2 reruns layer on top of full v1 domain passes. Resume is appended last.
+    """
     found: list[Path] = []
     missing: list[str] = []
-    for name in DEFAULT_NAMES:
-        match = _latest_matching(name)
-        if match is None:
-            missing.append(name)
+    for tag in DOMAIN_TAGS:
+        matches = _all_domain_experiments(tag)
+        pattern = f"post-fix-*-{tag}*"
+        if not matches:
+            missing.append(pattern)
         else:
-            found.append(match)
-    return found, missing
+            found.extend(matches)
+    resume = _latest_resume_experiment()
+    if resume is not None:
+        found.append(resume)
+    return found, missing, resume
 
 
 def _per_domain_pass(pipeline: dict[str, Any]) -> dict[str, tuple[int, int]]:
@@ -168,13 +208,17 @@ def main() -> None:
     args = parser.parse_args()
 
     # ── Resolve inputs ──
+    resume_path: Path | None = None
     if args.experiments is not None:
         input_paths = list(args.experiments)
         missing_names: list[str] = []
     else:
-        input_paths, missing_names = _resolve_default_inputs()
-        for name in missing_names:
-            print(f"Warning: no experiment found for {name!r}", file=sys.stderr)
+        domain_paths, missing_names, resume_path = _resolve_default_inputs()
+        input_paths = list(domain_paths)
+        for pattern in missing_names:
+            print(f"Warning: no experiment found for {pattern!r}", file=sys.stderr)
+        if resume_path is not None:
+            print(f"Including resume experiment: {resume_path}", file=sys.stderr)
 
     if len(input_paths) < 1:
         print("Error: no input experiments resolved.", file=sys.stderr)
@@ -220,6 +264,7 @@ def main() -> None:
         pipeline=pipeline,
         meta={
             "merged_from": [str(p) for _, p in loaded],
+            "resume_from": str(resume_path) if resume_path is not None else None,
             "baseline": str(args.baseline),
             "n_rows": len(merged_rows),
             "rows": merged_rows,
