@@ -2,7 +2,7 @@
 
 > A modular orchestration architecture that routes each query to a domain-specific processing pipeline, verifies the answer before delivery, and learns from attributed failures.
 
-**Status: In active development **
+**Status: MVP complete — eval harness, post-fix results, RQ1, repair demo.**
 
 ---
 
@@ -293,10 +293,16 @@ DSPy sidecars are **never** auto-applied; review and copy into source by hand.
 1. **Collect feedback**
    - Demo UI: 👍 / 👎 (on 👎, optionally pick `correct_domain` for router labels)
    - CLI: `python -m arcs.main --feedback NEGATIVE "..."` or `python scripts/run_batch.py`
-2. **Sort failures**
+2. **Sort failures** (default: merge live + eval-exported negatives)
    ```bash
    python scripts/extract_queues.py
+   # or via the repair orchestrator (same merge by default):
+   python scripts/repair.py --dry-run
    ```
+   By default, `repair.py` and `extract_queues.py --include-eval-failures` read
+   **`logs/requests.jsonl` + `logs/eval_failures.jsonl`** (when the latter exists).
+   Seed eval failures first with `scripts/export_eval_failures.py`. Use
+   `--requests-only` on `repair.py` to ignore eval-exported rows.
 3. **Plan repairs**
    ```bash
    python scripts/repair.py --dry-run
@@ -344,6 +350,7 @@ eval set and saved experiment artifacts, you cannot tell whether a repair helped
 | `scripts/eval_pipeline.py` | Full pipeline eval → `artifacts/experiments/` |
 | `scripts/eval_router.py` | Router-only eval (+ optional `--eval-queries`) |
 | `scripts/compare_experiments.py` | A vs B metric diff |
+| `scripts/merge_experiments.py` | Merge partial/resumed runs into one experiment |
 | `scripts/snapshot_baseline.py` | Capture router + pipeline baseline manifest |
 | `artifacts/experiments/` | Saved runs (`experiment.json`, `summary.txt`, manifests) |
 | `arcs/eval/` | Metrics, experiment I/O, compare helpers |
@@ -393,6 +400,58 @@ Baseline manifests live at `artifacts/experiments/<run_id>_baseline/manifest.jso
 point at the child router/pipeline experiment dirs. Use those child paths (or later
 eval runs) with `compare_experiments.py` after repair.
 
+### Surviving Groq quota exhaustion (resume + merge)
+
+The Groq free tier enforces per-minute (TPM) and per-day (TPD) token limits. TPM
+bumps are ridden out automatically by the client's retries; a **TPD** exhaustion
+cannot be recovered within the day, so `eval_pipeline.py` stops early, **saves the
+partial experiment**, prints a resume command, and exits with code `2`.
+
+```bash
+# Ease rate limits by pacing rows; if TPD is hit it saves partial + exits 2
+python scripts/eval_pipeline.py --name post-fix-v2 --sleep-between 2
+
+# After the daily quota resets, resume: rows already PASS/FAIL are skipped,
+# only ERROR/missing ids are re-run, and results merge into a new experiment
+python scripts/eval_pipeline.py --name post-fix-v2 \
+  --resume-from artifacts/experiments/2026-07-11T09-35-19_post-fix-v2-merged \
+  --sleep-between 2
+```
+
+A partial merged run may leave **15 ERROR rows** (infra / parse failures, not
+wrong answers). Resume re-runs only those plus any ids missing from the prior
+experiment — the 33 completed PASS/FAIL rows are kept as-is:
+
+```bash
+# Optional: target just the 15 ERROR ids from post-fix-v2-merged
+python scripts/eval_pipeline.py --name post-fix-v2-resume \
+  --resume-from artifacts/experiments/2026-07-11T09-35-19_post-fix-v2-merged \
+  --ids eval-021,eval-031,eval-032,eval-033,eval-034,eval-035,eval-036,eval-037,eval-038,eval-039,eval-040,eval-042,eval-044,eval-045,eval-047 \
+  --sleep-between 2
+```
+
+When TPD is hit mid-run, the script prints an exact `--resume-from` command and
+exits with code `2`. Re-run that command after the Groq daily quota resets.
+
+If you ran several partial evals under different names, stitch them into one
+authoritative experiment (dedupe by id; a non-ERROR row always beats an ERROR
+row, newer wins otherwise):
+
+```bash
+python scripts/merge_experiments.py \
+  artifacts/experiments/<part-1> artifacts/experiments/<part-2> \
+  --name post-fix-v2-merged
+
+# Optionally show per-domain PASS vs a baseline while merging
+python scripts/merge_experiments.py \
+  artifacts/experiments/<part-1> artifacts/experiments/<part-2> \
+  --name post-fix-v2-merged \
+  --baseline artifacts/experiments/<baseline-pipeline-run>
+```
+
+The merged experiment recomputes `pipeline_summary` + `router_accuracy` from the
+combined rows, so it is directly comparable with `compare_experiments.py`.
+
 ---
 
 ## Repair orchestrator
@@ -402,6 +461,9 @@ One entry point that sorts failure queues and dispatches the documented repair p
 ```bash
 # Full plan: extract queues, export/suggest per component (no train / no DSPy)
 python scripts/repair.py --dry-run
+
+# Live feedback only — skip logs/eval_failures.jsonl
+python scripts/repair.py --requests-only --dry-run
 
 # Extract + export ROUTER rows; suggest specialist/verifier/ambiguous next steps
 python scripts/repair.py
@@ -435,6 +497,43 @@ Label unlabeled router-queue rows before export pays off:
 python scripts/label_router_failures.py --list
 python scripts/label_router_failures.py --interactive
 ```
+
+### Bootstrap the repair demo from eval failures
+
+When live 👍/👎 feedback is sparse, seed the repair queues from eval FAILs so the
+Phase 1 tools have something to work on. `scripts/export_eval_failures.py` reads a
+pipeline experiment (default: newest `post-fix-v2-merged`, or `--experiment PATH`),
+turns each **FAIL** row (ERRORs are skipped) into a NEGATIVE, log-shaped record,
+runs the real `arcs.post.attribution.attribute` on it, and appends the results to
+`logs/eval_failures.jsonl` — **`logs/requests.jsonl` is never touched**. It then
+refreshes `logs/queues/*.jsonl` from the combined logs (real + eval-derived), so
+existing feedback is preserved.
+
+```bash
+# Preview attribution counts (writes nothing)
+python scripts/export_eval_failures.py --dry-run
+
+# Append eval FAILs to logs/eval_failures.jsonl and refresh queues
+python scripts/export_eval_failures.py
+
+# From a specific experiment
+python scripts/export_eval_failures.py --experiment artifacts/experiments/<run>
+
+# Then run the normal repair loop on the seeded queues
+python scripts/repair.py --dry-run
+
+# Live feedback only (ignore eval_failures.jsonl):
+python scripts/repair.py --requests-only --dry-run
+```
+
+Because these are synthetic (eval-derived) negatives, use them to exercise the
+repair loop — not as a substitute for real user feedback.
+
+Eval experiments saved before this fix may lack `specification` / `test_cases`;
+`export_eval_failures.py` synthesizes a minimal query-derived spec so
+`optimize_{coding,medical,legal,general}.py` can load examples. New eval runs
+via `scripts/eval_pipeline.py` persist the full spec, answer, and test cases
+when available.
 
 ---
 
@@ -677,6 +776,25 @@ Only meaningful once domain-specific models (or clearly stronger domain backends
 | Logging | JSONL (`logs/requests.jsonl`) |
 
 Planned / not in this MVP: ChromaDB grounding, DSPy batch prompt optimization, multi-domain query decomposition, autonomous evaluator feedback.
+
+---
+
+## Troubleshooting
+
+### `eval-042` / prose-only CODING queries → `answer cannot be empty`
+
+**Symptom.** Eval row `eval-042` (or similar “explain in plain English” coding queries) fails with `ERROR: answer cannot be empty` instead of a normal PASS/FAIL verdict.
+
+**Cause.** The CODING specialist stores executable code in the `SOLUTION` section (`answer` field) and prose in `EXPLANATION`. Prose-only answers have no runnable Python code block, so the Python sandbox cannot verify them. Previously the pipeline either retried sandbox with empty code or called the LLM judge with an empty `answer` string.
+
+**Fix (in `arcs/main.py`).** After the specialist returns, if there is no extractable Python code (prose-only, non-Python fences, or an empty Python fence), the pipeline sets `tooling.verifier_fallback = "judge"` and skips the sandbox. Judge verification uses `_effective_specialist_answer()` (SOLUTION + EXPLANATION + other sections). If the specialist truly returns no text, the pipeline records a synthetic FAIL instead of raising.
+
+**Verify.**
+
+```bash
+pytest tests/test_coding_fallback.py -q
+python scripts/eval_pipeline.py --ids eval-042 --name eval-042-check --no-save
+```
 
 ---
 
