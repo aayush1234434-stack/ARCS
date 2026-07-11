@@ -38,6 +38,14 @@ def main() -> None:
         help="Assume logs/queues/ already exists; skip extract_queues",
     )
     parser.add_argument(
+        "--requests-only",
+        action="store_true",
+        help=(
+            "Extract queues from logs/requests.jsonl only (ignore "
+            "logs/eval_failures.jsonl). Default merges both when present."
+        ),
+    )
+    parser.add_argument(
         "--component",
         action="append",
         choices=list(COMPONENTS),
@@ -77,6 +85,7 @@ def main() -> None:
             train_router=args.train_router,
             run_dspy=args.run_dspy,
             domain=args.domain,
+            include_eval_failures=not args.requests_only,
         )
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
@@ -95,7 +104,11 @@ def main() -> None:
             print("Extract: skipped")
         elif extract.get("ok"):
             note = " (dry-run)" if extract.get("dry_run") else ""
-            print(f"Extract: ok{note} — {extract.get('summary', '')}")
+            sources = extract.get("sources") or []
+            source_note = f" from {len(sources)} log(s)" if sources else ""
+            print(f"Extract: ok{note}{source_note} — {extract.get('summary', '')}")
+            for src in sources:
+                print(f"  source: {src}")
         else:
             print(f"Extract: failed — {extract.get('error', '')}", file=sys.stderr)
 

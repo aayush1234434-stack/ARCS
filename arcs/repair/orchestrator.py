@@ -23,6 +23,7 @@ from arcs import config
 from arcs.post.queues import (
     COMPONENTS as QUEUE_COMPONENTS,
     extract_queues,
+    feedback_log_paths,
     format_summary,
     queue_counts,
 )
@@ -389,6 +390,7 @@ def repair_all(
     train_router: bool = False,
     run_dspy: bool = False,
     domain: str | None = None,
+    include_eval_failures: bool = True,
 ) -> dict[str, Any]:
     """Sort failure queues and run (or suggest) the repair path per component.
 
@@ -402,6 +404,8 @@ def repair_all(
             printing instructions (ignored in dry_run).
         domain: Specialist domain for DSPy (e.g. MEDICAL). Used when
             SPECIALIST is selected.
+        include_eval_failures: When True (default), merge ``logs/eval_failures.jsonl``
+            with ``logs/requests.jsonl`` during queue extraction.
 
     Returns:
         Summary dict with queue counts, per-component results, and errors.
@@ -410,6 +414,7 @@ def repair_all(
     summary: dict[str, Any] = {
         "dry_run": dry_run,
         "extract_first": extract_first,
+        "include_eval_failures": include_eval_failures,
         "components": list(selected),
         "train_router": train_router,
         "run_dspy": run_dspy,
@@ -424,12 +429,18 @@ def repair_all(
 
     if extract_first:
         try:
-            queues = extract_queues(dry_run=dry_run)
+            queues = extract_queues(
+                dry_run=dry_run,
+                include_eval_failures=include_eval_failures,
+            )
             counts = queue_counts(queues)
             summary["extract"] = {
                 "ok": True,
                 "dry_run": dry_run,
                 "summary": format_summary(counts),
+                "sources": [str(p) for p in feedback_log_paths(
+                    include_eval_failures=include_eval_failures
+                )],
             }
             summary["queue_counts"] = counts
         except FileNotFoundError as exc:

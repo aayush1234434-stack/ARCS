@@ -95,6 +95,68 @@ def _sandbox_feedback(verification: dict) -> str:
     return "\n".join(parts)
 
 
+def _effective_specialist_answer(specialist_result: dict) -> str:
+    """Best-effort full answer text for verification (judge or code extraction).
+
+    The CODING specialist stores code in ``answer`` (SOLUTION section) and prose
+    in ``explanation`` / other fields. Prose-only queries (eval-042) may leave
+    ``answer`` empty while the explanation holds the real content.
+    """
+    answer = str(specialist_result.get("answer") or "").strip()
+    if answer:
+        return answer
+    parts: list[str] = []
+    for key in ("explanation", "complexity", "edge_cases"):
+        value = specialist_result.get(key)
+        if value is not None and str(value).strip():
+            parts.append(str(value).strip())
+    return "\n\n".join(parts)
+
+
+def _should_defer_to_judge(specialist_result: dict) -> bool:
+    """True when the Python sandbox cannot run meaningful verification."""
+    text = _effective_specialist_answer(specialist_result)
+    if not text:
+        return True
+    if not _is_python_verifiable(text):
+        return True
+    return not extract_code_block(text).strip()
+
+
+def _judge_fallback_tooling(
+    test_bundle: dict,
+    test_cases: list,
+    *,
+    model: str,
+    pipeline_id: str,
+    reason: str,
+) -> dict:
+    return {
+        "test_generator_model": test_bundle.get("model"),
+        "test_case_count": len(test_cases),
+        "test_cases": test_cases,
+        "verifier_fallback": "judge",
+        "fallback_reason": reason,
+        "generator_model": model,
+        "pipeline_id": pipeline_id,
+    }
+
+
+def _empty_answer_verification() -> dict:
+    """Synthetic FAIL when the specialist produced no usable answer text."""
+    return {
+        "verification_type": "LLM_JUDGE",
+        "verdict": "FAIL",
+        "score": 0.0,
+        "missing_required_elements": [],
+        "incorrect_claims": [],
+        "unsupported_claims": [],
+        "disqualifying_conditions_triggered": [],
+        "explanation": "specialist returned empty answer",
+        "model": "judge/none",
+    }
+
+
 def _run_judge(
     query: str,
     specialist_result: dict,
@@ -102,9 +164,12 @@ def _run_judge(
     components: dict,
 ) -> dict:
     progress.log("  Calling LLM judge (NVIDIA API)...")
+    answer = _effective_specialist_answer(specialist_result)
+    if not answer.strip():
+        return _empty_answer_verification()
     return components["judge"].run(
         question=query,
-        answer=specialist_result.get("answer", ""),
+        answer=answer,
         specification=specification,
     )
 
@@ -184,23 +249,21 @@ def _run_sandbox_pipeline(
     test_cases = test_bundle["test_cases"]
     progress.log(f"  {len(test_cases)} test case(s) from {test_bundle.get('model')}")
 
-    # Non-Python answers (JavaScript, SQL, prose "explain" answers) can't be
-    # verified by the Python sandbox. Defer them to the LLM judge instead of
-    # forcing a guaranteed sandbox FAIL.
-    first_answer = (first_draft or {}).get("answer", "")
-    if first_draft is not None and not _is_python_verifiable(first_answer):
-        progress.log("  Answer is not Python-verifiable — deferring to LLM judge")
+    # Non-Python or prose-only answers can't be verified by the Python sandbox.
+    # Defer them to the LLM judge instead of forcing sandbox retries or empty-code runs.
+    if first_draft is not None and _should_defer_to_judge(first_draft):
+        progress.log("  No runnable Python code — deferring to LLM judge")
         specialist_result = first_draft
         specialist_result["test_cases"] = test_cases
         specialist_result["pipeline_id"] = pipeline.pipeline_id
         specialist_result["generator_model"] = model
-        tooling = {
-            "test_generator_model": test_bundle.get("model"),
-            "test_case_count": len(test_cases),
-            "test_cases": test_cases,
-            "verifier_fallback": "judge",
-            "fallback_reason": "answer is not Python-verifiable (non-Python code or prose)",
-        }
+        tooling = _judge_fallback_tooling(
+            test_bundle,
+            test_cases,
+            model=model,
+            pipeline_id=pipeline.pipeline_id,
+            reason="answer is not Python-verifiable (non-Python code, prose-only, or empty code block)",
+        )
         return specialist_result, {}, tooling
 
     specialist_result: dict = {}
@@ -225,7 +288,19 @@ def _run_sandbox_pipeline(
         specialist_result["pipeline_id"] = pipeline.pipeline_id
         specialist_result["generator_model"] = model
 
-        code = extract_code_block(specialist_result.get("answer", ""))
+        if _should_defer_to_judge(specialist_result):
+            progress.log("  No runnable Python code — deferring to LLM judge")
+            tooling = _judge_fallback_tooling(
+                test_bundle,
+                test_cases,
+                model=model,
+                pipeline_id=pipeline.pipeline_id,
+                reason="answer is not Python-verifiable (non-Python code, prose-only, or empty code block)",
+            )
+            tooling["rounds_used"] = round_index
+            return specialist_result, {}, tooling
+
+        code = extract_code_block(_effective_specialist_answer(specialist_result))
         if not code.strip():
             # No fenced code to run. Rather than crash the query, record a FAIL
             # and feed it back so the next attempt emits a real code block.

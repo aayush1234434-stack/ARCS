@@ -2,9 +2,36 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from arcs.verification import judge
+
+EVAL_021_MALFORMED = (
+    "<think>Compare tenant rights against required elements...</think>\n"
+    "{\n"
+    '  "verification_type": "LLM_JUDGE",\n'
+    '  "verdict": "FAIL",\n'
+    '  "score": 0.5,\n'
+    '  "missing_required_elements": [\n'
+    '    "Tenant\'s right to quiet enjoyment under California law",\n'
+    '    "Statutory notice requirements under Cal. Civ. Code § 1954"\n'
+    "  ],\n"
+    '  "incorrect_claims": [],\n'
+    '  "unsupported_claims": [],\n'
+    '  "disqualifying_conditions_triggered": [],\n'
+    '  "explanation": "The answer mentions "quiet enjoyment" but omits the statute"\n'
+    "}"
+)
+
+MINIMAL_SPEC = {
+    "intent": "Explain tenant rights when a landlord enters without notice.",
+    "required_elements": ["Quiet enjoyment", "Notice requirements"],
+    "correctness_criteria": ["Cites California law"],
+    "disqualifying_conditions": ["Fabricated statutes"],
+    "scope": "California residential tenancy only.",
+}
 
 
 def test_plain_json_object():
@@ -67,3 +94,34 @@ def test_unparseable_raises_valueerror():
 def test_empty_after_think_raises():
     with pytest.raises(ValueError):
         judge._extract_json("<think>only reasoning, no answer</think>")
+
+
+def test_eval_021_pattern_unescaped_quotes_still_unparseable():
+    """eval-021 hit JSONDecodeError: Expecting ',' delimiter (unescaped quotes)."""
+    with pytest.raises(ValueError):
+        judge._extract_json(EVAL_021_MALFORMED)
+
+
+def test_eval_021_pattern_thinking_block_stripped_before_parse_attempt():
+    """Thinking is removed; remaining body is still invalid JSON."""
+    stripped = judge._strip_reasoning(EVAL_021_MALFORMED)
+    assert "<think>" not in stripped
+    assert stripped.lstrip().startswith("{")
+    with pytest.raises(ValueError):
+        judge._extract_json(stripped)
+
+
+def test_run_returns_normalized_fail_after_retry_on_eval_021_pattern():
+    """run() must not raise into eval_pipeline when parsing keeps failing."""
+    with patch.object(judge, "_call_judge", side_effect=ValueError("not json")):
+        result = judge.run(
+            question="What rights does a tenant have if the landlord enters without notice in California?",
+            answer="Tenants have a right to quiet enjoyment.",
+            specification=MINIMAL_SPEC,
+            model="test-model",
+        )
+    assert result["verdict"] == "FAIL"
+    assert result["score"] == 0.0
+    assert result["explanation"] == "judge parse error"
+    assert result["missing_required_elements"] == []
+    assert result["model"] == "test-model"

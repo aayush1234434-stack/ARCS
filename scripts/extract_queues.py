@@ -38,6 +38,11 @@ def main() -> None:
         action="store_true",
         help="Print counts only; do not write queue files",
     )
+    parser.add_argument(
+        "--requests-only",
+        action="store_true",
+        help="Use logs/requests.jsonl only (ignore logs/eval_failures.jsonl)",
+    )
     args = parser.parse_args()
 
     try:
@@ -45,6 +50,7 @@ def main() -> None:
             input_path=args.input,
             output_dir=args.output_dir,
             dry_run=args.dry_run,
+            include_eval_failures=not args.requests_only if args.input is None else False,
         )
     except FileNotFoundError as exc:
         print(f"Error: {exc}", file=sys.stderr)

@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +30,6 @@ from arcs.post.attribution import attribute
 from arcs.post.queues import COMPONENTS, extract_queues, format_summary, queue_counts
 
 EVAL_FAILURES_LOG = config.LOGS_DIR / "eval_failures.jsonl"
-REQUESTS_LOG = config.LOGS_DIR / "requests.jsonl"
 QUEUES_DIR = config.LOGS_DIR / "queues"
 
 
@@ -242,25 +240,8 @@ def _upsert_jsonl(path: Path, records: list[dict[str, Any]]) -> tuple[int, int]:
 
 
 def _refresh_queues() -> dict[str, int]:
-    """Rebuild queues from requests.jsonl + eval_failures.jsonl (combined).
-
-    Combining preserves any real feedback already logged instead of clobbering
-    the queues with only the eval-derived records.
-    """
-    sources = [p for p in (REQUESTS_LOG, EVAL_FAILURES_LOG) if p.exists()]
-    with tempfile.NamedTemporaryFile(
-        "w", suffix=".jsonl", delete=False, encoding="utf-8"
-    ) as tmp:
-        for source in sources:
-            text = source.read_text(encoding="utf-8")
-            tmp.write(text)
-            if text and not text.endswith("\n"):
-                tmp.write("\n")
-        tmp_path = Path(tmp.name)
-    try:
-        queues = extract_queues(input_path=tmp_path, output_dir=QUEUES_DIR)
-    finally:
-        tmp_path.unlink(missing_ok=True)
+    """Rebuild queues from requests.jsonl + eval_failures.jsonl (combined)."""
+    queues = extract_queues(include_eval_failures=True)
     return queue_counts(queues)
 
 

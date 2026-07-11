@@ -59,13 +59,18 @@ def is_rate_limit(exc: Any) -> bool:
 def is_groq_tpd_exhausted(exc: Any) -> bool:
     """True if the error is a 429 caused by the per-day token limit (TPD).
 
-    TPD exhaustion is not recoverable within the same day, so callers should
-    stop and resume later rather than retrying.
+    Requires both a 429 signal (HTTP status, ``Error code: 429``, or rate-limit
+    phrasing) **and** a TPD marker (``tokens per day`` or ``TPD``). TPM-only 429s
+    are excluded so eval can keep retrying those within the same run.
     """
-    if not is_rate_limit(exc):
-        return False
     message = _message(exc)
-    return any(marker in message for marker in _TPD_MARKERS)
+    if not any(marker in message for marker in _TPD_MARKERS):
+        return False
+    if _status_code(exc) == 429:
+        return True
+    if "error code: 429" in message:
+        return True
+    return is_rate_limit(exc)
 
 
 def parse_retry_after_seconds(exc: Any) -> float | None:

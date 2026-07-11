@@ -349,7 +349,7 @@ def _parse_error_result(model: str) -> dict:
         {
             "verdict": "FAIL",
             "score": 0.0,
-            "explanation": "judge response parse error",
+            "explanation": "judge parse error",
         }
     )
     result["model"] = model
