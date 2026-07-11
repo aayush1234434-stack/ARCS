@@ -128,8 +128,16 @@ def _build_user_message(question: str, answer: str, specification: dict) -> str:
     )
 
 
+def _strip_reasoning(raw: str) -> str:
+    """Drop <think>...</think> reasoning blocks that break JSON parsing."""
+    text = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL)
+    if "<think>" in text:
+        text = text[text.rfind("<think>") + len("<think>") :]
+    return text.strip()
+
+
 def _extract_json(raw: str) -> dict:
-    text = raw.strip()
+    text = _strip_reasoning(raw)
     if not text:
         raise ValueError("Judge returned empty response")
 

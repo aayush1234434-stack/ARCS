@@ -616,6 +616,48 @@ than the logged baseline **and** a higher LLM judge score on the same fixed
 **Run A:** retrain on every negative signal.  
 **Run B:** retrain only where `attribution == ROUTER`.
 
+## RQ1 Results
+
+**Hypothesis.** Retraining the router only on failures that attribution blames on the router (**Run B**) yields a more accurate classifier than retraining on *all* negative feedback (**Run A**) — i.e. targeted repair beats blanket repair.
+
+- **Run A** — base train set + **all** corpus negatives (every row with a `correct_domain`).
+- **Run B** — base train set + **ROUTER-attributed** negatives only (`attribution.component == ROUTER`).
+
+**Method.** Because real demo feedback was unavailable, the feedback corpus is bootstrapped synthetically and then split into the two training sets:
+
+1. `scripts/bootstrap_rq1_corpus.py` — merges router misclassifications (`artifacts/eval-results/misclassified_test.json`) and baseline pipeline failures (misroutes + correctly-routed FAILs, attributed via `arcs.post.attribution.attribute`) into `data/rq1/feedback_corpus.jsonl`.
+2. `scripts/rq1_prepare_datasets.py` — builds `run_a_train.csv` (all negatives) and `run_b_train.csv` (ROUTER-only) under `data/router/rq1/`, never touching `router_test.csv`.
+3. `scripts/rq1_run.py --execute` — trains both routers, evaluates each with `scripts/eval_router.py`, and writes a manifest with the metrics below.
+
+**Results.** (From `artifacts/experiments/2026-07-11T08-38-52_rq1/manifest.json`.)
+
+| Metric | pre-RQ1 | Run A (all negatives) | Run B (ROUTER-only) |
+|---|---|---|---|
+| Router test accuracy | 95.5% | 99.0% | 99.0% |
+| Eval-queries router accuracy | 93.75% | 97.92% | 97.92% |
+
+**Winner:** tie *(chosen by eval-queries accuracy first, then test accuracy).*
+
+**Interpretation.** Both retraining strategies improved the router substantially over the pre-RQ1 baseline — test accuracy rose from 95.5% to 99.0% and held-out eval-queries accuracy from 93.75% to 97.92%. However, Run A (all negatives) and Run B (ROUTER-only) landed on **identical** metrics, so this run does **not** show attribution filtering helping: with such a small corpus, the extra non-ROUTER rows in Run A neither helped nor hurt, and the ROUTER-only subset was already sufficient to close the gap. The result is consistent with the hypothesis being *plausible but unconfirmed* — a larger, real-feedback corpus is needed to separate the two strategies.
+
+**Limitations.**
+
+- **Synthetic corpus** — negatives are reconstructed from eval artifacts, not genuine user feedback, so the label distribution may not match production.
+- **Small N** — only a few dozen negatives (≈38 total, ≈12 ROUTER-attributed), so accuracy deltas can be within noise.
+- **Not production feedback** — no real 👍/👎 signal or `correct_domain` labels from the demo UI yet; results should be re-confirmed once real feedback accumulates.
+
+**Reproduce.**
+
+```bash
+python scripts/bootstrap_rq1_corpus.py
+python scripts/rq1_prepare_datasets.py
+python scripts/rq1_run.py --execute
+
+# after the run, diff the arms (paths are printed in the manifest):
+python scripts/compare_experiments.py <pre> <run-a>
+python scripts/compare_experiments.py <pre> <run-b>
+```
+
 ### RQ2 — Heterogeneous specialists vs one large generalist *(future)*
 
 Only meaningful once domain-specific models (or clearly stronger domain backends) are plugged into the same pipeline slots. Prompt-only cosplay does **not** answer RQ2.

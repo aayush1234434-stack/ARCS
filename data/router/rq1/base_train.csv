@@ -1,0 +1,801 @@
+text,label
+can a landlord ban pets in a rental property in the UK,LEGAL
+who invented the telephone,GENERAL
+my company fired me by email without any prior performance warning,LEGAL
+the database connection drops randomly,CODING
+what are the best ways to save money on groceries,GENERAL
+explain what the event loop in Node.js actually does,CODING
+explain what gene therapy is and whether there are laws governing it,GENERAL
+what is quantum computing,GENERAL
+my newborn has jaundice is that serious,MEDICAL
+how do I connect to a MySQL database in Python,CODING
+write a script to batch resize images in a folder using Pillow,CODING
+is it safe to exercise with high blood pressure,MEDICAL
+who was Mahatma Gandhi,GENERAL
+how do I use environment variables in Node.js,CODING
+can my boss reduce my salary without telling me in the UK,LEGAL
+what causes migraines,MEDICAL
+is it legal to resell concert tickets at a higher price in the UK,LEGAL
+what is the legal process for adopting a child in India,LEGAL
+can a bank legally share my financial data with third party apps without my consent,LEGAL
+who was the first person to walk on the moon,GENERAL
+what is depression and how is it treated,MEDICAL
+can my employer access my personal emails on a work device,LEGAL
+can I sue a pharmaceutical company if their drug gave me serious side effects,LEGAL
+can my employer make me work on public holidays without extra pay,LEGAL
+how does workers compensation work in the US,LEGAL
+I have a lump under my armpit that doesn't hurt,MEDICAL
+I cough up a small amount of blood when I blow my nose,MEDICAL
+can an app legally sell my location data to third parties,LEGAL
+do I have the right to see a lawyer before police questioning in India,LEGAL
+what is the legal process for filing a medical negligence case in India,LEGAL
+what is a startup,GENERAL
+implement breadth first search in Python,CODING
+what are my rights if I am made redundant in the UK,LEGAL
+my startup was copied by a bigger company what legal options do I have,LEGAL
+what are the best ways to improve my memory,GENERAL
+explain what end of life care is and what legal documents I need,GENERAL
+write a function to serialize a binary tree,CODING
+what does it mean when a tumor is described as stage 3,MEDICAL
+build an API endpoint that returns jurisdiction-based case law data,CODING
+what does it mean when kidney GFR is below 60,MEDICAL
+what are my legal options if a doctor shares my diagnosis with my family without my permission,LEGAL
+can I get a refund on a non-refundable ticket under UK consumer law,LEGAL
+my neighbour built a wall on my property boundary what are my options,LEGAL
+what is 5G and how is it different from 4G,GENERAL
+my name was used in a news article without permission is that legal,LEGAL
+implement depth first search in Java,CODING
+can high blood pressure cause headaches,MEDICAL
+how does nuclear energy work,GENERAL
+what is two factor authentication,GENERAL
+can I legally work two jobs at the same time in India,LEGAL
+what is informed consent in both a medical and a general ethical sense,GENERAL
+how much sodium per day is safe for someone with heart failure,MEDICAL
+what is the medical difference between a virus and a bacterial infection,MEDICAL
+can my daughter inherit property equally with my sons under Indian law,LEGAL
+I wake up every night drenched in sweat,MEDICAL
+how does the immune system work,GENERAL
+my doctor wants me to get an echocardiogram what is that,MEDICAL
+write a function to find the median of a stream of numbers,CODING
+how does facial recognition technology work,GENERAL
+my teenager has been very withdrawn and sleeping all day,MEDICAL
+write a function to deep clone a nested object in JavaScript,CODING
+I keep getting a weird metallic taste in my mouth,MEDICAL
+is oxycodone physically addictive after just a few days,MEDICAL
+what causes high blood pressure,MEDICAL
+what is a non-disclosure agreement,LEGAL
+symptoms of endometriosis,MEDICAL
+what is the science of climate change and who is legally responsible for it,GENERAL
+how does insulin work in the body,MEDICAL
+can I record a phone call without telling the other person in India,LEGAL
+what causes ringing in the ears,MEDICAL
+how does gravity work,GENERAL
+implement binary search in JavaScript,CODING
+write a function that finds all permutations of a string,CODING
+someone is using my brand name without permission what can I do,LEGAL
+what are my rights during a police arrest in India,LEGAL
+build a data pipeline to ingest and clean climate sensor data,CODING
+write a Python script to map coordinates from a geospatial dataset,CODING
+I have a pain in my upper right abdomen after eating fatty food,MEDICAL
+what is diabetes in simple terms,GENERAL
+optimize this nested loop,CODING
+how long does it take for antibiotics to work,MEDICAL
+what is mental health,GENERAL
+my property was acquired by the government was I entitled to more compensation,LEGAL
+what is cryptocurrency,GENERAL
+how does token-based auth work at the code level,CODING
+what is a contract in simple terms,GENERAL
+what is the legal process for divorce in the UK,LEGAL
+write a function to parse a CSV file in Python,CODING
+how does the right to fair trial work,LEGAL
+can my landlord withhold my security deposit without reason,LEGAL
+what are symptoms of iron deficiency anemia,MEDICAL
+what is cognitive bias,GENERAL
+something is off with my authentication logic,CODING
+what causes kidney stones,MEDICAL
+how does the internet work,GENERAL
+is a fitness app legally allowed to share my heart rate data with insurers,LEGAL
+is it legal to operate a food business from home in India,LEGAL
+can police use CCTV footage as evidence without a warrant in India,LEGAL
+what are the mental health effects of social media and are there any laws around it,GENERAL
+how do streaming services like Netflix work,GENERAL
+explain what a startup is and what kind of legal structure it should have,GENERAL
+what are my legal rights if a builder delays possession of my flat in India,LEGAL
+what is the legal process for recovering money from a business partner who cheated me,LEGAL
+what books should I read if I liked Atomic Habits,GENERAL
+write a SQL trigger for audit logging,CODING
+can I be fired for posting on social media in the US,LEGAL
+what is the difference between HTTP and HTTPS,GENERAL
+is it legal for a landlord to install cameras inside a rented property in the UK,LEGAL
+my child has had a cough for 3 weeks,MEDICAL
+my cholesterol came back high but I eat really healthy how is that possible,MEDICAL
+can my bank legally close my account without giving a reason in India,LEGAL
+my landlord is asking for 6 months rent in advance is that legal in the UK,LEGAL
+write a SQL query to flag patients with abnormal lab values,CODING
+what is the difference between civil and criminal law,LEGAL
+what causes irritable bowel syndrome,MEDICAL
+can a company use my personal data without permission,LEGAL
+how do I file for bankruptcy in the US,LEGAL
+is prediabetes reversible with diet alone,MEDICAL
+how does bail work in the US,LEGAL
+my app crashes when the list is empty,CODING
+what is the difference between a sole trader and a limited company in the UK,LEGAL
+I signed a contract under pressure can I cancel it,LEGAL
+how do I learn a new language fast,GENERAL
+I was defamed in a WhatsApp group can I take legal action in India,LEGAL
+what are the early signs of Alzheimer's,MEDICAL
+can you become dependent on nasal spray if you use it every day,MEDICAL
+what are the psychological and practical effects of unemployment,GENERAL
+what are the risks of long term proton pump inhibitor use,MEDICAL
+how does the gig economy work and are gig workers entitled to any legal protections,GENERAL
+what are the health effects and legal status of cannabis globally,GENERAL
+what is a recession,GENERAL
+can I legally refuse to work if my workplace is unsafe in the US,LEGAL
+my doctor said my kidney function is slightly low,MEDICAL
+what is climate science,GENERAL
+is it legal for police to access my deleted WhatsApp messages in India,LEGAL
+is it legal for a website to store my passwords in plain text,LEGAL
+what is inflation and why does it happen,GENERAL
+what is the cloud in computing,GENERAL
+how does inheritance law work when there is no will in India,LEGAL
+the button click event isn't firing,CODING
+what are the legal obligations of a therapist if I tell them I want to harm someone,LEGAL
+how does the body regulate temperature,GENERAL
+this function returns None when it shouldn't,CODING
+explain climate change and also what should governments do about it legally,GENERAL
+what is the process for filing a case in consumer court in India,LEGAL
+my stomach hurts after every meal,MEDICAL
+what is the metaverse,GENERAL
+symptoms of hypothyroidism,MEDICAL
+can a company legally terminate my contract because I became pregnant,LEGAL
+how do I handle CORS in a Node.js API,CODING
+how does the economy work,GENERAL
+what is the psychology of persuasion and is manipulative advertising legal,GENERAL
+my 70 year old father fell and hit his head,MEDICAL
+how do I use SQL subqueries,CODING
+what is the periodic table,GENERAL
+connect to a database and fetch all records,CODING
+how do I make friends as an adult,GENERAL
+my doctor put me on lisinopril is that a serious drug,MEDICAL
+can my employer demote me without giving any reason in the US,LEGAL
+getting module not found error in Node,CODING
+symptoms of appendicitis,MEDICAL
+my unit test is passing but the integration test fails,CODING
+symptoms of Parkinson's disease,MEDICAL
+can my employer change my job role without my consent,LEGAL
+I have a family history of heart disease how worried should I be,MEDICAL
+can stress actually cause hair loss or is that just a myth,MEDICAL
+I bought a phone online and it stopped working in a week what are my rights,LEGAL
+what are my rights if my employer goes bankrupt and owes me salary in India,LEGAL
+is it legal for a company to collect my health data through an app without telling me,LEGAL
+can my boss really do this to me,LEGAL
+can a debt collector call me at any time of day in the US,LEGAL
+what is the difference between palliative care and hospice,MEDICAL
+what is the difference between a CV and a resume,GENERAL
+what does yield do in Python,CODING
+why is my state not updating in React,CODING
+what is the Fibonacci sequence,GENERAL
+I was fired without any reason or warning is that allowed,LEGAL
+what are the health and ethical concerns around cosmetic surgery tourism,GENERAL
+how does the thyroid gland work,MEDICAL
+explain what surrogacy is from both a medical and legal perspective,GENERAL
+what are both the health risks and the legal implications of vaping,GENERAL
+is adderall safe to take if I have a heart condition,MEDICAL
+implement a retry mechanism with exponential backoff in Python,CODING
+how long does a sprained ankle take to heal,MEDICAL
+symptoms of low blood sugar,MEDICAL
+write a SQL query to pull all patients who were prescribed a drug more than once,CODING
+write a SQL query with GROUP BY and COUNT,CODING
+I feel my heartbeat in my neck is that normal,MEDICAL
+what causes chronic fatigue,MEDICAL
+what is consciousness,GENERAL
+I just got served a legal notice what do I do,LEGAL
+build a function to calculate a patient's BMI from a health records table,CODING
+how do I use generators in Python,CODING
+SQL query to compute churn rate from a subscriptions table,CODING
+can you check why this isn't working,CODING
+how do I learn to cook from scratch,GENERAL
+is it legal to share someone's salary information with other employees in India,LEGAL
+what is a data breach,GENERAL
+what are the privacy and mental health concerns with constant smartphone use,GENERAL
+what is the punishment for cheque bounce in India,LEGAL
+what is the medical reason behind why alcohol damages the liver,MEDICAL
+my Docker container won't start,CODING
+SQL to find top selling products in each category using window functions,CODING
+how do I deal with failure,GENERAL
+good movies to watch when you are feeling sad,GENERAL
+what is the first line treatment for community acquired pneumonia,MEDICAL
+create a REST API endpoint in Node.js,CODING
+my contractor abandoned the project halfway through what can I do,LEGAL
+my 5 year old has a fever of 39 what should I do,MEDICAL
+can a landlord legally increase rent every year without a cap in India,LEGAL
+why is npm install failing,CODING
+what does this SQL query actually return,CODING
+symptoms of a concussion,MEDICAL
+implement quicksort in Python,CODING
+what are the legal requirements for a valid contract,LEGAL
+explain what carbon trading is and whether it actually works scientifically,GENERAL
+what is a normal resting heart rate,MEDICAL
+how do I use the reduce function in JavaScript,CODING
+explain what this class method is doing,CODING
+remove duplicates from this array,CODING
+can a hospital legally share my medical records with my employer,LEGAL
+SQL query to calculate a 7-day rolling average from time series data,CODING
+suggest a good morning routine,GENERAL
+build a script to detect anomalies in server log data,CODING
+how do black holes form,GENERAL
+what is the prevention of sexual harassment act in India,LEGAL
+what are my rights as a shareholder in a private company,LEGAL
+how do blood pressure medications work,MEDICAL
+write a script to parse XML feed data from a government open data portal,CODING
+write a regex to validate email addresses,CODING
+what is the philosophy of existentialism,GENERAL
+what is the difference between legal insanity and a mental health diagnosis,GENERAL
+how does indexing speed up a database query,CODING
+how do I use localStorage in JavaScript,CODING
+what are the best documentaries on Netflix,GENERAL
+I was not given a written employment contract in India what are my rights,LEGAL
+why is my Python script using 100% CPU,CODING
+what are the health and cultural arguments for and against circumcision,GENERAL
+what is the treatment for a UTI,MEDICAL
+what is carbon footprint,GENERAL
+SQL to query education outcomes data by demographic group,CODING
+what is open source software,GENERAL
+my JWT token keeps expiring immediately,CODING
+my feet have been swelling at the end of each day,MEDICAL
+explain what nuclear weapons are and whether there are international laws banning them,GENERAL
+what causes earthquakes,GENERAL
+what is the treatment for asthma,MEDICAL
+what causes vertigo,MEDICAL
+can my employer legally require me to take a drug test in India,LEGAL
+how do I filter an array in JavaScript,CODING
+tips for sleeping better at night,GENERAL
+what are some easy exercises I can do at home,GENERAL
+what are the scientific and ethical arguments around the death penalty,GENERAL
+what is the law around wrongful death suits in the US,LEGAL
+is it legal for an employer to ask about my previous salary during hiring in India,LEGAL
+what are some good TED talks to watch,GENERAL
+why is my API call returning undefined,CODING
+explain what whistleblowing is and what legal protections exist for whistleblowers,GENERAL
+symptoms of Crohn's disease,MEDICAL
+something is wrong with my script,CODING
+this query takes forever to run,CODING
+what are the best ways to stay motivated,GENERAL
+build a model to predict patient readmission from structured data,CODING
+what is blockchain and how does it work,GENERAL
+how does divorce work in India,LEGAL
+I've been on antidepressants for 2 weeks and feel worse,MEDICAL
+write a Python script to process FHIR JSON health data,CODING
+what are the financial and emotional effects of divorce,GENERAL
+what is deep learning,GENERAL
+my 4 year old grinds their teeth at night is that a medical problem,MEDICAL
+how do planes stay in the air,GENERAL
+I've been having very heavy periods lately,MEDICAL
+what is the difference between a symptom and a sign in general,GENERAL
+is a verbal contract legally binding,LEGAL
+I inherited this codebase and have no idea what it does,CODING
+how do I make a POST request with axios,CODING
+implement a bloom filter in Python,CODING
+how does social media algorithm decide what I see,GENERAL
+my boss keeps making inappropriate comments is that a legal issue,LEGAL
+is it safe to take ozempic if I have a history of pancreatitis,MEDICAL
+I have been bruising really easily lately and I don't know why,MEDICAL
+can I sue a company for data breach in the US,LEGAL
+I've been losing weight without trying is that a bad sign,MEDICAL
+how do recommendation algorithms work,GENERAL
+my MRI report mentions a white matter lesion what does that mean,MEDICAL
+what is the difference between introverts and extroverts,GENERAL
+what causes swollen lymph nodes,MEDICAL
+how do I get better at maths,GENERAL
+write code to validate and sanitize user input before inserting into a database,CODING
+what is the theory of evolution,GENERAL
+my elderly mom keeps forgetting things is it dementia,MEDICAL
+can my parents disown me legally in India,LEGAL
+SQL to find duplicate patient records based on name and date of birth,CODING
+what is quantum physics in simple terms,GENERAL
+how do I deal with a difficult coworker,GENERAL
+should I use a list or a dictionary here,CODING
+how do I negotiate a higher salary,GENERAL
+what is an operating system,GENERAL
+what are the laws around using AI generated content commercially,LEGAL
+write code to redact sensitive information from legal text,CODING
+can my ISP throttle my internet speed and is that legal,LEGAL
+is it legal to use someone else's trademark in a comparative advertisement,LEGAL
+how do I start investing with a small amount of money,GENERAL
+what is a healthy BMI range,MEDICAL
+how long does a divorce take in the US,LEGAL
+can my employer legally ask me to repay my training costs if I resign in the UK,LEGAL
+how do I use multiprocessing in Python,CODING
+in India can my employer withhold my relieving letter,LEGAL
+can someone use my photo without my permission,LEGAL
+is it legal to film someone in a public place in India,LEGAL
+my employer is forcing me to resign instead of firing me is that legal,LEGAL
+what is the difference between hardware and software,GENERAL
+what are my rights if a flight is cancelled in the EU,LEGAL
+can I get a court order to stop my neighbour from building,LEGAL
+write a SQL JOIN query for two tables,CODING
+write code to scrape and analyze public opinion data,CODING
+my calves cramp up badly at night,MEDICAL
+why is my loop running one too many times,CODING
+tell me about CRISPR and whether editing human genes is legal,GENERAL
+how do I contest a will in the US,LEGAL
+what is a normal white blood cell count,MEDICAL
+what is the ozone layer,GENERAL
+SQL query to find all insurance claims that were denied in the last 30 days,CODING
+can high cortisol levels cause weight gain,MEDICAL
+explain what food security means and who is legally responsible for ensuring it,GENERAL
+what is an algorithm,GENERAL
+can a private school expel my child without proper process,LEGAL
+what is a normal blood pressure reading,MEDICAL
+what is the recommended amount of sleep for adults,MEDICAL
+what are the symptoms of PCOS,MEDICAL
+what causes restless leg syndrome,MEDICAL
+what is ethics in simple terms,GENERAL
+symptoms of a panic attack,MEDICAL
+what is natural selection,GENERAL
+what is the difference between a virus and malware,GENERAL
+explain both how blockchain works and whether it is regulated,GENERAL
+my company is not giving me my gratuity after 5 years is that legal in India,LEGAL
+what exactly is a race condition and how do I reproduce it,CODING
+what is a power of attorney and how do I get one,LEGAL
+how far is the moon from the Earth,GENERAL
+how does the brain store memories,GENERAL
+my toddler swallowed a small coin,MEDICAL
+is it dangerous to have high triglycerides even if cholesterol is normal,MEDICAL
+what is the standard protocol for treating anaphylaxis,MEDICAL
+what is the legal process for filing a cheating case under IPC 420 in India,LEGAL
+how long does strep throat last without antibiotics,MEDICAL
+how do I challenge an unfair dismissal in the UK,LEGAL
+getting a NullPointerException in Java,CODING
+implement a linked list in Java,CODING
+my employer is asking for my original degree certificates to keep is that allowed,LEGAL
+my landlord entered my flat without telling me is that legal,LEGAL
+I lent money to a friend with no written agreement can I get it back legally,LEGAL
+how does inheritance work in genetics,GENERAL
+write a SQL query to calculate running totals,CODING
+can a company sue me for a negative review online,LEGAL
+my son has a rash that looks like a bullseye,MEDICAL
+symptoms of lupus,MEDICAL
+create a schema for a case management database,CODING
+what are both the health and environmental risks of ultra processed food,GENERAL
+create a Dockerfile for a Python app,CODING
+explain what refugee status means and how the asylum process works in simple terms,GENERAL
+how does the Motor Vehicles Act apply to accidents in India,LEGAL
+suggest some good podcasts for self improvement,GENERAL
+what is the difference between a calorie and a kilocalorie,GENERAL
+what is the process for registering a trademark in the UK,LEGAL
+getting a deadlock in my database transactions how do I debug it,CODING
+my doctor ordered a HbA1c test what is it measuring,MEDICAL
+I've been getting heart palpitations every time I drink coffee,MEDICAL
+what are the legal implications of signing a document without reading it,LEGAL
+what is evolution in simple terms,GENERAL
+can anxiety cause chest tightness that lasts for days,MEDICAL
+what causes muscle cramps,MEDICAL
+write a script to summarize terms from a legal document,CODING
+my freelance client is refusing to pay the agreed amount,LEGAL
+write a function to check if a string is a palindrome,CODING
+how does a neural network work in terms of actual code,CODING
+how does the heart pump blood,GENERAL
+what is the process for getting a legal separation in the UK,LEGAL
+my doctor is recommending surgery for my herniated disc should I get a second opinion,MEDICAL
+I think there's a race condition in my code,CODING
+can I take NSAIDs if I have chronic kidney disease,MEDICAL
+is it medically necessary to take statins if your LDL is 160,MEDICAL
+what is a normal creatinine level,MEDICAL
+can my employer legally change my employment contract terms after I have signed it,LEGAL
+I have a pain in my lower right abdomen that comes and goes,MEDICAL
+what are the laws around drug possession in the UK,LEGAL
+explain how OAuth works in terms of implementation,CODING
+I keep feeling dizzy when I stand up,MEDICAL
+explain what a pandemic is and how governments respond legally,GENERAL
+how does the consumer protection act work in India,LEGAL
+can you review this Python function I wrote,CODING
+can a minor enter into a legally binding contract,LEGAL
+how does alimony work in India,LEGAL
+what is the speed of light,GENERAL
+how does the COVID vaccine work,MEDICAL
+what are edge cases I'm missing in this function,CODING
+can I use someone else's music in my YouTube video,LEGAL
+my employer hasn't paid my salary for 2 months in India,LEGAL
+what is the difference between a democracy and a republic,GENERAL
+what is the best way to learn a skill quickly,GENERAL
+create a GraphQL resolver in Node.js,CODING
+can a private company legally run a background check on me without my permission in India,LEGAL
+what is the legal definition of medical negligence in India,LEGAL
+my landlord raised rent by 40 percent overnight can he do that in India,LEGAL
+getting a segfault in C++ code I can't find,CODING
+how do I paginate results in SQL,CODING
+what is the dark web,GENERAL
+fix the bug in this code,CODING
+what is GDP and how is it calculated,GENERAL
+the tests pass locally but fail in CI,CODING
+how do statins work,MEDICAL
+write a function to convert a flat array into a nested tree structure,CODING
+what are my rights if I am wrongfully terminated in the US,LEGAL
+create a simple Flask web server,CODING
+my fingers have been turning blue in the cold,MEDICAL
+is benzodiazepine dependence the same as addiction,MEDICAL
+is it safe to take melatonin every night,MEDICAL
+how do I file a consumer complaint in India,LEGAL
+what are the side effects of metformin,MEDICAL
+implement merge sort in C++,CODING
+what is the fight or flight response,GENERAL
+is my approach to this problem correct,CODING
+my neighbour is playing loud music every night is there a law against that,LEGAL
+what are the rules around non-compete clauses in employment contracts,LEGAL
+what is the legal age of consent in India,LEGAL
+why does my recursive function hit max recursion depth,CODING
+SQL query that ranks lawyers by number of cases won,CODING
+can my employer deduct salary without reason,LEGAL
+how does the human digestive system work,GENERAL
+what is the philosophy of mind,GENERAL
+I have a throbbing headache behind one eye,MEDICAL
+can I take legal action if a doctor refused to treat me in an emergency,LEGAL
+I took two doses of my antibiotic by accident,MEDICAL
+what is the law around cyberbullying in India and can I file a case,LEGAL
+create a database schema for storing electronic health records,CODING
+explain both what a recession is and how it affects everyday people,GENERAL
+I've been on birth control for a month and feel really moody,MEDICAL
+how does photosynthesis work,GENERAL
+signs of type 2 diabetes in adults,MEDICAL
+what is the law on maternity leave in India,LEGAL
+who was Cleopatra,GENERAL
+write a SQL query to find duplicate rows,CODING
+write code to anonymize patient names in a dataset,CODING
+what are the rules around sick leave in India,LEGAL
+can a school legally share my child's data with third party apps in India,LEGAL
+what are my rights if police stop and search me in the UK,LEGAL
+what is mindfulness,GENERAL
+what is the science of aging and are there any legal protections for elderly people against discrimination,GENERAL
+what is the recommended daily dose of vitamin D,MEDICAL
+create a Django model with relationships,CODING
+what are my rights if a moving company damages my belongings in India,LEGAL
+SQL to find gaps in a sequence of order IDs,CODING
+I started a new medication and now I can't sleep,MEDICAL
+my lab results show low ferritin but normal hemoglobin what does that mean,MEDICAL
+what are the psychological and legal aspects of addiction,GENERAL
+implement a stack using Python,CODING
+can my employer make me work overtime without pay in India,LEGAL
+how do electric cars work,GENERAL
+what are the legal rights of a surrogate mother in India,LEGAL
+my hands are always cold even when it is warm outside what could cause that,MEDICAL
+create a class in Java with a constructor,CODING
+what are the mental health and legal consequences of cyberbullying,GENERAL
+write a function to rotate a matrix 90 degrees,CODING
+I have a rash that won't go away,MEDICAL
+what are the ethical issues of autonomous weapons and are there international laws,GENERAL
+my doctor mentioned watchful waiting for my prostate cancer is that safe,MEDICAL
+my merge is causing git conflicts in the code files,CODING
+create a middleware function in Express.js,CODING
+write a script to scrape a webpage with BeautifulSoup,CODING
+write a function to calculate Fibonacci using memoization,CODING
+how does plea bargaining work in the US,LEGAL
+my iron levels are always low no matter how much iron rich food I eat,MEDICAL
+how does the GDPR affect businesses in the UK,LEGAL
+create a Python decorator that logs function calls,CODING
+who built the pyramids,GENERAL
+what is the punishment for drunk driving in India,LEGAL
+symptoms of carpal tunnel syndrome,MEDICAL
+what causes numbness in hands and feet,MEDICAL
+how does social media affect teenage mental health and what are parents legally allowed to do,GENERAL
+can my employer monitor my laptop and keystrokes while I work from home,LEGAL
+is it safe to take ashwagandha every day long term,MEDICAL
+how does the placebo effect work and are there ethical issues with using it in medicine,GENERAL
+my back has been killing me for months nothing helps,MEDICAL
+what is the difference between sympathy and empathy,GENERAL
+what is the notice period law in India,LEGAL
+write a SQL query to get all users from a table,CODING
+is it legal for a company to use a probation period to avoid paying notice in the UK,LEGAL
+how long does food poisoning last,MEDICAL
+what is the best way to apologize to someone,GENERAL
+is fibromyalgia a real diagnosis or just a catch all,MEDICAL
+what is the POCSO act in India,LEGAL
+how do I use useState hook in React,CODING
+is it safe to take magnesium supplements every day,MEDICAL
+how does the right to information act work in India,LEGAL
+write a function to count word frequency,CODING
+can my internet provider share my browsing history with police,LEGAL
+getting an out of memory error when loading a large CSV into Python,CODING
+explain this error message to me,CODING
+what causes frequent urination,MEDICAL
+how do I use grid layout in CSS,CODING
+my 2 year old hasn't been eating for 2 days,MEDICAL
+I have numbness going down my left arm,MEDICAL
+how does GPS work,GENERAL
+what is the legal drinking age in different countries,LEGAL
+how do I use fetch API in JavaScript,CODING
+who was Albert Einstein,GENERAL
+I've been on the same medication for 10 years is it safe to stay on it that long,MEDICAL
+what is the difference between a virus and a bacteria,GENERAL
+how do beta blockers work,MEDICAL
+implement a LRU cache in JavaScript,CODING
+write a Python script to parse medical billing codes from a CSV,CODING
+can you take paracetamol and ibuprofen together,MEDICAL
+my business partner wants to dissolve the partnership without my consent,LEGAL
+create a Python class that inherits from another,CODING
+I got a CCJ in the UK what does that mean for me,LEGAL
+is it safe to use AI therapy apps and are there regulations around them,GENERAL
+how do volcanoes form,GENERAL
+what is venture capital,GENERAL
+how does the stock market work,GENERAL
+what are the environmental and economic impacts of fast fashion,GENERAL
+what is the placebo effect,GENERAL
+what are my rights as an employee in the UK,LEGAL
+what is the difference between a psychologist and a psychiatrist,GENERAL
+write a function to parse structured data from a court filing,CODING
+how do I convert this to work asynchronously,CODING
+Python script to calculate statute of limitations dates from case data,CODING
+my CSS is not working on mobile,CODING
+how do self driving cars work,GENERAL
+what is a pandemic versus an epidemic,GENERAL
+what is child custody and how is it decided,LEGAL
+my heart skips a beat sometimes is that dangerous,MEDICAL
+how do I use async await in JavaScript,CODING
+how does sleep affect the brain,GENERAL
+how does AI work and is there any law regulating it,GENERAL
+my hands shake when I try to hold things,MEDICAL
+can my employer force me to sign an NDA after I resign,LEGAL
+my joints are stiff every morning for about an hour,MEDICAL
+write a script to automate file renaming in Python,CODING
+what is the legal notice period for eviction in the US,LEGAL
+I get really short of breath when I climb stairs,MEDICAL
+what is the difference between a patent and a trademark,LEGAL
+can a gym legally hold me to a 12 month contract if I have a medical condition preventing me from going,LEGAL
+what actually happens when you call a function recursively,CODING
+what is the treatment for hypothyroidism,MEDICAL
+what is machine learning explained simply,GENERAL
+help me fix this broken function,CODING
+what's the difference between == and === in JS,CODING
+how do I read a file in Python,CODING
+what caused the French Revolution,GENERAL
+implement a min heap in C++,CODING
+is it safe to drink alcohol while taking antibiotics,MEDICAL
+can antidepressants cause weight gain long term,MEDICAL
+I have been taking ibuprofen every day for a month for back pain is that dangerous,MEDICAL
+my 8 year old complains of stomach aches before school every day,MEDICAL
+my landlord is threatening to cut off electricity to force me out,LEGAL
+can my employer legally put me on a performance improvement plan just before my appraisal,LEGAL
+write a function to convert Roman numerals to integers,CODING
+what is the difference between weather and climate,GENERAL
+can lack of sleep cause high blood pressure,MEDICAL
+why is this working in dev but not in production,CODING
+write a function to find duplicates in a list,CODING
+should I be worried about a mole that changed color,MEDICAL
+can my employer force me to take annual leave on specific days in the UK,LEGAL
+what is the connection between autoimmune disease and leaky gut,MEDICAL
+is it normal for my heart rate to go above 170 when I do cardio,MEDICAL
+what is emotional intelligence,GENERAL
+how do I use pytest to write unit tests in Python,CODING
+what are both the medical and legal risks of having surgery,GENERAL
+what is the punishment for domestic violence under Indian law,LEGAL
+I've been having really bad brain fog lately,MEDICAL
+my database query is super slow how do I fix it,CODING
+I've been on metformin and my stomach is always upset,MEDICAL
+I've been on steroids for a week and I can't sleep,MEDICAL
+how do I use threading in Python,CODING
+is 37.8 a fever in adults,MEDICAL
+my 6 year old has been complaining of headaches,MEDICAL
+read a JSON file and parse it,CODING
+tips for a first job interview,GENERAL
+write a function to check balanced parentheses,CODING
+can my employer fire me without notice in India,LEGAL
+how do I use CSS flexbox,CODING
+how do tides work,GENERAL
+what is a digital footprint,GENERAL
+how do I create a custom hook in React,CODING
+write a Python script to process census microdata by age group,CODING
+can a society or RWA ban me from using common areas in my apartment complex in India,LEGAL
+create a binary tree in C++,CODING
+my regex isn't matching what I expect,CODING
+what are the long term effects of untreated sleep apnea,MEDICAL
+explain how a browser renders JavaScript,CODING
+what is the difference between TCP and UDP when building networked apps,CODING
+can they fire me while I am on sick leave in the UK,LEGAL
+write a SQL query to pivot rows into columns,CODING
+what is dark matter,GENERAL
+can a bank auction my property without going to court in India,LEGAL
+what are the laws around employee monitoring software in the UK,LEGAL
+how do vaccines work in simple terms,GENERAL
+I get extremely tired after eating is that a sign of something,MEDICAL
+write a function to detect a cycle in a linked list,CODING
+symptoms of an overactive thyroid,MEDICAL
+what are the legal obligations of a company that uses AI to make hiring decisions,LEGAL
+what is automation and how does it affect jobs,GENERAL
+my urine is really dark is that bad,MEDICAL
+what is the difference between renewable and non renewable energy,GENERAL
+what are the liability laws for self-driving car accidents in the US,LEGAL
+what is a server,GENERAL
+how does the liver process alcohol,MEDICAL
+is it legal for an employer to fire someone for refusing the covid vaccine in the US,LEGAL
+explain mental health stigma and whether discrimination based on it is illegal,GENERAL
+SQL query to calculate month over month revenue growth,CODING
+how do I write a short story,GENERAL
+write a function to check if two strings are anagrams,CODING
+I'm getting a KeyError in my dictionary code,CODING
+is it legal for a company to use my face in their advertising without consent,LEGAL
+what is the time complexity of this algorithm,CODING
+can you tell me what this code does,CODING
+what is the difference between mitosis and meiosis,GENERAL
+implement a priority queue in Java,CODING
+getting 404 on all my API routes,CODING
+how does child support work in the US,LEGAL
+build a simple key-value store using a hash map in C++,CODING
+explain what a closure is in JavaScript,CODING
+my doctor said my cholesterol is borderline high do I need medication,MEDICAL
+my hospital discharge summary says I had a myocardial infarction what is that,MEDICAL
+is it legal for a company to use unpaid interns in India,LEGAL
+how does addiction work scientifically and what are the legal consequences of drug use,GENERAL
+can a company legally terminate a contract over email without a signature,LEGAL
+can my housing society ban me from selling my flat to a certain community,LEGAL
+can low testosterone cause depression in men,MEDICAL
+what is the best way to learn guitar as a beginner,GENERAL
+create an index in a database table,CODING
+symptoms of bipolar disorder,MEDICAL
+what is the statute of limitations for filing a civil suit in India,LEGAL
+how do wind turbines generate electricity,GENERAL
+my eye has been twitching for days,MEDICAL
+I need to join a medications table with a diagnoses table in SQL,CODING
+what is stoicism,GENERAL
+can I be denied a job because of my religion,LEGAL
+what is the science behind vaccines and why is there debate around mandating them,GENERAL
+what is the clinical definition of metabolic syndrome,MEDICAL
+how do I stop procrastinating,GENERAL
+what is a legal heir certificate in India,LEGAL
+what is the microbiome,GENERAL
+I received a legal notice from my ex employer for breach of contract,LEGAL
+how do I use promises in JavaScript,CODING
+write a function to compare two versions of a legal contract,CODING
+I've been spotting between periods for 3 months,MEDICAL
+what is the difference between a cold and the flu,MEDICAL
+what is the treatment for insomnia,MEDICAL
+what is the legal liability of a hospital if a patient dies due to staff negligence,LEGAL
+side effects of long term ibuprofen use,MEDICAL
+how does the Insolvency and Bankruptcy Code work in India,LEGAL
+what was the Renaissance,GENERAL
+my knee keeps swelling after I run,MEDICAL
+can my employer legally track my location using my work phone in India,LEGAL
+write code to analyze trends in financial transaction data,CODING
+explain how HTTP requests work under the hood,CODING
+write a short poem about the ocean,GENERAL
+what causes gallstones,MEDICAL
+what is memoization and when should I use it in code,CODING
+build a rate limiter middleware for an Express API,CODING
+how do I use decorators in Python,CODING
+is it safe to drink protein shakes every day if I am not a professional athlete,MEDICAL
+what are the health and legal implications of recreational drug use,GENERAL
+what are the legal obligations of a company after a data breach in the US,LEGAL
+is it normal to feel tired all the time,MEDICAL
+how do antidepressants work,MEDICAL
+how do I improve my English writing skills,GENERAL
+symptoms of ovarian cysts,MEDICAL
+SQL to find all contracts expiring in the next 60 days,CODING
+how does wi-fi work,GENERAL
+how does biometric data collection work and what are the privacy laws around it,GENERAL
+what is a gene and how does DNA work,GENERAL
+what is compound interest and how does it work,GENERAL
+what are the business and ethical implications of using AI to make hiring decisions,GENERAL
+how do corticosteroids work,MEDICAL
+how does version control track file diffs internally,CODING
+what causes chest pain on the left side,MEDICAL
+I keep getting UTIs every month what is wrong with me,MEDICAL
+write a function to find the longest common subsequence,CODING
+what does a high CRP level indicate,MEDICAL
+build a dashboard component in React that shows real-time stock prices,CODING
+what is the difference between a law and a theory in science,GENERAL
+what is biodiversity,GENERAL
+I have been really thirsty lately and peeing a lot,MEDICAL
+I feel nauseous every morning but I'm not pregnant,MEDICAL
+what are the risks of general anesthesia in elderly patients,MEDICAL
+how do I loop through an array in JavaScript,CODING
+what causes night sweats in women,MEDICAL
+what are some tips for public speaking,GENERAL
+sort this list without using built in functions,CODING
+my blood sugar spikes really high after eating white rice,MEDICAL
+what are the clinical symptoms of early stage liver disease,MEDICAL
+I have been having floating stools for a few weeks is that serious,MEDICAL
+my period has been irregular for 6 months,MEDICAL
+I've had diarrhea for 5 days now,MEDICAL
+symptoms of multiple sclerosis,MEDICAL
+what caused the 2008 financial crisis,GENERAL
+what is the psychology of cult behavior and are cults illegal,GENERAL
+write a Python script to extract clauses from a contract PDF,CODING
+write a function that reverses a string in Python,CODING
+symptoms of a herniated disc,MEDICAL
+I need to know if I can get out of this lease agreement,LEGAL
+is it legal for a school to expel a student without a disciplinary hearing in the UK,LEGAL
+I ordered something online and it never arrived what are my legal rights in India,LEGAL
+build a cron job that archives old database records,CODING
+what is a VPN and why do people use it,GENERAL
+I've been having chest pains for 3 days should I be worried,MEDICAL
+is it legal for an employer to ask for my social media passwords during hiring,LEGAL
+write a SQL query to find the second highest salary,CODING
+what is the legal process for name change in India,LEGAL
+is it safe to get a flu shot while on immunosuppressants,MEDICAL
+how do I use the spread operator in JavaScript,CODING
+under IPC section 420 what exactly can I file a case for,LEGAL
+how does the human brain respond to trauma and are there any legal protections for trauma survivors,GENERAL
+my employer keeps changing my shift without notice is that legal in the UK,LEGAL
+what is the largest country in the world by area,GENERAL
+what does it mean if my PSA levels are elevated,MEDICAL
+my blood test showed elevated liver enzymes what does that mean,MEDICAL
+build a command line tool in Python using argparse and subcommands,CODING
+I got into a minor car accident and the other driver is threatening to sue me,LEGAL
+what happens if I break a rental agreement early,LEGAL
+I am being harassed by my manager but HR is doing nothing,LEGAL
+implement an AVL tree in Java,CODING
+what are the best places to visit in Japan,GENERAL
+my employer is not contributing to my provident fund in India is that legal,LEGAL
+what happens during an MRI scan,MEDICAL
+create a many-to-many relationship in SQL,CODING
+why is the TypeScript compiler complaining about this type,CODING
+what would be a cleaner way to write this,CODING
+I keep forgetting words mid sentence is that normal,MEDICAL
+what are the legal implications of signing a medical consent form under pressure,LEGAL
+what year did World War 2 end,GENERAL
+how does garbage collection work in Python,CODING
+my doctor wants to put my 8 year old on ADHD medication is that safe,MEDICAL
+my React component is re-rendering too many times,CODING
+what are my rights if I am arrested without warrant in India,LEGAL
+write a function to find the kth largest element,CODING
+what are my rights if a product I bought is faulty,LEGAL
+is it dangerous to stop taking SSRIs suddenly,MEDICAL
+what is the treatment for depression,MEDICAL
+what is the legal position on moonlighting in India after the IT company controversies,LEGAL
+my doctor said my ECG was slightly abnormal but not to worry should I get a second opinion,MEDICAL
+what is the Internet of Things,GENERAL
+is chronic inflammation linked to heart disease,MEDICAL
+is a hospital legally liable if a patient gets an infection during their stay,LEGAL
+my pandas dataframe merge is producing way more rows than expected,CODING
+write a SQL query to calculate percentile ranks for student test scores,CODING
+symptoms of sleep apnea,MEDICAL
+is it safe to get pregnant while taking thyroid medication,MEDICAL
+I don't understand what this function is doing,CODING
+is it legal to run a home business in a residential area in the UK,LEGAL
+is it illegal to share someone's private photos without their consent in India,LEGAL
+build an NLP pipeline to classify symptoms from patient intake forms,CODING
+what is a neural network in simple terms,GENERAL
+my function works but feels wrong somehow,CODING
+my Python virtual environment is not activating properly,CODING
+is it safe to eat eggs every day,MEDICAL
+what are the best ways to reduce stress,GENERAL
+how does the nervous system work,GENERAL
+what is CRISPR in simple terms,GENERAL
+what are the social and economic causes of homelessness,GENERAL
+can a landlord evict a tenant without a court order in India,LEGAL
+is it normal to have chest tightness with anxiety,MEDICAL
+how do I learn to draw,GENERAL
+a doctor performed a surgery on me that I didn't consent to what are my legal options,LEGAL
+my landlord is refusing to return my security deposit,LEGAL
+can a landlord legally refuse to rent to someone based on their nationality in the UK,LEGAL
+make this code faster,CODING
+what is the punishment for theft under IPC in India,LEGAL
+how do I write a good CV,GENERAL
+what are both the technical and legal risks of using public wi-fi,GENERAL
+what are the technical and ethical concerns with deepfake technology,GENERAL
+what is the difference between AR and VR,GENERAL
+my business partner is stealing from the company what do I do,LEGAL
+how does a hash table handle collisions in code,CODING
+my skin has been turning yellow,MEDICAL
+can a credit card company sue me personally if I default in India,LEGAL
+what causes hair loss in women,MEDICAL
+symptoms of vitamin B12 deficiency,MEDICAL
+how does the endocrine system work,GENERAL
+what happens if I take ibuprofen with blood thinners,MEDICAL
+what is a microchip,GENERAL
+what is the water cycle,GENERAL
+what is the legal process for property registration in India,LEGAL
+what is the clinical significance of a prolonged QT interval,MEDICAL
+my environment variables aren't loading,CODING
+SQL to join a defendants table with a charges table,CODING
+write a function to diff two JSON objects and return changed keys,CODING
+is it safe to take melatonin and antidepressants at the same time,MEDICAL
+how does sleep deprivation affect the body and are there workplace laws about rest periods,GENERAL
+how do I use the map function in JavaScript,CODING
+how much ibuprofen can I take in a day,MEDICAL
+I have been having headaches every single day for a week,MEDICAL
+what is democracy,GENERAL
+I am being bullied at work and HR is ignoring me what are my legal options,LEGAL
+implement a hash map from scratch in C++,CODING
+can my employer read my work WhatsApp messages,LEGAL
+what is logic and how do logical fallacies work,GENERAL
+what causes acid reflux,MEDICAL
