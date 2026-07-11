@@ -7,7 +7,7 @@
 | Artifact | What it proves |
 |---|---|
 | `artifacts/experiments/2026-07-10T07-24-20_baseline-v1-full-pipeline` | Pre-repair end-to-end baseline |
-| `artifacts/experiments/2026-07-11T12-36-52_post-fix-v2-merged` | Post-fix **FINAL** (48/48 rows, 0 ERROR after domain runs + resume merge) |
+| `artifacts/experiments/2026-07-11T14-01-55_post-fix-v2-merged` | Post-fix **FINAL** (48/48 rows, 0 ERROR, **47.9%** PASS) |
 | `artifacts/experiments/2026-07-11T08-38-52_rq1/manifest.json` | RQ1 bootstrap (Run A vs Run B) |
 | `artifacts/experiments/2026-07-11T11-22-52_repair_ablation/manifest.json` | RQ1-bis fast router ablation |
 
@@ -15,11 +15,11 @@
 
 | Metric | Baseline | Post-fix FINAL | Δ |
 |---|---:|---:|---:|
-| PASS (completed) | 16/44 → **36.4%** | 20/48 → **41.7%** | **+5.3 pp** |
+| PASS (completed) | 16/44 → **36.4%** | 23/48 → **47.9%** | **+11.5 pp** |
 | ERROR | 4 | 0 | −4 |
 | Eval routing (RQ1 pre) | 93.75% | 97.92% (Run A = Run B) | +4.17 pp |
 
-Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDICAL **−8 pp**, GENERAL **−9 pp** (see [README](../README.md#results-baseline-vs-post-fix)).
+Per-domain PASS (all rows in domain): CODING **+42 pp**, LEGAL **+31 pp**, MEDICAL **−8 pp**, GENERAL **−9 pp** (see [README](../README.md#results-baseline-vs-post-fix)).
 
 ---
 
@@ -28,13 +28,13 @@ Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDIC
 | Dimension | Score | Status |
 |---|---:|---|
 | Architecture | **8 / 10** | Strong MVP design; RQ2 heterogeneity not built |
-| Implementation | **7 / 10** | End-to-end works; API fragility and partial uncommitted work |
-| Eval rigor | **7 / 10** | Good harness; small *n*, merge stitching, no full CI eval |
-| Research | **6 / 10** | Clear RQs; RQ1 inconclusive, naive baseline not run at scale |
-| Production readiness | **5 / 10** | Skeleton only (Docker, ONNX, smoke) |
-| Documentation | **8 / 10** | Extensive; committee one-pager now exists |
+| Implementation | **7.5 / 10** | End-to-end works; judge levers + smoke committed; API fragility remains |
+| Eval rigor | **7.5 / 10** | Good harness; 48/48 FINAL merge; small *n*, stitched runs |
+| Research | **6 / 10** | Clear RQs; RQ1 inconclusive, naive baseline run in progress |
+| Production readiness | **6 / 10** | Docker, ONNX, smoke_e2e + error_class; no hosted deploy |
+| Documentation | **8 / 10** | Extensive; README/SCORECARD at 47.9% |
 
-**Weighted thesis readiness:** ~**6.8 / 10** — credible **systems + methods** contribution; **empirical claims** need one more eval cycle and real-feedback RQ1.
+**Weighted thesis readiness:** ~**7.0 / 10** — credible **systems + methods** contribution; **empirical claims** need naive ablation + real-feedback RQ1 v2.
 
 ---
 
@@ -68,7 +68,7 @@ Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDIC
 
 ### Evidence
 
-- **90 pytest tests** (`tests/`, including `smoke_imports.py`, router backend, eval merge/resume, RQ1 v2 gates).
+- **119 pytest tests** (`tests/`, including smoke e2e, judge modes, DSPy Groq LM, apply_sidecar).
 - Full pipeline runs locally: router → specialist → spec → verify → log; demo FastAPI wraps same path.
 - **Eval resume** after Groq TPD (`eval_pipeline.py` exit code 2 + `--resume-from`).
 - **Production debuggability:** `error_class` on pipeline failures (`rate_limit`, `judge_parse`, `sandbox`, `empty_code`, `unknown`); `query_id` preserved in logs.
@@ -76,8 +76,8 @@ Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDIC
 
 ### Gaps (honest)
 
-- End-to-end PASS improved only **+5.3 pp** on completed rows; MEDICAL/GENERAL regressed per-domain after prompt/sidecar experiments.
-- Large surface area still **uncommitted** on `phase-1-repair-loops` (Docker, DSPy sidecars, many scripts) — portfolio should pin a release tag.
+- End-to-end PASS improved **+11.5 pp** on completed rows (36.4% → 47.9%); CODING/LEGAL up strongly; MEDICAL/GENERAL flat-to-down per-domain.
+- Judge partial-coverage lever (`JUDGE_STRICT`), MEDICAL prompt completeness, and smoke e2e hardening **committed** on `main` (`2b5ef8c1`).
 - `coding_optimized.txt` / most DSPy sidecars **not applied** to source (`apply_sidecar.py` exists; manual review gate).
 - Free-tier **Groq TPD** drove ERROR rows and merge/resume complexity — not a production-grade dependency story.
 
@@ -96,7 +96,7 @@ Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDIC
 | **C** | `error_class`, `smoke_e2e.py`, ONNX export | **done** |
 | **D** | `smoke_imports.py`, CI optional e2e job | **done** |
 | **B** | Apply optimized prompts (`apply_sidecar.py`) | **pending** |
-| **B** | Full 48-row naive baseline run | **pending** |
+| **B** | Full 48-row naive baseline run | **in progress** |
 
 ---
 
@@ -107,7 +107,7 @@ Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDIC
 - **Held-out set:** `data/eval_queries.jsonl` — 48 rows, stratified, tricky cases (HIPAA→LEGAL, prose coding→CODING); validated by `validate_eval_queries.py`.
 - **Frozen router test:** 200 rows (`data/router/router_test.csv`); never used for RQ1 augment.
 - **Baseline before repair** captured (`snapshot_baseline.py`); post-fix merged with explicit dedupe (`merge_experiment_rows`: prefer non-ERROR, newer wins).
-- **FINAL merge** (`2026-07-11T12-36-52_post-fix-v2-merged`): **48/48** rows, **0 ERROR** (domain v1/v2 runs + `post-fix-resume-v1`).
+- **FINAL merge** (`2026-07-11T14-01-55_post-fix-v2-merged`): **48/48** rows, **0 ERROR**, **47.9% PASS** (23/48).
 - **Compare tooling:** `compare_experiments.py`, per-domain PASS in `snapshot_post_fix.py`, ERROR breakdown by `error_class` in eval summary.
 - **Reproduce entry points:** `scripts/reproduce.sh`, `docs/RESULTS.md`, `docs/DEPLOY.md`.
 
@@ -142,8 +142,8 @@ Per-domain PASS (all rows in domain): CODING **+17 pp**, LEGAL **+31 pp**, MEDIC
 
 **End-to-end (primary product metric)**
 
-- Completed PASS: **36.4% → 41.7%** (+5.3 pp). Meaningful but modest; committee should treat as directional.
-- LEGAL/CODING repairs show targeted gains; MEDICAL/GENERAL do not.
+- Completed PASS: **36.4% → 47.9%** (+11.5 pp). Meaningful directional gain; still below 60% thesis target (+6 PASS needed).
+- LEGAL/CODING repairs show strong gains (CODING **66.7%**, LEGAL **46.2%**); MEDICAL/GENERAL lag.
 
 **RQ1 (bootstrap corpus, synthetic/eval-export negatives)**
 
@@ -165,7 +165,7 @@ From `2026-07-11T11-22-52_repair_ablation/manifest.json`: arm0 **93.75%** → ar
 **Orchestration ablation (naive vs ARCS)**
 
 - `eval_naive_baseline.py` wired; same spec+judge as full pipeline.
-- **Full 48-row naive run: not completed** (README still shows “run below”). Cannot yet quantify orchestration lift rigorously.
+- **Full 48-row naive run:** in progress (`naive-baseline-v1`). README/RESULTS show ARCS at **47.9%**; naive row **TBD**.
 
 **RQ1 v2 (real demo feedback)**
 
@@ -175,7 +175,7 @@ From `2026-07-11T11-22-52_repair_ablation/manifest.json`: arm0 **93.75%** → ar
 
 - RQ1 v2 on real feedback with **Run A ≠ Run B** (or powered negative result with adequate *n*).
 - Completed **naive-baseline-v1** vs **post-fix-v2-merged** table with same completed-row denominator.
-- End-to-end PASS **≥50%** on completed rows *or* clear per-domain story with ablation isolating each repair.
+- End-to-end PASS **≥60%** on 48/48 *or* clear per-domain story with ablation isolating each repair.
 
 ### Phase map
 
@@ -197,7 +197,7 @@ From `2026-07-11T11-22-52_repair_ablation/manifest.json`: arm0 **93.75%** → ar
 - **Dockerfile** (multi-stage `.venv`), **docker-compose.yml**, **docs/DEPLOY.md**.
 - **Health endpoint** `/health` — `groq_configured`, `nvidia_configured`, `router_backend`.
 - **ONNX router** export + `smoke_router.py`; avoids PyTorch cold start in containers.
-- **CI:** pytest gate (90 tests), pip cache, optional `smoke-e2e` (continue-on-error, needs secrets).
+- **CI:** pytest gate (119 tests), pip cache, optional `smoke-e2e` (dry-run always; live when secrets set).
 - **Logs contract:** `logs/README.md` documents `requests.jsonl`, `eval_failures.jsonl`, queues.
 
 ### Gaps (honest)
@@ -268,19 +268,19 @@ Development was organized in four agent phases. Use this for thesis “methods t
 | **A** | Reliability & CI — judge fixes, eval resume/merge, repair queues, GitHub Actions | CI, resume, merge, repair orchestrator, judge parse degrade | Pin release; mock-LLM CI tests |
 | **B** | Research — RQ1 bootstrap, RQ1-bis, naive baseline, RESULTS.md, RQ1 v2 wiring | RQ1 manifest (tie), RQ1-bis (+4.17 pp routing), scripts + docs | RQ1 v2 real feedback, full naive eval, apply DSPy sidecars |
 | **C** | Production path — Docker, ONNX, health, smoke tests, error taxonomy | Dockerfile, DEPLOY, ONNX, smoke_router/e2e, `error_class` | Hosted deploy, observability |
-| **D** | Portfolio polish — FINAL merge, README numbers, reproduce, scorecard, CI smoke imports | `snapshot_post_fix` auto-merge, README table, SCORECARD, 90 tests | Post-prompt re-eval, tag + artifact bundle |
+| **D** | Portfolio polish — FINAL merge, README numbers, reproduce, scorecard, CI smoke imports | `snapshot_post_fix` auto-merge, README at **47.9%**, SCORECARD, 119 tests | Naive baseline run, tag + artifact bundle |
 
 ---
 
 ## Recommended committee narrative (one paragraph)
 
-> ARCS demonstrates that **attribution-gated repair loops** can be engineered end-to-end: a router dispatches queries to verifiable domain pipelines, failures are blamed before retraining, and held-out eval shows **+5.3 percentage points** on completed PASS rate (36.4% → 41.7%) after targeted LEGAL/CODING repairs, with **zero ERROR rows** in the FINAL merged eval. Router retraining on bootstrap negative feedback improves held-out routing from **93.75% to 97.92%**, but **Run A vs Run B ties**, so attribution filtering remains **plausible but unconfirmed** until RQ1 v2 on real user feedback. The system is a **credible MVP** with strong documentation and eval hygiene; it is **not yet production-deployed**, and orchestration value vs a naive single-LLM baseline is **wired but not fully measured**.
+> ARCS demonstrates that **attribution-gated repair loops** can be engineered end-to-end: a router dispatches queries to verifiable domain pipelines, failures are blamed before retraining, and held-out eval shows **+11.5 percentage points** on PASS rate (36.4% → **47.9%**, 23/48) after targeted LEGAL/CODING repairs, with **zero ERROR rows** in the FINAL merged eval. Router retraining on bootstrap negative feedback improves held-out routing from **93.75% to 97.92%**, but **Run A vs Run B ties**, so attribution filtering remains **plausible but unconfirmed** until RQ1 v2 on real user feedback. The system is a **credible MVP** with strong documentation and eval hygiene; orchestration value vs a naive single-LLM baseline is **currently running** (`naive-baseline-v1`).
 
 ---
 
 ## Next three actions (highest ROI for thesis)
 
-1. **Run `eval_naive_baseline.py` on all 48 queries** — completes the orchestration claim ([Phase B](#phase-ad-checklist-prompt-arc)).
+1. **Complete `eval_naive_baseline.py` on all 48 queries** — in progress; fills orchestration claim ([Phase B](#phase-ad-checklist-prompt-arc)).
 2. **Collect ≥40 real 👎 feedback rows** → RQ1 v2 — may finally separate Run A vs B ([Phase B](#phase-ad-checklist-prompt-arc)).
 3. **Tag a release** + export `experiment.json` checksums for baseline, FINAL merge, and RQ1 manifest ([Phase D](#phase-ad-checklist-prompt-arc)).
 
