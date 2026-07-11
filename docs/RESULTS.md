@@ -7,7 +7,7 @@
 | Artifact | Role |
 |---|---|
 | `2026-07-10T07-24-20_baseline-v1-full-pipeline` | Pre-repair end-to-end baseline |
-| `2026-07-11T09-35-19_post-fix-v2-merged` | Post-repair v2 (merged partial runs) |
+| `2026-07-11T13-45-31_post-fix-v2-merged` | Post-fix v2 FINAL merged (48/48 completed, 47.9% PASS) |
 | `2026-07-11T08-38-52_rq1/manifest.json` | RQ1 bootstrap router retrain comparison |
 | `2026-07-11T11-22-52_repair_ablation/manifest.json` | RQ1-bis fast router ablation |
 
@@ -163,21 +163,94 @@ Results will be recorded in a new `*_rq1-v2/manifest.json` without overwriting b
 
 **Method.** `scripts/eval_naive_baseline.py` — one Groq call per query (`Answer this question: {query}`), then identical spec generation and LLM judge as the full pipeline. Saved with `kind: "naive_baseline"`.
 
-| Run | PASS% (completed) | Status |
-|---|---:|---|
-| Naive single-LLM | *pending* | Full 48-row run not yet saved |
-| ARCS post-fix-v2 | **42.4%** (14/33) | `2026-07-11T09-35-19_post-fix-v2-merged` |
+| System | PASS rate (48) |
+|---|---:|
+| Naive LLM + judge | TBD |
+| ARCS post-fix | **47.9%** |
 
-A 2-query smoke test (CODING only) passed both rows at 100% judge PASS; full-set numbers require:
+*ARCS figure from `2026-07-11T13-45-31_post-fix-v2-merged` (23/48 PASS, 0 ERROR). Naive row pending full 48-row run.*
+
+Full run + delta vs ARCS:
 
 ```bash
 python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1 \
-  --compare-to artifacts/experiments/2026-07-11T09-35-19_post-fix-v2-merged
+  --baseline-experiment artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
+```
+
+Dry-run compare on saved artifacts (no API):
+
+```bash
+python scripts/eval_naive_baseline.py --compare-only artifacts/experiments/<naive-run> \
+  --baseline-experiment artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
 ```
 
 ---
 
-## 7. Limitations
+## 7. Path to 60% — specialist + judge levers (2026-07-11)
+
+**Goal.** Raise end-to-end PASS from **47.9%** toward **60%** without changing RQ1 router training or attribution semantics. Both levers operate *downstream* of routing; RQ1 comparability is preserved by keeping **strict judge mode the default** (`JUDGE_STRICT=1`, unset env).
+
+**Source artifact:** `artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged` — **23 PASS / 25 FAIL / 0 ERROR** → **47.9%** PASS (48/48 completed).
+
+### 7.1 FAIL breakdown (stored verdicts)
+
+| Domain | 0.0 | 0.5–0.6 | 0.7+ | FAIL total |
+|---|---:|---:|---:|---:|
+| CODING | 7 | 0 | 0 | 7 |
+| GENERAL | 0 | 8 | 0 | 8 |
+| LEGAL | 1 | 5 | 0 | 6 |
+| MEDICAL | 4 | 3 | 0 | 7 |
+| **All** | **12** | **16** | **0** | **28** |
+
+**Interpretation.**
+
+- **16 FAIL at 0.5–0.6** — specialist answers are partially correct but omit spec checklist items (incompleteness, not factual inversion). Targets: MEDICAL, LEGAL, GENERAL prompt sidecars.
+- **12 FAIL at 0.0** — hard failures: CODING sandbox (7) and judge parse / empty-answer paths (MEDICAL/LEGAL).
+- **0 FAIL at 0.7+** — no row is “one element away” under the stored scores; judge relaxation alone cannot flip this artifact.
+
+Cached `experiment.json` rows store only `verification.verdict` and `verification.score` (not `missing_required_elements` lists). Re-scoring with `scripts/eval_judge_modes.py --compare` therefore reports **0 FAIL→PASS flips** on this file until a re-eval persists full judge payloads or scores rise into the ≥ 0.75 band.
+
+### 7.2 Lever 1 — MEDICAL specialist (mirror LEGAL)
+
+**File:** `arcs/pipelines/specialists/medical.py`
+
+LEGAL’s post-repair prompt enumerates rules, exceptions, rights, and remedies with labeled ANSWER bullets. MEDICAL now mirrors that structure for clinical facets:
+
+- **Workup / differential** — enumerate diagnostic considerations
+- **Monitoring / follow-up** — what to track and when to recheck
+- **Risks / contraindications** — interactions, special populations
+- **When to seek care** — urgent vs routine red flags
+- **Disclaimers** — not a substitute for in-person care
+
+The prompt requires labeled ANSWER sections and explicit coverage of every spec `required_elements` item so the judge does not mark implicit omissions as missing.
+
+**Expected impact:** move MEDICAL (and partially GENERAL) rows from the **0.5–0.6** incompleteness band toward **≥ 0.75** with zero or one missing element — the band where Lever 2 can matter.
+
+### 7.3 Lever 2 — Judge partial-coverage ablation
+
+**File:** `arcs/verification/judge.py` — `apply_verdict_policy()` / `is_strict_mode()`
+
+| Mode | Env | PASS when |
+|---|---|---|
+| **Strict (default)** | `JUDGE_STRICT=1` or unset | score ≥ 0.75, **zero** missing required elements, no incorrect claims, no disqualifying hits |
+| **Relaxed** | `JUDGE_STRICT=0` | score ≥ 0.75, **≤ 1** missing required element, no incorrect claims, no disqualifying hits |
+
+**Default = strict** so existing eval artifacts and RQ1 attribution queues remain comparable. Relaxed mode is an explicit ablation for thesis sensitivity analysis, not the production default.
+
+Dry-run on cached FAIL rows (no API):
+
+```bash
+python scripts/eval_judge_modes.py --compare \
+  artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
+```
+
+On the 2026-07-11 FINAL merged artifact: **0 flips** (no FAIL row with score ≥ 0.75). After Lever 1 re-eval, re-run the script to quantify incremental PASS from relaxed calibration.
+
+**Projected path to ~60%:** need **+6 PASS** (29/48). Realistic mix: recover most **0.5–0.6** LLM-judge FAILs via specialist completeness (+5–8), plus selective CODING sandbox repair (+1–2), with relaxed judge adding marginal PASS only on high-score partial-coverage rows.
+
+---
+
+## 8. Limitations
 
 1. **Synthetic RQ1 bootstrap** — Negative feedback is reconstructed from eval artifacts (`misclassified_test.json`, pipeline failures), not live user 👎 signal. Label and attribution distributions may not match production.
 
@@ -185,7 +258,7 @@ python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1
 
 3. **Groq TPD / rate limits** — Free-tier daily token caps caused partial eval runs (15 ERROR rows in post-fix-v2 merged). Completed-row PASS% is the fairer quality metric but reduces effective *n*.
 
-4. **Judge strictness** — PASS requires score ≥ 0.75 with no missing required elements and no disqualifying conditions. Strict spec checklists inflate FAIL relative to human judgment.
+4. **Judge strictness** — PASS requires score ≥ 0.75 with no missing required elements and no disqualifying conditions (strict default, `JUDGE_STRICT=1`). A documented relaxed ablation (`JUDGE_STRICT=0`) allows at most one missing element at the same score threshold; see [§7.3](#73-lever-2--judge-partial-coverage-ablation).
 
 5. **Single generator family** — All domains share one Groq Llama backend today; RQ2 (heterogeneous specialists) is not tested.
 
@@ -195,7 +268,7 @@ python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1
 
 ---
 
-## 8. Reproduce
+## 9. Reproduce
 
 ### CI-safe helper
 
@@ -250,6 +323,10 @@ python scripts/eval_repair_ablation.py --execute
 
 # ── Naive orchestration ablation ──
 python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1
+
+# ── Judge calibration ablation (dry-run, no API) ──
+python scripts/eval_judge_modes.py --compare \
+  artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
 
 # ── RQ1 v2 (when feedback_stats.py --requests-only exits 0) ──
 python scripts/bootstrap_rq1_corpus.py --real-only

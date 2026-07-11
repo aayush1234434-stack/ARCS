@@ -222,6 +222,43 @@ def _as_string_list(value: Any, field: str) -> list[str]:
     return [str(item).strip() for item in value if str(item).strip()]
 
 
+def is_strict_mode() -> bool:
+    """Return True unless JUDGE_STRICT=0 (relaxed partial-coverage mode)."""
+    raw = os.getenv("JUDGE_STRICT", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def apply_verdict_policy(result: dict, *, strict: bool | None = None) -> dict:
+    """Apply strict or relaxed PASS/FAIL rules to a normalized verification dict.
+
+    Strict (default, ``JUDGE_STRICT=1``): PASS only when score >= 0.75 and there
+    are zero missing required elements, incorrect claims, or disqualifying hits.
+
+    Relaxed (``JUDGE_STRICT=0``): PASS when score >= 0.75, at most one missing
+    required element, and no incorrect claims or disqualifying hits.
+    """
+    if strict is None:
+        strict = is_strict_mode()
+
+    out = dict(result)
+    score = float(out.get("score", 0.0))
+    missing = out.get("missing_required_elements") or []
+    incorrect = out.get("incorrect_claims") or []
+    disqualified = out.get("disqualifying_conditions_triggered") or []
+
+    if disqualified or incorrect:
+        out["verdict"] = "FAIL"
+        return out
+    if score < 0.75:
+        out["verdict"] = "FAIL"
+        return out
+    if strict:
+        out["verdict"] = "FAIL" if missing else "PASS"
+    else:
+        out["verdict"] = "PASS" if len(missing) <= 1 else "FAIL"
+    return out
+
+
 def _normalize_result(data: dict) -> dict:
     if not isinstance(data, dict):
         raise ValueError("Judge JSON must be an object")
@@ -255,22 +292,7 @@ def _normalize_result(data: dict) -> dict:
     )
     result["explanation"] = str(data.get("explanation", "")).strip()
 
-    # Enforce verdict consistency with hard failures
-    if (
-        result["disqualifying_conditions_triggered"]
-        or result["missing_required_elements"]
-    ):
-        result["verdict"] = "FAIL"
-    elif result["score"] < 0.75:
-        result["verdict"] = "FAIL"
-    elif (
-        not result["disqualifying_conditions_triggered"]
-        and not result["missing_required_elements"]
-        and result["score"] >= 0.75
-    ):
-        result["verdict"] = "PASS"
-
-    return result
+    return apply_verdict_policy(result)
 
 
 def _call_judge(

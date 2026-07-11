@@ -52,6 +52,30 @@ Repairs were targeted; regressions show the cost of prompt experiments without f
 
 ---
 
+## 3b. Specialist repair loop — CODING (1 min)
+
+**Attribution → queue → DSPy sidecar → human review → apply → re-eval**
+
+```
+eval FAIL (SPECIALIST) → specialist_queue.jsonl
+  → optimize_coding.py → artifacts/prompts/coding_optimized.txt
+  → apply_sidecar.py (dry-run diff, then .bak + apply)
+  → eval_pipeline --domains CODING
+```
+
+| Step | Tool | Notes |
+|---|---|---|
+| Extract | `repair.py --component SPECIALIST --domain CODING` | From demo/eval failures |
+| Optimize | `optimize_coding.py` | COPRO on queue; **needs GROQ**; writes sidecar only |
+| Apply | `apply_sidecar.py --dry-run` then apply | Never auto-applied; creates `coding.py.bak` |
+| Verify | `eval_pipeline --domains CODING --name post-fix-coding-v4` | CODING PASS: **25% → 42%** (+17 pp) in FINAL merge |
+
+One-shot: `./scripts/run_coding_repair.sh` (use `--dry-run` to plan without API writes). Groq COPRO defaults: **`--breadth 2 --depth 2`** (`n=1` per API call).
+
+**Status:** `coding_optimized.txt` not in repo — generate locally; see [artifacts/prompts/README.md](../artifacts/prompts/README.md).
+
+---
+
 ## 4. Results — RQ1 (2 min)
 
 **Hypothesis:** Router retrain on ROUTER-attributed negatives (Run B) beats blanket negatives (Run A).
@@ -98,7 +122,7 @@ See [SCORECARD.md](SCORECARD.md) for 1–10 self-ratings.
 
 ## Slide checklist
 
-- [ ] Architecture diagram (README)
+- [ ] CODING specialist repair flow (section 3b)
 - [ ] Baseline vs post-fix table
 - [ ] RQ1 tie chart (pre / Run A / Run B)
 - [ ] Demo screenshot or 30s screen recording

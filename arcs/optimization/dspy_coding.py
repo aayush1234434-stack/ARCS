@@ -18,6 +18,8 @@ from typing import Any
 
 from arcs import config
 from arcs.optimization.dspy_common import (
+    GROQ_COPRO_DEFAULT_BREADTH,
+    GROQ_COPRO_DEFAULT_DEPTH,
     configure_groq_lm,
     extract_instructions,
     run_copro,
@@ -202,8 +204,8 @@ def optimize_coding_prompt(
     output_path: Path | None = None,
     max_examples: int = 20,
     dry_run: bool = False,
-    breadth: int = 5,
-    depth: int = 2,
+    breadth: int = GROQ_COPRO_DEFAULT_BREADTH,
+    depth: int = GROQ_COPRO_DEFAULT_DEPTH,
 ) -> dict[str, Any]:
     """Run COPRO on CODING specialist failures and write a sidecar prompt.
 

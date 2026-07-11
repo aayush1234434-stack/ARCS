@@ -96,19 +96,36 @@ Docker `HEALTHCHECK` and Compose healthcheck both hit `/health`.
 
 ## Post-deploy verification
 
-After the container is up and `/health` shows configured API keys:
+After the container is up and `/health` shows configured API keys, run the smoke harness. It exercises **5 fixed eval queries** (one per domain plus coding-in-prose `eval-042`) through the full pipeline and requires **zero ERROR rows** — each query must finish with verifier status PASS or FAIL (infra failures count as ERROR).
+
+| Step | Command | Secrets | Expected |
+|---|---|---|---|
+| Router only | `python scripts/smoke_router.py --backend onnx --query "test query"` | None | Routed domain printed |
+| Smoke plan | `python scripts/smoke_e2e.py --dry-run` | None | Lists 5 query ids |
+| Live smoke | `python scripts/smoke_e2e.py --json --quiet` | Groq + NVIDIA | `exit_code: 0`, `summary.errors: 0` |
+
+Fixed query ids: `eval-024` (LEGAL), `eval-013` (MEDICAL), `eval-033` (GENERAL), `eval-001` (CODING), `eval-042` (CODING prose).
 
 ```bash
 # Router-only (no Groq/NVIDIA calls)
 python scripts/smoke_router.py --backend onnx --query "test query"
 
-# Full pipeline — 5 fixed eval queries (1/domain + coding prose)
-# Requires GROQ_API_KEY + NVIDIA_API_KEY + artifacts/router-model/
-python scripts/smoke_e2e.py --dry-run          # plan only
-python scripts/smoke_e2e.py --json --quiet     # live; exit 0 iff 5/5 PASS or FAIL
+# Full pipeline — plan only (no API)
+python scripts/smoke_e2e.py --dry-run
+
+# Live smoke — exit 0 iff 5/5 complete with zero ERROR
+python scripts/smoke_e2e.py --json --quiet
 ```
 
-Fixed query ids: `eval-024` (LEGAL), `eval-013` (MEDICAL), `eval-033` (GENERAL), `eval-001` (CODING), `eval-042` (CODING prose).
+**Exit codes** (`scripts/smoke_e2e.py`):
+
+| Code | Meaning |
+|---:|---|
+| `0` | All 5 queries completed (PASS or FAIL); `summary.errors == 0` |
+| `1` | One or more ERROR / UNKNOWN rows — inspect `error_class` per row in JSON |
+| `2` | Setup failure (missing API keys, router checkpoint, or eval file) |
+
+JSON output includes `exit_code`, per-row `error_class` (`rate_limit`, `judge_parse`, `sandbox`, `empty_code`, `unknown`), and an `error_classes` breakdown when any row fails.
 
 Inside Docker (keys from `.env`, router mounted):
 
@@ -116,7 +133,7 @@ Inside Docker (keys from `.env`, router mounted):
 docker compose exec demo python scripts/smoke_e2e.py --json --quiet
 ```
 
-**CI:** optional [`.github/workflows/smoke-e2e.yml`](../.github/workflows/smoke-e2e.yml) runs on `workflow_dispatch` and nightly schedule when `GROQ_API_KEY` and `NVIDIA_API_KEY` repository secrets are set. Not part of the default push CI (requires live API keys).
+**CI (optional):** [`.github/workflows/smoke-e2e.yml`](../.github/workflows/smoke-e2e.yml) runs on `workflow_dispatch` and a nightly schedule. It **always** runs the dry-run step (no secrets). The **live** smoke step runs only when both `GROQ_API_KEY` and `NVIDIA_API_KEY` repository secrets are configured; otherwise the workflow prints a notice and stays green — it is **not** part of the default push CI (`ci.yml`). Forks without secrets therefore pass without failing on missing keys.
 
 ---
 

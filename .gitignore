@@ -8,6 +8,10 @@
 artifacts/experiments/*
 !artifacts/experiments/README.md
 
+# DSPy sidecars (keep README)
+artifacts/prompts/*
+!artifacts/prompts/README.md
+
 # Other generated artifacts (large / local-only)
 artifacts/router-model*/
 artifacts/router-checkpoints/

@@ -20,20 +20,20 @@ Held-out eval: **`data/eval_queries.jsonl`** (*n* = 48). Baseline pipeline run:
 merged snapshot (latest per-domain `post-fix-*-{legal,coding,medical,general}*` runs +
 `post-fix-resume-v1` where present):
 
-`artifacts/experiments/2026-07-11T12-36-52_post-fix-v2-merged`
+`artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged`
 
 ### Overall (completed rows)
 
 | Run | PASS | FAIL | ERROR | PASS% (completed) |
 |---|---:|---:|---:|---:|
 | Baseline v1 | 16 | 28 | 4 | **36.4%** (16/44) |
-| Post-fix FINAL | 20 | 28 | 0 | **41.7%** (20/48) |
+| Post-fix FINAL | 23 | 25 | 0 | **47.9%** (23/48) |
 
 ### Per-domain PASS (all rows in domain)
 
 | Domain | *n* | Baseline | Post-fix FINAL | Δ (post − base) |
 |---|---:|---:|---:|---:|
-| CODING | 12 | 25.0% (3/12) | 41.7% (5/12) | **+17 pts** |
+| CODING | 12 | 25.0% (3/12) | 66.7% (8/12) | **+42 pts** |
 | MEDICAL | 12 | 50.0% (6/12) | 41.7% (5/12) | −8 pts |
 | LEGAL | 13 | 15.4% (2/13) | 46.2% (6/13) | **+31 pts** |
 | GENERAL | 11 | 45.5% (5/11) | 36.4% (4/11) | −9 pts |
@@ -58,6 +58,17 @@ optionally resume ERROR rows (`--name post-fix-resume-v1 --resume-from …`), th
 generated from saved artifacts at git `e60b30e8`.</sup>
 
 Paper-style write-up: [docs/RESULTS.md](docs/RESULTS.md).
+
+### Judge calibration ablation
+
+Strict judge mode remains the default (`JUDGE_STRICT=1`): PASS only when score ≥ 0.75 with **zero** missing spec elements. Set `JUDGE_STRICT=0` for relaxed partial-coverage (≤ 1 missing element at the same score, no incorrect claims) — documented in [docs/RESULTS.md §7.3](docs/RESULTS.md#73-lever-2--judge-partial-coverage-ablation). Compare modes on a cached experiment without API calls:
+
+```bash
+python scripts/eval_judge_modes.py --compare \
+  artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
+```
+
+On the 2026-07-11 FINAL merged run (**47.9%** PASS, 25 FAIL), relaxed re-scoring yields **0 flips** on rows with score ≥ 0.75; specialist completeness (Lever 1) must lift scores first.
 
 ---
 
@@ -460,25 +471,13 @@ A fair ablation asks: *if we use the same generator model and the same spec+judg
 
 **Results** (held-out `data/eval_queries.jsonl`, 48 rows):
 
-| Run | PASS | FAIL | ERROR | PASS% (completed) |
-|---|---:|---:|---:|---:|
-| Naive single-LLM (`naive-baseline-v1`) | — | — | — | *run below* |
-| ARCS post-fix-v2 (`post-fix-v2-merged`) | 14 | 19 | 15 | **42.4%** (14/33) |
-
-On the same eval set, orchestration (domain routing, specialist prompts, coding sandbox + retries) is what separates a one-shot generalist answer from a verified pipeline outcome. The naive baseline isolates that gap: generator and judge are held constant, so any PASS-rate difference is attributable to orchestration rather than model or verifier choice.
+| System | PASS rate (48) |
+|---|---:|
+| Naive LLM + judge | TBD |
+| ARCS post-fix | **47.9%** |
 
 ```bash
-# Naive baseline (no router/specialist; same spec+judge)
-python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1
-
-# Auto-compare against newest post-fix ARCS experiment
-python scripts/eval_naive_baseline.py --name naive-baseline-v1 \
-  --compare-to artifacts/experiments/2026-07-11T10-29-30_post-fix-v2-merged
-
-# Or diff two saved runs (prints orchestration table when naive vs pipeline)
-python scripts/compare_experiments.py \
-  artifacts/experiments/<naive-baseline-v1-run> \
-  artifacts/experiments/2026-07-11T10-29-30_post-fix-v2-merged
+python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1 --baseline-experiment artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
 ```
 
 Dry-run / subset:
@@ -509,7 +508,7 @@ Safe, CI-friendly entry points that avoid API calls unless you run the printed f
 
 Each subcommand ends with: *Full eval requires GROQ_API_KEY and NVIDIA_API_KEY; not run in CI.*
 
-See [docs/RESULTS.md](docs/RESULTS.md#8-reproduce) for the full manual command list when keys are available.
+See [docs/RESULTS.md](docs/RESULTS.md#9-reproduce) for the full manual command list when keys are available.
 
 ### Example commands
 
@@ -789,6 +788,8 @@ python scripts/run_batch.py --quiet
 python scripts/extract_queues.py
 ```
 
+**Groq + DSPy COPRO:** Groq chat completions require **`n=1`**. ARCS uses `GroqSafeLM` to enforce that and emulate `n>1` with sequential calls when COPRO requests multiple candidates. CLI defaults: **`--breadth 2 --depth 2`** (COPRO 3.2 requires breadth > 1; breadth=1 is rejected). Judge optimization uses **NVIDIA** (`optimize_judge.py`) and is unchanged.
+
 ### Apply optimized prompts (`apply_sidecar.py`)
 
 Manual workflow for **all** `optimize_*.py` sidecars (human review required before apply):
@@ -848,10 +849,10 @@ Uses CODING rows from `specialist_queue.jsonl` (`pipeline_id == CODING`).
 
 ```bash
 # Preview examples (no API calls, no file write)
-python scripts/optimize_coding.py --dry-run --max-examples 20
+python scripts/optimize_coding.py --dry-run --limit 1
 
-# Generate sidecar (requires GROQ_API_KEY; COPRO can take several minutes)
-python scripts/optimize_coding.py --max-examples 20
+# Minimal train (requires GROQ_API_KEY; COPRO uses breadth=2, depth=2 by default)
+python scripts/optimize_coding.py --limit 1 --breadth 2 --depth 2
 ```
 
 Then review and apply:

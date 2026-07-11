@@ -18,6 +18,8 @@ Usage:
     python scripts/eval_naive_baseline.py --limit 5 --domains CODING,MEDICAL
     python scripts/eval_naive_baseline.py --name naive-baseline-v1 \
         --compare-to artifacts/experiments/<post-fix-v2-merged>
+    python scripts/eval_naive_baseline.py --compare-only artifacts/experiments/<naive-run> \
+        --baseline-experiment artifacts/experiments/<post-fix-v2-merged>
 """
 
 from __future__ import annotations
@@ -297,8 +299,62 @@ def _fmt_pct(value: float | None) -> str:
     return "n/a" if value is None else f"{value:5.1f}%"
 
 
+def _print_simple_delta(naive: dict[str, Any], arcs_exp: dict[str, Any]) -> None:
+    """Print compact PASS rate table with delta."""
+    naive_stats = pass_stats(naive)
+    arcs_stats = pass_stats(arcs_exp)
+    n_all = naive_stats.get("n") or arcs_stats.get("n")
+    print("\n=== Naive vs ARCS (orchestration ablation) ===", file=sys.stderr)
+    print(f"{'System':<22} {'PASS rate (48)':>16}", file=sys.stderr)
+    print("-" * 40, file=sys.stderr)
+    naive_pct = naive_stats["pass_pct"]
+    arcs_pct = arcs_stats["pass_pct"]
+    naive_label = f"{naive_stats['pass']}/{naive_stats['completed']}"
+    arcs_label = f"{arcs_stats['pass']}/{arcs_stats['completed']}"
+    print(
+        f"{'Naive LLM + judge':<22} "
+        f"{_fmt_pct(naive_pct) if naive_pct is not None else 'TBD':>16}",
+        file=sys.stderr,
+    )
+    print(
+        f"{'ARCS post-fix':<22} "
+        f"{_fmt_pct(arcs_pct) if arcs_pct is not None else 'TBD':>16}",
+        file=sys.stderr,
+    )
+    if naive_pct is not None and arcs_pct is not None:
+        delta = arcs_pct - naive_pct
+        print(
+            f"\nARCS − naive: {delta:+.1f} pts ({arcs_label} vs {naive_label} completed)",
+            file=sys.stderr,
+        )
+    if n_all:
+        print(f"(eval corpus n={n_all})", file=sys.stderr)
+
+
 def _print_comparison(naive: dict[str, Any], arcs_exp: dict[str, Any]) -> None:
+    _print_simple_delta(naive, arcs_exp)
     print("\n=== " + format_orchestration_comparison(naive, arcs_exp).rstrip(), file=sys.stderr)
+
+
+def _run_compare_only(naive_path: Path, baseline_path: Path) -> None:
+    naive_exp = load_experiment(naive_path)
+    arcs_exp = load_experiment(baseline_path)
+    _print_comparison(naive_exp, arcs_exp)
+
+
+def _resolve_experiment_path(raw: str) -> Path | None:
+    """Resolve an experiment directory or ``experiment.json`` path."""
+    path = Path(raw)
+    if path.is_file() and path.name == "experiment.json":
+        return path.parent
+    if path.is_dir() and (path / "experiment.json").is_file():
+        return path
+    if path.exists():
+        return path
+    candidate = config.EXPERIMENTS_DIR / raw
+    if candidate.is_dir() and (candidate / "experiment.json").is_file():
+        return candidate
+    return None
 
 
 def _resolve_compare_to(raw: str | None) -> Path | None:
@@ -308,13 +364,10 @@ def _resolve_compare_to(raw: str | None) -> Path | None:
     (auto-pick the newest post-fix experiment, else the newest experiment).
     """
     if raw is not None:
-        path = Path(raw)
-        if path.exists():
-            return path
-        candidate = config.EXPERIMENTS_DIR / raw
-        if candidate.exists():
-            return candidate
-        print(f"Warning: --compare-to not found: {raw}", file=sys.stderr)
+        resolved = _resolve_experiment_path(raw)
+        if resolved is not None:
+            return resolved
+        print(f"Warning: experiment not found: {raw}", file=sys.stderr)
         return None
 
     root = config.EXPERIMENTS_DIR
@@ -399,7 +452,26 @@ def main() -> None:
         metavar="PATH",
         help=(
             "ARCS experiment (path or run_id) to compare PASS%% against. "
-            "Default: newest post-fix experiment under artifacts/experiments/."
+            "Default: newest post-fix experiment under artifacts/experiments/. "
+            "Alias: --baseline-experiment."
+        ),
+    )
+    parser.add_argument(
+        "--baseline-experiment",
+        default=None,
+        metavar="PATH",
+        help=(
+            "ARCS post-fix experiment to compare against (same as --compare-to). "
+            "Use with --compare-only for a dry-run delta on saved artifacts."
+        ),
+    )
+    parser.add_argument(
+        "--compare-only",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Skip eval; load a saved naive_baseline experiment and print PASS%% "
+            "delta vs --baseline-experiment (no API calls)."
         ),
     )
     parser.add_argument(
@@ -418,6 +490,27 @@ def main() -> None:
         help="Print full experiment dict to stdout",
     )
     args = parser.parse_args()
+
+    baseline_raw = args.baseline_experiment or args.compare_to
+
+    if args.compare_only is not None:
+        naive_path = _resolve_experiment_path(args.compare_only)
+        if naive_path is None:
+            print(f"Error: --compare-only not found: {args.compare_only}", file=sys.stderr)
+            sys.exit(1)
+        baseline_path = _resolve_compare_to(baseline_raw)
+        if baseline_path is None:
+            print(
+                "Error: --baseline-experiment (or --compare-to) is required with --compare-only",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        try:
+            _run_compare_only(naive_path, baseline_path)
+        except (OSError, json.JSONDecodeError, TypeError) as exc:
+            print(f"Error: could not load experiment: {exc}", file=sys.stderr)
+            sys.exit(1)
+        return
 
     if not args.input.exists():
         print(f"Error: eval file not found: {args.input}", file=sys.stderr)
@@ -518,7 +611,7 @@ def main() -> None:
         print(f"saved:     {saved_to}", file=sys.stderr)
 
     if not args.no_compare:
-        compare_path = _resolve_compare_to(args.compare_to)
+        compare_path = _resolve_compare_to(baseline_raw)
         if compare_path is not None:
             try:
                 arcs_exp = load_experiment(compare_path)

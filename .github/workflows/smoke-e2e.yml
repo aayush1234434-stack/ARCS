@@ -4,8 +4,9 @@
 #   GROQ_API_KEY
 #   NVIDIA_API_KEY
 #
-# Trains the router from data/router/*.csv when no checkpoint is present.
-# Not run on every push — use workflow_dispatch or the nightly schedule.
+# Dry-run always runs (no secrets). Live smoke runs only when both secrets are
+# set; otherwise the live step is skipped with a notice (workflow stays green).
+# See docs/DEPLOY.md § Post-deploy verification.
 
 name: Smoke E2E
 
@@ -17,9 +18,6 @@ on:
 jobs:
   smoke-e2e:
     runs-on: ubuntu-latest
-    # Skip cleanly when secrets are not configured on the fork/repo.
-    if: >-
-      ${{ secrets.GROQ_API_KEY != '' && secrets.NVIDIA_API_KEY != '' }}
 
     steps:
       - name: Checkout
@@ -34,18 +32,37 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Check API secrets
+        id: secrets
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          if [ -n "$GROQ_API_KEY" ] && [ -n "$NVIDIA_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dry-run smoke plan (no API)
+        run: python scripts/smoke_e2e.py --dry-run --json
+
       - name: Train router if checkpoint missing
+        if: steps.secrets.outputs.present == 'true'
         run: |
           if [ ! -f artifacts/router-model/config.json ]; then
             python -m arcs.router.train --epochs 2
           fi
 
-      - name: Dry-run smoke plan
-        run: python scripts/smoke_e2e.py --dry-run --json
-
       - name: Live smoke e2e (5 fixed queries)
+        if: steps.secrets.outputs.present == 'true'
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           ARCS_ROUTER_BACKEND: torch
         run: python scripts/smoke_e2e.py --json --quiet
+
+      - name: Live smoke skipped (secrets not configured)
+        if: steps.secrets.outputs.present != 'true'
+        run: |
+          echo "::notice::Skipping live smoke e2e — set GROQ_API_KEY and NVIDIA_API_KEY repository secrets to enable."

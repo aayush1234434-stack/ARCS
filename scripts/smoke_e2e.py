@@ -2,10 +2,15 @@
 """End-to-end pipeline smoke test on five fixed held-out eval queries.
 
 One query per domain plus one coding-in-prose tricky row. Asserts each run
-completes with status PASS or FAIL (not ERROR or UNKNOWN).
+completes with status PASS or FAIL (zero ERROR / UNKNOWN rows).
 
 Requires GROQ_API_KEY, NVIDIA_API_KEY, and a trained router under
 ``artifacts/router-model/``. Does not write to ``logs/requests.jsonl``.
+
+Exit codes:
+    0  — all 5 queries completed (PASS or FAIL); zero ERROR
+    1  — one or more ERROR / UNKNOWN rows (see ``error_class`` in JSON output)
+    2  — setup failure (missing keys, router checkpoint, eval file)
 """
 
 from __future__ import annotations
@@ -15,6 +20,7 @@ import json
 import os
 import sys
 import traceback
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -24,7 +30,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from arcs import config, progress
-from arcs.main import run_pipeline
+from arcs.main import PipelineError, classify_pipeline_error, run_pipeline
 
 EVAL_QUERIES = config.DATA_DIR / "eval_queries.jsonl"
 
@@ -46,6 +52,10 @@ EXPECTED_DOMAINS: dict[str, str] = {
 }
 
 COMPLETED_STATUSES = frozenset({"PASS", "FAIL"})
+
+EXIT_OK = 0
+EXIT_SMOKE_FAIL = 1
+EXIT_SETUP = 2
 
 
 @dataclass(frozen=True)
@@ -138,9 +148,16 @@ def _run_case(case: SmokeCase) -> dict[str, Any]:
     }
     try:
         state = run_pipeline(case.query)
+    except PipelineError as exc:
+        state = exc.state
+        result["status"] = _derive_status(state, error=str(state.get("error") or exc))
+        result["error"] = str(state.get("error") or exc)
+        result["error_class"] = str(state.get("error_class") or classify_pipeline_error(exc))
+        return result
     except Exception as exc:
         result["status"] = "ERROR"
         result["error"] = str(exc)
+        result["error_class"] = classify_pipeline_error(exc)
         result["traceback"] = traceback.format_exc()
         return result
 
@@ -156,7 +173,31 @@ def _run_case(case: SmokeCase) -> dict[str, Any]:
     result["timing_ms"] = timing.get("total_ms") if isinstance(timing, dict) else None
     if result["status"] == "ERROR":
         result["error"] = str(state.get("error") or "pipeline error")
+        result["error_class"] = str(state.get("error_class") or "unknown")
+    elif result["status"] == "UNKNOWN":
+        result["error_class"] = "unknown"
+        result["error"] = "pipeline finished without PASS/FAIL verdict"
     return result
+
+
+def _summarize_results(results: list[dict[str, Any]], *, total: int) -> dict[str, Any]:
+    pass_count = sum(1 for row in results if row.get("status") == "PASS")
+    fail_count = sum(1 for row in results if row.get("status") == "FAIL")
+    error_rows = [row for row in results if row.get("status") not in COMPLETED_STATUSES]
+    errors = len(error_rows)
+    error_classes = Counter(
+        str(row.get("error_class") or "unknown") for row in error_rows
+    )
+    complete = pass_count + fail_count
+    return {
+        "total": total,
+        "pass": pass_count,
+        "fail": fail_count,
+        "complete": complete,
+        "errors": errors,
+        "error_classes": dict(sorted(error_classes.items())),
+        "success": errors == 0 and complete == total,
+    }
 
 
 def run_smoke(*, dry_run: bool = False) -> dict[str, Any]:
@@ -197,8 +238,6 @@ def run_smoke(*, dry_run: bool = False) -> dict[str, Any]:
         )
 
     results: list[dict[str, Any]] = []
-    complete = 0
-    errors = 0
 
     for index, case in enumerate(cases, start=1):
         print(
@@ -209,36 +248,41 @@ def run_smoke(*, dry_run: bool = False) -> dict[str, Any]:
         results.append(row)
         status = row.get("status")
         if status in COMPLETED_STATUSES:
-            complete += 1
             print(
                 f"  OK status={status} routed={row.get('predicted_domain')} "
                 f"verdict={row.get('verdict')}",
                 file=sys.stderr,
             )
         else:
-            errors += 1
+            error_class = row.get("error_class") or "unknown"
             print(
-                f"  FAIL status={status} error={row.get('error', '')}",
+                f"  ERROR status={status} error_class={error_class} "
+                f"error={row.get('error', '')}",
                 file=sys.stderr,
             )
 
+    summary = _summarize_results(results, total=len(cases))
     return {
         "dry_run": False,
         "results": results,
-        "summary": {
-            "total": len(cases),
-            "complete": complete,
-            "errors": errors,
-            "success": complete == len(cases),
-        },
+        "summary": summary,
     }
+
+
+def _exit_code_for_report(report: dict[str, Any], *, dry_run: bool) -> int:
+    if dry_run:
+        return EXIT_OK
+    summary = report.get("summary") or {}
+    if summary.get("errors", 0) == 0 and summary.get("complete") == summary.get("total"):
+        return EXIT_OK
+    return EXIT_SMOKE_FAIL
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
             "Run five fixed eval queries through the full ARCS pipeline. "
-            "Exit 0 only when all complete with PASS or FAIL (no ERROR)."
+            f"Exit {EXIT_OK} only when all complete with PASS or FAIL (zero ERROR)."
         ),
     )
     parser.add_argument(
@@ -265,10 +309,12 @@ def main() -> None:
         report = run_smoke(dry_run=args.dry_run)
     except (FileNotFoundError, KeyError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(EXIT_SETUP)
 
     if args.json:
-        print(json.dumps(report, indent=2, ensure_ascii=False))
+        payload = dict(report)
+        payload["exit_code"] = _exit_code_for_report(report, dry_run=args.dry_run)
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
     elif args.dry_run:
         for case in report.get("cases", []):
             print(
@@ -279,17 +325,22 @@ def main() -> None:
     else:
         summary = report["summary"]
         print(
-            f"\nSmoke e2e: {summary['complete']}/{summary['total']} complete, "
-            f"{summary['errors']} error(s)",
+            f"\nSmoke e2e: {summary['complete']}/{summary['total']} complete "
+            f"(PASS={summary['pass']} FAIL={summary['fail']}), "
+            f"errors={summary['errors']}",
+            file=sys.stderr,
+        )
+        if summary["errors"]:
+            print("ERROR breakdown by error_class:", file=sys.stderr)
+            for bucket, count in sorted((summary.get("error_classes") or {}).items()):
+                print(f"  {bucket}: {count}", file=sys.stderr)
+        print(
+            f"exit_code={_exit_code_for_report(report, dry_run=False)} "
+            f"(0=ok, {EXIT_SMOKE_FAIL}=smoke fail, {EXIT_SETUP}=setup)",
             file=sys.stderr,
         )
 
-    if args.dry_run:
-        sys.exit(0)
-
-    if report["summary"]["complete"] == report["summary"]["total"]:
-        sys.exit(0)
-    sys.exit(1)
+    sys.exit(_exit_code_for_report(report, dry_run=args.dry_run))
 
 
 if __name__ == "__main__":

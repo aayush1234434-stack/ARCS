@@ -112,3 +112,27 @@ def test_run_one_uses_naive_answer_spec_and_judge(monkeypatch) -> None:
     assert result["pipeline_id"] == "NAIVE"
     assert result["verification"]["score"] == 0.9
     assert result["answer"] == "42 is the answer"
+
+
+def test_compare_only_prints_delta(capsys) -> None:
+    import scripts.eval_naive_baseline as mod
+
+    naive = _make_experiment(
+        "naive-baseline-v1",
+        [
+            {"status": "PASS", "expected_domain": "CODING", "verification": {"verdict": "PASS"}},
+            {"status": "FAIL", "expected_domain": "MEDICAL", "verification": {"verdict": "FAIL"}},
+        ],
+    )
+    arcs = _make_experiment(
+        "post-fix-v2",
+        [
+            {"status": "PASS", "expected_domain": "CODING", "verification": {"verdict": "PASS"}},
+            {"status": "PASS", "expected_domain": "MEDICAL", "verification": {"verdict": "PASS"}},
+        ],
+    )
+    mod._print_comparison(naive, arcs)
+    err = capsys.readouterr().err
+    assert "Naive vs ARCS" in err
+    assert "ARCS − naive:" in err
+    assert "50.0%" in err

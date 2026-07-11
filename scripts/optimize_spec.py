@@ -15,6 +15,12 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from arcs.optimization.dspy_cli import (
+    add_groq_copro_args,
+    add_max_examples_arg,
+    finalize_optimize_run,
+    validate_optimize_args,
+)
 from arcs.optimization.dspy_spec import (
     DEFAULT_OUTPUT,
     DEFAULT_SPECIALIST_QUEUE,
@@ -50,37 +56,17 @@ def main() -> None:
         default=DEFAULT_OUTPUT,
         help=f"Sidecar prompt path (default: {DEFAULT_OUTPUT})",
     )
-    parser.add_argument(
-        "--max-examples",
-        type=int,
-        default=20,
-        metavar="N",
-        help="Max incomplete-spec examples to load (default: 20)",
-    )
+    add_max_examples_arg(parser)
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="List incomplete-spec examples; do not call DSPy or write files",
     )
-    parser.add_argument(
-        "--breadth",
-        type=int,
-        default=5,
-        help="COPRO breadth (default: 5)",
-    )
-    parser.add_argument(
-        "--depth",
-        type=int,
-        default=2,
-        help="COPRO depth (default: 2)",
-    )
+    add_groq_copro_args(parser)
     args = parser.parse_args()
 
-    if args.max_examples < 1:
-        print("Error: --max-examples must be >= 1", file=sys.stderr)
-        sys.exit(1)
-
     try:
+        validate_optimize_args(args)
         summary = optimize_spec_prompt(
             specialist_queue=args.specialist_queue,
             verifier_queue=args.verifier_queue,
@@ -90,6 +76,7 @@ def main() -> None:
             breadth=args.breadth,
             depth=args.depth,
         )
+        finalize_optimize_run(summary, args.output)
     except (FileNotFoundError, ValueError, RuntimeError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
