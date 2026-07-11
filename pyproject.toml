@@ -17,3 +17,7 @@ include = ["arcs*"]
 pythonpath = ["."]
 testpaths = ["tests"]
 python_files = ["test_*.py", "smoke_*.py"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: requires local artifacts, exported ONNX, or live APIs",
+]

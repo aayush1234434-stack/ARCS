@@ -42,6 +42,31 @@ def test_matches_domain_dir_excludes_merged_and_resume():
     )
 
 
+def test_all_domain_experiments_uses_synthetic_dirs(monkeypatch, tmp_path):
+    exp_root = tmp_path / "experiments"
+    _write_experiment_dir(exp_root, "2026-07-10T09-04-19_post-fix-coding-v1")
+    _write_experiment_dir(exp_root, "2026-07-11T09-35-04_post-fix-coding-v2")
+
+    monkeypatch.setattr(snapshot_post_fix.config, "EXPERIMENTS_DIR", exp_root)
+
+    matches = snapshot_post_fix._all_domain_experiments("coding")
+    assert len(matches) == 2
+    assert matches[0].name.endswith("post-fix-coding-v1")
+    assert matches[1].name.endswith("post-fix-coding-v2")
+
+
+def test_latest_resume_experiment(monkeypatch, tmp_path):
+    exp_root = tmp_path / "experiments"
+    _write_experiment_dir(exp_root, "2026-07-11T09-00-00_post-fix-resume-v1")
+    _write_experiment_dir(exp_root, "2026-07-11T10-00-00_post-fix-resume-v2")
+
+    monkeypatch.setattr(snapshot_post_fix.config, "EXPERIMENTS_DIR", exp_root)
+
+    resume = snapshot_post_fix._latest_resume_experiment()
+    assert resume is not None
+    assert resume.name.endswith("post-fix-resume-v2")
+
+
 def test_resolve_default_inputs_finds_domain_runs_and_resume(monkeypatch, tmp_path):
     """CI-safe: synthetic experiment dirs; no dependency on local artifacts/."""
     exp_root = tmp_path / "experiments"
@@ -61,12 +86,21 @@ def test_resolve_default_inputs_finds_domain_runs_and_resume(monkeypatch, tmp_pa
     assert len(domain_paths) >= len(snapshot_post_fix.DOMAIN_TAGS)
 
 
-@pytest.mark.skipif(
-    not snapshot_post_fix.config.EXPERIMENTS_DIR.exists(),
-    reason="local artifacts/experiments not present",
-)
+def test_resolve_default_inputs_reports_missing_domains(monkeypatch, tmp_path):
+    exp_root = tmp_path / "experiments"
+    _write_experiment_dir(exp_root, "2026-07-11T09-00-00_post-fix-legal-v1")
+
+    monkeypatch.setattr(snapshot_post_fix.config, "EXPERIMENTS_DIR", exp_root)
+
+    domain_paths, missing, resume = snapshot_post_fix._resolve_default_inputs()
+    assert "legal" in " ".join(p.name.lower() for p in domain_paths)
+    assert any("coding" in pattern for pattern in missing)
+    assert resume is None
+
+
+@pytest.mark.integration
 def test_resolve_default_inputs_local_artifacts_when_present():
-    """Optional integration check when developer has saved eval runs locally."""
+    """Optional: full discovery against saved eval runs on disk."""
     domain_paths, missing, resume = snapshot_post_fix._resolve_default_inputs()
     if missing:
         pytest.skip(f"missing local post-fix runs: {missing}")
