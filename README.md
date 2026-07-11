@@ -975,6 +975,8 @@ than the logged baseline **and** a higher LLM judge score on the same fixed
 **Run A:** retrain on every negative signal.  
 **Run B:** retrain only where `attribution == ROUTER`.
 
+**RQ1 status (bootstrap, complete).** On a synthetic corpus reconstructed from eval artifacts (38 negatives, 12 ROUTER-attributed), router retraining improved eval-queries accuracy from **93.75% → 97.92%**, but Run A and Run B **tied** at **99.0% / 97.92%** — attribution filtering is **inconclusive at this sample size**, not refuted. **RQ1 v2 (real feedback)** is explicitly **future work**: requires **≥40** 👎 rows and **≥15** ROUTER-attributed (currently **2 / 0**). Until v2 runs, the bootstrap manifest below is the authoritative RQ1 result.
+
 ## RQ1 Results
 
 **Hypothesis.** Retraining the router only on failures that attribution blames on the router (**Run B**) yields a more accurate classifier than retraining on *all* negative feedback (**Run A**) — i.e. targeted repair beats blanket repair.
@@ -1107,7 +1109,7 @@ Only meaningful once domain-specific models (or clearly stronger domain backends
 | Sandbox | Docker (`python:3.11-slim`) with subprocess fallback |
 | Logging | JSONL (`logs/requests.jsonl`) |
 
-Planned / not in this MVP: ChromaDB grounding, DSPy batch prompt optimization, multi-domain query decomposition, autonomous evaluator feedback.
+Planned / not in this MVP: ChromaDB grounding, multi-domain query decomposition, autonomous evaluator feedback. DSPy prompt optimization is **wired** (`scripts/optimize_*.py`); sidecars require manual review via `apply_sidecar.py` before source apply.
 
 ---
 

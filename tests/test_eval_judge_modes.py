@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "artifacts/experiments/2026-07-11T12-36-52_post-fix-v2-merged"
+ARTIFACT = ROOT / "artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged"
 
 
 def test_eval_judge_modes_compare_on_cached_experiment():

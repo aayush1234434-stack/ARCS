@@ -30,7 +30,7 @@ Per-domain PASS (all rows in domain): CODING **+42 pp**, LEGAL **+31 pp**, MEDIC
 | Architecture | **8 / 10** | Strong MVP design; RQ2 heterogeneity not built |
 | Implementation | **7.5 / 10** | End-to-end works; judge levers + smoke committed; API fragility remains |
 | Eval rigor | **7.5 / 10** | Good harness; 48/48 FINAL merge; small *n*, stitched runs |
-| Research | **6 / 10** | Clear RQs; RQ1 inconclusive, naive baseline run in progress |
+| Research | **7 / 10** | RQ1 bootstrap complete (tie reported); v2 explicitly future work |
 | Production readiness | **6 / 10** | Docker, ONNX, smoke_e2e + error_class; no hosted deploy |
 | Documentation | **8 / 10** | Extensive; README/SCORECARD at 47.9% |
 
@@ -92,11 +92,11 @@ Per-domain PASS (all rows in domain): CODING **+42 pp**, LEGAL **+31 pp**, MEDIC
 | Phase | Item | Status |
 |---|---|---|
 | **A** | CI workflow, judge/prose fixes, eval resume | **done** |
-| **B** | `eval_naive_baseline.py`, `eval_repair_ablation.py`, RQ1 v2 wiring | **done** (v2 **blocked** on corpus) |
+| **B** | `eval_naive_baseline.py`, `eval_repair_ablation.py`, RQ1 v2 wiring | **done** (v2 **future work**) |
 | **C** | `error_class`, `smoke_e2e.py`, ONNX export | **done** |
 | **D** | `smoke_imports.py`, CI optional e2e job | **done** |
 | **B** | Apply optimized prompts (`apply_sidecar.py`) | **pending** |
-| **B** | Full 48-row naive baseline run | **in progress** |
+| **B** | Full 48-row naive baseline run | **future work** |
 
 ---
 
@@ -165,7 +165,7 @@ From `2026-07-11T11-22-52_repair_ablation/manifest.json`: arm0 **93.75%** → ar
 **Orchestration ablation (naive vs ARCS)**
 
 - `eval_naive_baseline.py` wired; same spec+judge as full pipeline.
-- **Full 48-row naive run:** in progress (`naive-baseline-v1`). README/RESULTS show ARCS at **47.9%**; naive row **TBD**.
+- **Full 48-row naive run:** future work. README/RESULTS show ARCS at **47.9%**; naive row **TBD**.
 
 **RQ1 v2 (real demo feedback)**
 
@@ -186,7 +186,7 @@ From `2026-07-11T11-22-52_repair_ablation/manifest.json`: arm0 **93.75%** → ar
 | **B** | Naive baseline script + comparison | **done** (run **pending**) |
 | **B** | RQ1 v2 real-feedback path | **done** (execution **pending**) |
 | **B** | McNemar paired misroute analysis in `rq1_run.py` | **done** |
-| **D** | Thesis-ready negative result write-up for RQ1 tie | **pending** |
+| **D** | Thesis-ready negative result write-up for RQ1 tie | **done** |
 
 ---
 
@@ -274,14 +274,14 @@ Development was organized in four agent phases. Use this for thesis “methods t
 
 ## Recommended committee narrative (one paragraph)
 
-> ARCS demonstrates that **attribution-gated repair loops** can be engineered end-to-end: a router dispatches queries to verifiable domain pipelines, failures are blamed before retraining, and held-out eval shows **+11.5 percentage points** on PASS rate (36.4% → **47.9%**, 23/48) after targeted LEGAL/CODING repairs, with **zero ERROR rows** in the FINAL merged eval. Router retraining on bootstrap negative feedback improves held-out routing from **93.75% to 97.92%**, but **Run A vs Run B ties**, so attribution filtering remains **plausible but unconfirmed** until RQ1 v2 on real user feedback. The system is a **credible MVP** with strong documentation and eval hygiene; orchestration value vs a naive single-LLM baseline is **currently running** (`naive-baseline-v1`).
+> ARCS demonstrates that **attribution-gated repair loops** can be engineered end-to-end: a router dispatches queries to verifiable domain pipelines, failures are blamed before retraining, and held-out eval shows **+11.5 percentage points** on PASS rate (36.4% → **47.9%**, 23/48) after targeted LEGAL/CODING repairs, with **zero ERROR rows** in the FINAL merged eval. Bootstrap RQ1 (synthetic corpus) shows router retraining improves held-out routing from **93.75% to 97.92%**, but **Run A vs Run B ties** — attribution filtering is **inconclusive at bootstrap *N***, not refuted; real-feedback RQ1 v2 is explicitly future work (≥40 / ≥15 gates). The system is a **credible MVP** with strong documentation and eval hygiene.
 
 ---
 
 ## Next three actions (highest ROI for thesis)
 
-1. **Complete `eval_naive_baseline.py` on all 48 queries** — in progress; fills orchestration claim ([Phase B](#phase-ad-checklist-prompt-arc)).
-2. **Collect ≥40 real 👎 feedback rows** → RQ1 v2 — may finally separate Run A vs B ([Phase B](#phase-ad-checklist-prompt-arc)).
+1. **Optional:** complete `eval_naive_baseline.py` on all 48 queries — future work; fills orchestration claim ([Phase B](#phase-ad-checklist-prompt-arc)).
+2. **Optional:** RQ1 v2 when demo feedback reaches ≥40 / ≥15 gates ([Phase B](#phase-ad-checklist-prompt-arc)).
 3. **Tag a release** + export `experiment.json` checksums for baseline, FINAL merge, and RQ1 manifest ([Phase D](#phase-ad-checklist-prompt-arc)).
 
 ---

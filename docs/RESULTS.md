@@ -2,6 +2,10 @@
 
 *Paper-style summary of the MVP evaluation harness. All numbers below are pulled from saved artifacts under `artifacts/experiments/` unless noted as pending.*
 
+**Canonical end-to-end result:** `2026-07-11T13-45-31_post-fix-v2-merged` — **23/48 PASS (47.9%)**, **0 ERROR**.
+
+**RQ1 status (bootstrap, complete):** On a synthetic corpus reconstructed from eval artifacts (38 negatives, 12 ROUTER-attributed), router retraining improved eval-queries accuracy from **93.75% → 97.92%**, but Run A (all negatives) and Run B (ROUTER-only) **tied** at **99.0% / 97.92%** — attribution filtering is **inconclusive at this sample size**, not refuted. **RQ1 v2 (real feedback)** is deferred future work: requires **≥40** 👎 rows and **≥15** ROUTER-attributed (currently **2 / 0**). Manifest: `artifacts/experiments/2026-07-11T08-38-52_rq1/manifest.json`.
+
 **Primary sources**
 
 | Artifact | Role |
@@ -15,7 +19,7 @@
 
 ## 1. Abstract
 
-ARCS (Adaptive Routing & Correction System) is a modular orchestration stack that routes each user query to a domain-specific pipeline, verifies the answer against an independently generated specification, and attributes failures to router, specialist, verifier, or ambiguous causes before any retraining. We evaluate on a held-out set of 48 multi-domain queries (`data/eval_queries.jsonl`) and a frozen router test set of 200 examples (`data/router/router_test.csv`). After domain-targeted repairs (prompt sidecars, coding-path fixes, router retrain), end-to-end PASS rate on completed eval rows rises from **36.4%** (baseline) to **42.4%** (post-fix-v2), with the largest per-domain gain on LEGAL (+30.8 pts) and CODING (+25.0 pts). Bootstrap RQ1 shows router retraining on synthetic negative feedback improves eval-queries routing accuracy from **93.75%** to **97.92%**, but Run A (all negatives) and Run B (ROUTER-only) **tie** on both routing and pipeline metrics — attribution filtering is plausible but unconfirmed at this corpus size. A naive single-LLM baseline (same generator and judge, no orchestration) is wired but not yet run at full scale; RQ1 v2 on real demo feedback remains blocked pending corpus thresholds (≥40 negatives, ≥15 ROUTER-attributed).
+ARCS (Adaptive Routing & Correction System) is a modular orchestration stack that routes each user query to a domain-specific pipeline, verifies the answer against an independently generated specification, and attributes failures to router, specialist, verifier, or ambiguous causes before any retraining. We evaluate on a held-out set of 48 multi-domain queries (`data/eval_queries.jsonl`) and a frozen router test set of 200 examples (`data/router/router_test.csv`). After domain-targeted repairs (prompt hardening, coding-path fixes, router retrain), end-to-end PASS rate on completed eval rows rises from **36.4%** (baseline) to **47.9%** (post-fix FINAL), with the largest per-domain gains on CODING (+41.7 pts) and LEGAL (+30.8 pts). Bootstrap RQ1 shows router retraining on synthetic negative feedback improves eval-queries routing accuracy from **93.75%** to **97.92%**, but Run A (all negatives) and Run B (ROUTER-only) **tie** — attribution filtering is **inconclusive** at bootstrap *N*, not confirmed. A naive single-LLM baseline (same generator and judge, no orchestration) is wired but not yet run at full scale. RQ1 v2 on real demo feedback is explicitly scoped as future work (≥40 negatives, ≥15 ROUTER-attributed; currently 2 / 0).
 
 ---
 
@@ -78,49 +82,49 @@ Between baseline and post-fix-v2 the project applied:
 - Domain prompt sidecars (LEGAL, CODING, MEDICAL, GENERAL) from DSPy optimization artifacts
 - Coding-path fixes (prose-only CODING → judge fallback; empty-answer handling)
 - Router retrain on exported failure examples
-- Partial eval resume after Groq TPD exhaustion (15 ERROR rows in merged post-fix-v2 run)
+- Partial eval resume after Groq TPD exhaustion (earlier partial merges; superseded by FINAL merge below)
 
 ---
 
-## 4. End-to-end results: baseline vs post-fix-v2
+## 4. End-to-end results: baseline vs post-fix FINAL
 
-**Sources:** `2026-07-10T07-24-20_baseline-v1-full-pipeline`, `2026-07-11T09-35-19_post-fix-v2-merged`.
+**Sources:** `2026-07-10T07-24-20_baseline-v1-full-pipeline`, `2026-07-11T13-45-31_post-fix-v2-merged` (48/48 rows, 0 ERROR).
 
 ### 4.1 Overall pipeline (eval queries, *n* = 48)
 
 | Run | PASS | FAIL | ERROR | PASS% (all rows) | PASS% (completed) |
 |---|---:|---:|---:|---:|---:|
 | Baseline v1 | 16 | 28 | 4 | 33.3% | **36.4%** (16/44) |
-| Post-fix v2 | 14 | 19 | 15 | 29.2% | **42.4%** (14/33) |
+| Post-fix FINAL | 23 | 25 | 0 | 47.9% | **47.9%** (23/48) |
 
-Post-fix-v2 improves quality on rows that finish (42.4% vs 36.4% completed), but **15 ERROR rows** (mostly Groq TPD / infra during the merged run) depress the raw rate. GENERAL eval rows were entirely ERROR in the merged artifact (0/11 PASS).
+Post-fix FINAL is a stitched merge of per-domain runs plus resume rows where needed. All 48 eval rows completed with a PASS/FAIL verdict (no infra ERROR in the canonical artifact).
 
 ### 4.2 Per-domain PASS rate (all eval rows in domain)
 
-| Domain | *n* | Baseline PASS% | Post-fix-v2 PASS% | Δ (post − base) |
+| Domain | *n* | Baseline PASS% | Post-fix FINAL PASS% | Δ (post − base) |
 |---|---:|---:|---:|---:|
-| CODING | 12 | 25.0% (3/12) | 50.0% (6/12) | **+25.0 pts** |
-| MEDICAL | 12 | 50.0% (6/12) | 16.7% (2/12) | −33.3 pts |
+| CODING | 12 | 25.0% (3/12) | 66.7% (8/12) | **+41.7 pts** |
+| MEDICAL | 12 | 50.0% (6/12) | 41.7% (5/12) | −8.3 pts |
 | LEGAL | 13 | 15.4% (2/13) | 46.2% (6/13) | **+30.8 pts** |
-| GENERAL | 11 | 45.5% (5/11) | 0.0% (0/11) | −45.5 pts† |
+| GENERAL | 11 | 45.5% (5/11) | 36.4% (4/11) | −9.1 pts |
 
-† GENERAL regression is an artifact of 11/11 ERROR in post-fix-v2 merged run, not verified answer-quality regression.
-
-### 4.3 Router accuracy (same eval pass)
+### 4.3 Router accuracy (eval queries)
 
 | Run | Eval-queries router acc. | Router test acc. (*n* = 200) |
 |---|---:|---:|
-| Baseline v1 | 93.2% (41/44 scored) | 95.5% |
-| Post-fix v2 | 97.0% (32/33 scored) | — |
+| Baseline v1 | 93.75% (45/48) | 95.5% |
+| Post-fix FINAL | 97.92% (47/48) | — |
 
 ---
 
-## 5. RQ1 — Attribution-filtered router retraining
+## 5. RQ1 — Attribution-filtered router retraining *(bootstrap complete)*
 
 **Hypothesis.** Retraining the router only on failures attributed to the router (Run B) beats retraining on all negative feedback (Run A).
 
+**Status.** Bootstrap pilot **complete**. Outcome: **inconclusive (tie)** — retraining helps over pre-RQ1, but Run A and Run B cannot be distinguished at this corpus size. Real-feedback RQ1 v2 is **future work** (see §5.2); not required to interpret the bootstrap result.
+
 **Source:** `artifacts/experiments/2026-07-11T08-38-52_rq1/manifest.json`  
-**Corpus:** bootstrap synthetic (`data/rq1/feedback_corpus.jsonl`) — 38 augment rows (Run A), 12 ROUTER-only (Run B).
+**Corpus:** bootstrap synthetic (`data/rq1/feedback_corpus.jsonl`) — negatives reconstructed from eval artifacts, **not** live user 👎 signal. 38 augment rows (Run A), 12 ROUTER-only (Run B).
 
 | Arm | Router test acc. | Eval-queries router acc. |
 |---|---:|---:|
@@ -142,18 +146,26 @@ Post-fix-v2 improves quality on rows that finish (42.4% vs 36.4% completed), but
 
 Manifest: `2026-07-11T11-22-52_repair_ablation/manifest.json`.
 
-### 5.2 RQ1 v2 (real feedback) — pending
+### 5.2 RQ1 v2 (real feedback) — future work
 
-Real-feedback RQ1 requires **≥40** total 👎 rows and **≥15** ROUTER-attributed negatives in `logs/requests.jsonl`. As of the last corpus build: **2 negatives, 0 ROUTER** — not ready.
+Real-feedback RQ1 is **explicitly deferred**, not an open blocker for the MVP. Readiness gates (enforced before `--execute --corpus real`):
+
+| Threshold | Minimum | Current (demo logs) |
+|---|---:|---:|
+| Total 👎 rows | **≥40** | **2** |
+| ROUTER-attributed | **≥15** | **0** |
+
+Check status: `python scripts/feedback_stats.py --requests-only` (exit 0 when ready).
+
+When thresholds are met:
 
 ```bash
-python scripts/feedback_stats.py --requests-only   # exit 0 when ready
 python scripts/bootstrap_rq1_corpus.py --real-only
 python scripts/rq1_prepare_datasets.py --corpus real
 python scripts/rq1_run.py --execute --corpus real
 ```
 
-Results will be recorded in a new `*_rq1-v2/manifest.json` without overwriting bootstrap artifacts.
+Results will be recorded in a new `*_rq1-v2/manifest.json` without overwriting bootstrap artifacts. Until then, **§5 bootstrap numbers are the authoritative RQ1 result**.
 
 ---
 
@@ -252,19 +264,19 @@ On the 2026-07-11 FINAL merged artifact: **0 flips** (no FAIL row with score ≥
 
 ## 8. Limitations
 
-1. **Synthetic RQ1 bootstrap** — Negative feedback is reconstructed from eval artifacts (`misclassified_test.json`, pipeline failures), not live user 👎 signal. Label and attribution distributions may not match production.
+1. **Synthetic RQ1 bootstrap** — Negative feedback is reconstructed from eval artifacts (`misclassified_test.json`, pipeline failures), not live user 👎 signal. Label and attribution distributions may not match production. **Bootstrap RQ1 is complete; real-feedback RQ1 v2 is future work** (§5.2).
 
-2. **Small N** — 48 eval queries and ≈38 bootstrap negatives (≈12 ROUTER) leave metric deltas within noise; RQ1 Run A vs Run B cannot be distinguished.
+2. **Small N** — 48 eval queries and ≈38 bootstrap negatives (≈12 ROUTER) leave metric deltas within noise; RQ1 Run A vs Run B **tied** and cannot be distinguished at bootstrap *N*.
 
-3. **Groq TPD / rate limits** — Free-tier daily token caps caused partial eval runs (15 ERROR rows in post-fix-v2 merged). Completed-row PASS% is the fairer quality metric but reduces effective *n*.
+3. **Groq TPD / rate limits** — Free-tier daily token caps caused partial eval runs during development. The canonical FINAL merge (`13-45-31_post-fix-v2-merged`) has **0 ERROR** rows; earlier partial merges are superseded.
 
 4. **Judge strictness** — PASS requires score ≥ 0.75 with no missing required elements and no disqualifying conditions (strict default, `JUDGE_STRICT=1`). A documented relaxed ablation (`JUDGE_STRICT=0`) allows at most one missing element at the same score threshold; see [§7.3](#73-lever-2--judge-partial-coverage-ablation).
 
 5. **Single generator family** — All domains share one Groq Llama backend today; RQ2 (heterogeneous specialists) is not tested.
 
-6. **GENERAL domain fragility** — Post-fix-v2 merged run lost all GENERAL rows to ERROR; domain-level conclusions for GENERAL are unreliable until resume completes.
+6. **Naive baseline pending** — Full 48-row naive-vs-ARCS orchestration ablation not yet completed (§6).
 
-7. **Real feedback gap** — RQ1 v2 and production repair loops depend on demo/CLI feedback that has not yet reached corpus thresholds.
+7. **End-to-end PASS below thesis target** — 47.9% PASS on 48/48 completed rows; 60% target not reached in this cycle.
 
 ---
 
@@ -311,7 +323,7 @@ python scripts/merge_experiments.py \
 # ── Compare experiments ──
 python scripts/compare_experiments.py \
   artifacts/experiments/2026-07-10T07-24-20_baseline-v1-full-pipeline \
-  artifacts/experiments/2026-07-11T09-35-19_post-fix-v2-merged
+  artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
 
 # ── RQ1 bootstrap ──
 python scripts/bootstrap_rq1_corpus.py
