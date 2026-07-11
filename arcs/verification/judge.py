@@ -136,6 +136,41 @@ def _strip_reasoning(raw: str) -> str:
     return text.strip()
 
 
+def _bracket_match(text: str, start: int) -> str | None:
+    """Return the balanced ``{...}`` substring beginning at ``start``.
+
+    Tracks string state so braces inside string literals do not affect depth.
+    Returns None if no balanced object is found.
+    """
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+    return None
+
+
+def _strip_trailing_commas(text: str) -> str:
+    """Remove trailing commas before } or ] (a common model JSON defect)."""
+    return re.sub(r",(\s*[}\]])", r"\1", text)
+
+
 def _extract_json(raw: str) -> dict:
     text = _strip_reasoning(raw)
     if not text:
@@ -146,11 +181,37 @@ def _extract_json(raw: str) -> dict:
         text = fence.group(1)
 
     start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
+    if start == -1:
         raise ValueError(f"Judge response is not JSON: {raw[:200]}")
 
-    return json.loads(text[start : end + 1])
+    # 1. Preferred: decode a single JSON object starting at the first '{'.
+    #    raw_decode tolerates trailing prose after the object.
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(text[start:])
+        if isinstance(obj, dict):
+            return obj
+    except json.JSONDecodeError:
+        pass
+
+    # 2. Bracket-match the outermost {...} (handles leading prose + nested braces).
+    candidate = _bracket_match(text, start)
+    if candidate is None:
+        # Last resort: span from first '{' to last '}'.
+        end = text.rfind("}")
+        if end <= start:
+            raise ValueError(f"Judge response is not JSON: {raw[:200]}")
+        candidate = text[start : end + 1]
+
+    try:
+        return json.loads(candidate)
+    except json.JSONDecodeError:
+        pass
+
+    # 3. Safe repair: strip trailing commas, then retry.
+    try:
+        return json.loads(_strip_trailing_commas(candidate))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Judge response is not valid JSON: {raw[:200]}") from exc
 
 
 def _as_string_list(value: Any, field: str) -> list[str]:
@@ -274,7 +335,25 @@ def run(
     try:
         return _call_judge(question, answer, specification, model=model)
     except (ValueError, json.JSONDecodeError):
-        return _call_judge(question, answer, specification, model=model, retry=True)
+        try:
+            return _call_judge(question, answer, specification, model=model, retry=True)
+        except (ValueError, json.JSONDecodeError):
+            # Unparseable even after a retry: degrade to a FAIL instead of
+            # raising, so a single bad judge response cannot abort an eval run.
+            return _parse_error_result(model)
+
+
+def _parse_error_result(model: str) -> dict:
+    """Normalized FAIL used when the judge response cannot be parsed."""
+    result = _normalize_result(
+        {
+            "verdict": "FAIL",
+            "score": 0.0,
+            "explanation": "judge response parse error",
+        }
+    )
+    result["model"] = model
+    return result
 
 
 def main() -> None:

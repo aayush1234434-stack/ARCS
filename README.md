@@ -344,6 +344,7 @@ eval set and saved experiment artifacts, you cannot tell whether a repair helped
 | `scripts/eval_pipeline.py` | Full pipeline eval → `artifacts/experiments/` |
 | `scripts/eval_router.py` | Router-only eval (+ optional `--eval-queries`) |
 | `scripts/compare_experiments.py` | A vs B metric diff |
+| `scripts/merge_experiments.py` | Merge partial/resumed runs into one experiment |
 | `scripts/snapshot_baseline.py` | Capture router + pipeline baseline manifest |
 | `artifacts/experiments/` | Saved runs (`experiment.json`, `summary.txt`, manifests) |
 | `arcs/eval/` | Metrics, experiment I/O, compare helpers |
@@ -393,6 +394,42 @@ Baseline manifests live at `artifacts/experiments/<run_id>_baseline/manifest.jso
 point at the child router/pipeline experiment dirs. Use those child paths (or later
 eval runs) with `compare_experiments.py` after repair.
 
+### Surviving Groq quota exhaustion (resume + merge)
+
+The Groq free tier enforces per-minute (TPM) and per-day (TPD) token limits. TPM
+bumps are ridden out automatically by the client's retries; a **TPD** exhaustion
+cannot be recovered within the day, so `eval_pipeline.py` stops early, **saves the
+partial experiment**, prints a resume command, and exits with code `2`.
+
+```bash
+# Ease rate limits by pacing rows; if TPD is hit it saves partial + exits 2
+python scripts/eval_pipeline.py --name post-fix-v2 --sleep-between 2
+
+# After the daily quota resets, resume: rows already PASS/FAIL are skipped,
+# only ERROR/missing ids are re-run, and results merge into a new experiment
+python scripts/eval_pipeline.py --name post-fix-v2 \
+  --resume-from artifacts/experiments/<partial-run> --sleep-between 2
+```
+
+If you ran several partial evals under different names, stitch them into one
+authoritative experiment (dedupe by id; a non-ERROR row always beats an ERROR
+row, newer wins otherwise):
+
+```bash
+python scripts/merge_experiments.py \
+  artifacts/experiments/<part-1> artifacts/experiments/<part-2> \
+  --name post-fix-v2-merged
+
+# Optionally show per-domain PASS vs a baseline while merging
+python scripts/merge_experiments.py \
+  artifacts/experiments/<part-1> artifacts/experiments/<part-2> \
+  --name post-fix-v2-merged \
+  --baseline artifacts/experiments/<baseline-pipeline-run>
+```
+
+The merged experiment recomputes `pipeline_summary` + `router_accuracy` from the
+combined rows, so it is directly comparable with `compare_experiments.py`.
+
 ---
 
 ## Repair orchestrator
@@ -435,6 +472,40 @@ Label unlabeled router-queue rows before export pays off:
 python scripts/label_router_failures.py --list
 python scripts/label_router_failures.py --interactive
 ```
+
+### Bootstrap the repair demo from eval failures
+
+When live 👍/👎 feedback is sparse, seed the repair queues from eval FAILs so the
+Phase 1 tools have something to work on. `scripts/export_eval_failures.py` reads a
+pipeline experiment (default: newest `post-fix-v2-merged`, or `--experiment PATH`),
+turns each **FAIL** row (ERRORs are skipped) into a NEGATIVE, log-shaped record,
+runs the real `arcs.post.attribution.attribute` on it, and appends the results to
+`logs/eval_failures.jsonl` — **`logs/requests.jsonl` is never touched**. It then
+refreshes `logs/queues/*.jsonl` from the combined logs (real + eval-derived), so
+existing feedback is preserved.
+
+```bash
+# Preview attribution counts (writes nothing)
+python scripts/export_eval_failures.py --dry-run
+
+# Append eval FAILs to logs/eval_failures.jsonl and refresh queues
+python scripts/export_eval_failures.py
+
+# From a specific experiment
+python scripts/export_eval_failures.py --experiment artifacts/experiments/<run>
+
+# Then run the normal repair loop on the seeded queues
+python scripts/repair.py --skip-extract --dry-run
+```
+
+Because these are synthetic (eval-derived) negatives, use them to exercise the
+repair loop — not as a substitute for real user feedback.
+
+Eval experiments saved before this fix may lack `specification` / `test_cases`;
+`export_eval_failures.py` synthesizes a minimal query-derived spec so
+`optimize_{coding,medical,legal,general}.py` can load examples. New eval runs
+via `scripts/eval_pipeline.py` persist the full spec, answer, and test cases
+when available.
 
 ---
 

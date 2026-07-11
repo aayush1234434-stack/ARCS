@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import traceback
 from collections import Counter
 from pathlib import Path
@@ -18,7 +19,8 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from arcs import config, progress
-from arcs.eval.experiments import save_experiment
+from arcs.clients.rate_limit import is_groq_tpd_exhausted
+from arcs.eval.experiments import load_experiment, save_experiment
 from arcs.eval.metrics import (
     VALID_DOMAINS,
     aggregate_experiment,
@@ -29,6 +31,13 @@ from arcs.main import run_pipeline
 
 DEFAULT_INPUT = config.DATA_DIR / "eval_queries.jsonl"
 DOMAIN_SET = frozenset(VALID_DOMAINS)
+
+# Exit code used when the run stops early because Groq's daily token limit (TPD)
+# is exhausted; partial results are saved and a resume command is printed.
+EXIT_TPD_EXHAUSTED = 2
+
+# Statuses considered "done" — resume will not re-run these.
+COMPLETED_STATUSES = frozenset({"PASS", "FAIL"})
 
 
 def _load_rows(path: Path) -> list[dict[str, Any]]:
@@ -149,6 +158,27 @@ def _build_row_result(
     result["verifier"] = pipeline.get("verifier") if isinstance(pipeline, dict) else None
     result["timing"] = dict(timing) if isinstance(timing, dict) else {}
     result["error"] = None
+
+    specification = state.get("specification")
+    if isinstance(specification, dict) and specification:
+        result["specification"] = specification
+
+    specialist = state.get("specialist")
+    tooling = state.get("tooling") or {}
+    if isinstance(specialist, dict):
+        specialist_out: dict[str, Any] = {}
+        answer = specialist.get("answer")
+        if isinstance(answer, str) and answer.strip():
+            specialist_out["answer"] = answer
+        test_cases = specialist.get("test_cases") or tooling.get("test_cases")
+        if isinstance(test_cases, list) and test_cases:
+            specialist_out["test_cases"] = test_cases
+        pipeline_id = specialist.get("pipeline_id") or result.get("pipeline_id")
+        if pipeline_id:
+            specialist_out["pipeline_id"] = pipeline_id
+        if specialist_out:
+            result["specialist"] = specialist_out
+
     return result
 
 
@@ -248,12 +278,32 @@ def _print_summary(experiment: dict[str, Any], *, dry_run: bool, saved_to: Path 
         print(f"saved:    {saved_to}", file=sys.stderr)
 
 
+def _tally(counters: dict[str, int], status: str | None) -> None:
+    if status == "ERROR":
+        counters["errors"] += 1
+    elif status == "PASS":
+        counters["pass"] += 1
+        counters["ok"] += 1
+    elif status == "FAIL":
+        counters["fail"] += 1
+        counters["ok"] += 1
+    else:
+        counters["unknown"] += 1
+        counters["ok"] += 1
+
+
 def run_eval(
     rows: list[dict[str, Any]],
     *,
     dry_run: bool,
-) -> tuple[list[dict[str, Any]], dict[str, int]]:
-    """Run eval rows. Returns (per-row results, counters)."""
+    sleep_between: float = 0.0,
+) -> tuple[list[dict[str, Any]], dict[str, int], bool]:
+    """Run eval rows.
+
+    Returns ``(per-row results, counters, tpd_exhausted)``. When the Groq daily
+    token limit is hit, the loop stops early, records the offending row as ERROR,
+    and sets ``tpd_exhausted=True`` so the caller can save partial results.
+    """
     counters = {
         "total": 0,
         "ok": 0,
@@ -264,6 +314,7 @@ def run_eval(
     }
     results: list[dict[str, Any]] = []
     total = len(rows)
+    tpd_exhausted = False
 
     for index, row in enumerate(rows, start=1):
         counters["total"] += 1
@@ -293,30 +344,102 @@ def run_eval(
             result = _build_row_result(row, state)
         except Exception as exc:
             result = _build_row_result(row, None, error=str(exc))
-            print(
-                f"  ERROR on {row_id}: {exc}",
-                file=sys.stderr,
-            )
-            # Keep traceback for debugging without aborting the run.
+            print(f"  ERROR on {row_id}: {exc}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
+            if is_groq_tpd_exhausted(exc):
+                # Daily token limit — not recoverable now. Record this row and
+                # stop so we can save partial progress and resume later.
+                results.append(result)
+                _print_progress(index, total, result)
+                counters["errors"] += 1
+                tpd_exhausted = True
+                print(
+                    "\nGroq daily token limit (TPD) exhausted — stopping early.",
+                    file=sys.stderr,
+                )
+                break
 
         results.append(result)
         _print_progress(index, total, result)
+        _tally(counters, result.get("status"))
 
-        status = result.get("status")
-        if status == "ERROR":
-            counters["errors"] += 1
-        elif status == "PASS":
-            counters["pass"] += 1
-            counters["ok"] += 1
-        elif status == "FAIL":
-            counters["fail"] += 1
-            counters["ok"] += 1
-        else:
-            counters["unknown"] += 1
-            counters["ok"] += 1
+        if sleep_between > 0 and index < total:
+            time.sleep(sleep_between)
 
-    return results, counters
+    return results, counters, tpd_exhausted
+
+
+def _load_prior_rows(path: Path) -> dict[str, dict[str, Any]]:
+    """Return {id: row} from a prior experiment's meta.rows."""
+    experiment = load_experiment(path)
+    prior = (experiment.get("meta") or {}).get("rows") or []
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in prior:
+        if isinstance(row, dict) and row.get("id"):
+            by_id[str(row["id"])] = row
+    return by_id
+
+
+def _finalize_and_save(
+    results: list[dict[str, Any]],
+    *,
+    name: str,
+    input_path: Path,
+    counters: dict[str, int],
+    output_dir: Path | None,
+    no_save: bool,
+    extra_meta: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], Path | None]:
+    """Recompute metrics over results and (optionally) save the experiment."""
+    router = router_accuracy(results)
+    pipeline = pipeline_summary(results)
+    meta: dict[str, Any] = {
+        "input": str(input_path),
+        "n_rows": len(results),
+        "counters": counters,
+        "rows": results,
+    }
+    if extra_meta:
+        meta.update(extra_meta)
+    experiment = aggregate_experiment(name, router=router, pipeline=pipeline, meta=meta)
+
+    saved_to: Path | None = None
+    if not no_save:
+        saved_to = save_experiment(experiment, name=name, output_dir=output_dir)
+        experiment = load_experiment(saved_to)
+    return experiment, saved_to
+
+
+def _print_resume_hint(
+    results: list[dict[str, Any]],
+    *,
+    saved_to: Path | None,
+    args: argparse.Namespace,
+) -> None:
+    """Print a ready-to-paste command to resume after TPD exhaustion."""
+    incomplete = [
+        str(r.get("id"))
+        for r in results
+        if r.get("id")
+        and str(r.get("status") or "").upper() not in COMPLETED_STATUSES
+    ]
+    print("\n=== Resume after quota resets ===", file=sys.stderr)
+    if saved_to is None:
+        print(
+            "Partial results were NOT saved (--no-save); re-run without --no-save "
+            "to enable resume.",
+            file=sys.stderr,
+        )
+        return
+    cmd = (
+        f"python scripts/eval_pipeline.py --name {args.name} "
+        f"--resume-from {saved_to} --sleep-between {max(args.sleep_between, 1.0):g}"
+    )
+    print(f"Partial experiment saved to: {saved_to}", file=sys.stderr)
+    if incomplete:
+        print(f"Incomplete ids ({len(incomplete)}): {','.join(incomplete)}", file=sys.stderr)
+    print("Resume with:", file=sys.stderr)
+    print(f"  {cmd}", file=sys.stderr)
 
 
 def main() -> None:
@@ -381,6 +504,24 @@ def main() -> None:
         action="store_true",
         help="Do not write experiment artifacts",
     )
+    parser.add_argument(
+        "--resume-from",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "Prior experiment dir or experiment.json. Rows already PASS/FAIL "
+            "there are skipped; only ERROR/missing ids are re-run, and results "
+            "are merged into the saved experiment."
+        ),
+    )
+    parser.add_argument(
+        "--sleep-between",
+        type=float,
+        default=0.0,
+        metavar="N",
+        help="Seconds to sleep between rows to ease rate limits (default: 0)",
+    )
     args = parser.parse_args()
 
     if not args.input.exists():
@@ -412,6 +553,18 @@ def main() -> None:
             normalized_domains.add(domain)
         domain_filter = normalized_domains
 
+    if args.sleep_between < 0:
+        print("Error: --sleep-between must be >= 0", file=sys.stderr)
+        sys.exit(1)
+
+    prior_rows: dict[str, dict[str, Any]] = {}
+    if args.resume_from is not None:
+        try:
+            prior_rows = _load_prior_rows(args.resume_from)
+        except (FileNotFoundError, TypeError, json.JSONDecodeError) as exc:
+            print(f"Error: could not load --resume-from: {exc}", file=sys.stderr)
+            sys.exit(1)
+
     rows = _load_rows(args.input)
     rows = _filter_rows(
         rows,
@@ -422,6 +575,38 @@ def main() -> None:
     if not rows:
         print("Error: no eval rows matched filters", file=sys.stderr)
         sys.exit(1)
+
+    # Resume: skip rows already completed (PASS/FAIL) in the prior experiment.
+    if prior_rows and not args.dry_run:
+        done_ids = {
+            rid
+            for rid, row in prior_rows.items()
+            if str(row.get("status") or "").upper() in COMPLETED_STATUSES
+        }
+        remaining = [r for r in rows if str(r.get("id")) not in done_ids]
+        print(
+            f"Resume: {len(done_ids)} row(s) already complete, "
+            f"{len(remaining)} to (re)run.",
+            file=sys.stderr,
+        )
+        rows = remaining
+        if not rows:
+            print("Nothing to resume — all rows already complete.", file=sys.stderr)
+            # Still rebuild/save the merged experiment from prior rows.
+            merged = list(prior_rows.values())
+            experiment, saved_to = _finalize_and_save(
+                merged,
+                name=args.name,
+                input_path=args.input,
+                counters={"total": len(merged), "resumed": len(merged)},
+                output_dir=args.output_dir,
+                no_save=args.no_save,
+                extra_meta={"resumed_from": str(args.resume_from)},
+            )
+            _print_summary(experiment, dry_run=False, saved_to=saved_to)
+            if args.json:
+                print(json.dumps(experiment, indent=2, default=str))
+            return
 
     progress.set_verbose(not args.quiet and not args.dry_run)
 
@@ -437,7 +622,11 @@ def main() -> None:
     for domain in VALID_DOMAINS:
         print(f"  {domain}: {planned_counts.get(domain, 0)}", file=sys.stderr)
 
-    results, counters = run_eval(rows, dry_run=args.dry_run)
+    results, counters, tpd_exhausted = run_eval(
+        rows,
+        dry_run=args.dry_run,
+        sleep_between=args.sleep_between,
+    )
 
     if args.dry_run:
         experiment = aggregate_experiment(
@@ -459,35 +648,38 @@ def main() -> None:
             print(json.dumps(experiment, indent=2, default=str))
         return
 
-    router = router_accuracy(results)
-    pipeline = pipeline_summary(results)
-    experiment = aggregate_experiment(
-        args.name,
-        router=router,
-        pipeline=pipeline,
-        meta={
-            "input": str(args.input),
-            "n_rows": len(results),
-            "counters": counters,
-            "rows": results,
-        },
+    # Merge prior completed rows (resume) with the freshly-run rows. New results
+    # win on id collision so a re-run ERROR->PASS is reflected.
+    if prior_rows:
+        new_ids = {str(r.get("id")) for r in results}
+        merged = list(results)
+        for rid, row in prior_rows.items():
+            if rid not in new_ids:
+                merged.append(row)
+        results = merged
+        counters["resumed_total"] = len(results)
+
+    extra_meta: dict[str, Any] = {}
+    if args.resume_from is not None:
+        extra_meta["resumed_from"] = str(args.resume_from)
+
+    experiment, saved_to = _finalize_and_save(
+        results,
+        name=args.name,
+        input_path=args.input,
+        counters=counters,
+        output_dir=args.output_dir,
+        no_save=args.no_save,
+        extra_meta=extra_meta or None,
     )
-
-    saved_to: Path | None = None
-    if not args.no_save:
-        saved_to = save_experiment(
-            experiment,
-            name=args.name,
-            output_dir=args.output_dir,
-        )
-        # Reload so meta includes run_id / git_commit written by save_experiment.
-        from arcs.eval.experiments import load_experiment
-
-        experiment = load_experiment(saved_to)
 
     _print_summary(experiment, dry_run=False, saved_to=saved_to)
     if args.json:
         print(json.dumps(experiment, indent=2, default=str))
+
+    if tpd_exhausted:
+        _print_resume_hint(results, saved_to=saved_to, args=args)
+        sys.exit(EXIT_TPD_EXHAUSTED)
 
 
 if __name__ == "__main__":
