@@ -34,6 +34,8 @@ Each output record (one JSON object per line) looks like:
 Usage:
     python scripts/bootstrap_rq1_corpus.py --dry-run
     python scripts/bootstrap_rq1_corpus.py --output data/rq1/feedback_corpus.jsonl
+    python scripts/bootstrap_rq1_corpus.py --real-only
+    python scripts/bootstrap_rq1_corpus.py --real-only --dry-run
 """
 
 from __future__ import annotations
@@ -59,8 +61,12 @@ DEFAULT_EXPERIMENT = (
     / "experiment.json"
 )
 DEFAULT_OUTPUT = config.DATA_DIR / "rq1" / "feedback_corpus.jsonl"
+DEFAULT_REAL_OUTPUT = config.DATA_DIR / "rq1" / "feedback_corpus_real.jsonl"
+REQUESTS_LOG = config.LOGS_DIR / "requests.jsonl"
 
 MIN_ROUTER_EXAMPLES = 8
+RQ1_V2_MIN_NEGATIVES = 40
+RQ1_V2_MIN_ROUTER = 15
 
 
 def _norm_query(query: str) -> str:
@@ -237,6 +243,122 @@ def build_corpus(
     ]
 
 
+def _user_feedback(record: dict[str, Any]) -> str | None:
+    feedback = record.get("user_feedback")
+    if feedback is None:
+        metadata = record.get("metadata")
+        if isinstance(metadata, dict):
+            feedback = metadata.get("user_feedback")
+    if feedback is None or not isinstance(feedback, str):
+        return None
+    return feedback.strip().upper()
+
+
+def build_real_corpus(*, requests_path: Path) -> list[dict[str, Any]]:
+    """Build corpus from live demo/CLI feedback in logs/requests.jsonl only."""
+    if not requests_path.exists():
+        return []
+
+    # Keep the last NEGATIVE record per normalized query (newest wins).
+    by_query: dict[str, dict[str, Any]] = {}
+    order: list[str] = []
+
+    with requests_path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(record, dict):
+                continue
+            if _user_feedback(record) != "NEGATIVE":
+                continue
+
+            query = str(record.get("query") or "").strip()
+            if not query:
+                continue
+
+            route = record.get("route") if isinstance(record.get("route"), dict) else {}
+            verification = (
+                record.get("verification")
+                if isinstance(record.get("verification"), dict)
+                else {}
+            )
+            attribution = record.get("attribution")
+            if not isinstance(attribution, dict) or not attribution.get("component"):
+                attribution = attribute(
+                    {
+                        "route": route,
+                        "verification": verification,
+                        "user_feedback": "NEGATIVE",
+                        "specialist": record.get("specialist"),
+                    }
+                )
+
+            correct_domain = record.get("correct_domain") or record.get("expected_domain")
+            if isinstance(correct_domain, str):
+                correct_domain = correct_domain.strip().upper()
+            else:
+                correct_domain = None
+
+            expected = correct_domain or (
+                str(route.get("domain")).strip().upper() if route.get("domain") else None
+            )
+
+            corpus_row: dict[str, Any] = {
+                "query_id": str(record.get("query_id") or ""),
+                "query": query,
+                "correct_domain": correct_domain or expected,
+                "expected_domain": expected,
+                "user_feedback": "NEGATIVE",
+                "source": "demo_feedback",
+                "route": route,
+                "verification": verification,
+                "attribution": attribution,
+            }
+
+            key = _norm_query(query)
+            if key not in by_query:
+                order.append(key)
+            by_query[key] = corpus_row
+
+    corpus: list[dict[str, Any]] = []
+    for index, key in enumerate(order, start=1):
+        row = by_query[key]
+        if not row.get("query_id"):
+            row["query_id"] = f"rq1-real-{index:03d}"
+        corpus.append(row)
+    return corpus
+
+
+def _print_real_summary(corpus: list[dict[str, Any]]) -> None:
+    by_component = Counter(r["attribution"]["component"] for r in corpus)
+    router = by_component.get("ROUTER", 0)
+    total = len(corpus)
+    with_domain = sum(
+        1
+        for r in corpus
+        if isinstance(r.get("correct_domain"), str) and str(r["correct_domain"]).strip()
+    )
+
+    print("RQ1 real-feedback corpus summary")
+    print(f"  source:            {REQUESTS_LOG}")
+    print(f"  total negatives:   {total}")
+    print(f"  with correct_domain: {with_domain}")
+    print("  by attribution component:")
+    for component in ("ROUTER", "SPECIALIST", "VERIFIER", "AMBIGUOUS"):
+        print(f"    {component:11s} {by_component.get(component, 0)}")
+    print(f"  ROUTER count:      {router}")
+    print(f"  non-ROUTER count:  {total - router}")
+    print()
+    print(f"  RQ1 v2 thresholds: ≥{RQ1_V2_MIN_NEGATIVES} negatives, ≥{RQ1_V2_MIN_ROUTER} ROUTER")
+    ready = total >= RQ1_V2_MIN_NEGATIVES and router >= RQ1_V2_MIN_ROUTER
+    print(f"  RQ1 v2 ready:      {'yes' if ready else 'no'}")
+
+
 def _print_summary(corpus: list[dict[str, Any]]) -> None:
     by_component = Counter(r["attribution"]["component"] for r in corpus)
     by_source = Counter(r["source"] for r in corpus)
@@ -282,10 +404,21 @@ def main() -> None:
         help=f"Baseline pipeline experiment.json (default: {DEFAULT_EXPERIMENT})",
     )
     parser.add_argument(
+        "--real-only",
+        action="store_true",
+        help=(
+            "Build ONLY from logs/requests.jsonl (live demo/CLI feedback). "
+            "Excludes eval export and misclassified_test.json."
+        ),
+    )
+    parser.add_argument(
         "--output",
         type=Path,
-        default=DEFAULT_OUTPUT,
-        help=f"Output JSONL path (default: {DEFAULT_OUTPUT})",
+        default=None,
+        help=(
+            "Output JSONL path (default: feedback_corpus_real.jsonl with "
+            "--real-only, else feedback_corpus.jsonl)"
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -294,29 +427,44 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    corpus = build_corpus(
-        misclassified_path=args.misclassified,
-        experiment_path=args.experiment,
+    output = args.output or (
+        DEFAULT_REAL_OUTPUT if args.real_only else DEFAULT_OUTPUT
     )
 
-    if not corpus:
-        print(
-            "Error: no records built — check that source files exist.",
-            file=sys.stderr,
+    if args.real_only:
+        if not REQUESTS_LOG.exists():
+            print(f"Error: requests log not found: {REQUESTS_LOG}", file=sys.stderr)
+            sys.exit(1)
+        corpus = build_real_corpus(requests_path=REQUESTS_LOG)
+        if not corpus:
+            print(
+                "Error: no NEGATIVE feedback rows in requests.jsonl.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        _print_real_summary(corpus)
+    else:
+        corpus = build_corpus(
+            misclassified_path=args.misclassified,
+            experiment_path=args.experiment,
         )
-        sys.exit(1)
-
-    _print_summary(corpus)
+        if not corpus:
+            print(
+                "Error: no records built — check that source files exist.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        _print_summary(corpus)
 
     if args.dry_run:
         print("\n(dry-run: no file written)")
         return
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    with args.output.open("w", encoding="utf-8") as fh:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8") as fh:
         for record in corpus:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-    print(f"\nWrote {len(corpus)} record(s) to {args.output}")
+    print(f"\nWrote {len(corpus)} record(s) to {output}")
 
 
 if __name__ == "__main__":

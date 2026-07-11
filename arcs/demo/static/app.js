@@ -15,9 +15,28 @@
   const btnNegative = $("btn-negative");
   const feedbackMsg = $("feedback-msg");
   const domainPicker = $("domain-picker");
+  const footerQueryId = $("footer-query-id");
+  const queryIdValue = $("query-id-value");
+  const footerLabelHint = $("footer-label-hint");
+  const labelCmd = $("label-cmd");
 
   let currentQueryId = null;
   let feedbackSent = false;
+
+  function hideQueryIdFooter() {
+    footerQueryId.classList.add("hidden");
+    footerLabelHint.classList.add("hidden");
+    queryIdValue.textContent = "";
+    labelCmd.textContent = "";
+  }
+
+  function showQueryIdFooter(queryId) {
+    queryIdValue.textContent = queryId;
+    labelCmd.textContent =
+      `python scripts/label_router_failures.py --query-id ${queryId} --correct-domain MEDICAL`;
+    footerQueryId.classList.remove("hidden");
+    footerLabelHint.classList.remove("hidden");
+  }
 
   function hideAll() {
     loadingEl.classList.add("hidden");
@@ -68,6 +87,7 @@
 
     currentQueryId = null;
     feedbackSent = false;
+    hideQueryIdFooter();
     feedbackMsg.classList.add("hidden");
     hideDomainPicker();
     setFeedbackButtons(false);
@@ -87,6 +107,7 @@
       }
 
       currentQueryId = data.query_id;
+      showQueryIdFooter(data.query_id);
       answerEl.textContent = data.answer || "(No answer text)";
 
       const domain = data.domain || "UNKNOWN";
@@ -141,6 +162,10 @@
       feedbackMsg.classList.remove("hidden");
       if (signal === "NEGATIVE") {
         feedbackMsg.classList.add("negative");
+        if (!correctDomain) {
+          feedbackMsg.textContent +=
+            " Tip: pick a domain next time if routing was wrong — it feeds router retrain.";
+        }
       } else {
         feedbackMsg.classList.remove("negative");
       }
@@ -169,6 +194,14 @@
     const btn = e.target.closest("button[data-domain]");
     if (!btn) return;
     const domain = btn.getAttribute("data-domain") || null;
+    if (!domain && !window.confirm(
+      "Skip domain label? Only skip if routing was correct but the answer was bad. "
+      + "If the wrong specialist ran, pick the correct domain instead."
+    )) {
+      setFeedbackButtons(false);
+      showDomainPicker();
+      return;
+    }
     sendFeedback("NEGATIVE", domain || undefined);
   });
 })();

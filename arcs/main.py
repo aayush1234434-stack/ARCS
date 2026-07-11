@@ -23,6 +23,8 @@ import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
+from uuid import uuid4
 
 from arcs import progress
 from arcs.pipelines import Pipeline, resolve_pipeline
@@ -30,6 +32,49 @@ from arcs.pipelines.specialists.common import extract_code_block
 from arcs.post import feedback, logger
 
 _components: dict | None = None
+
+ERROR_CLASSES = frozenset(
+    {"rate_limit", "judge_parse", "sandbox", "empty_code", "unknown"}
+)
+
+
+class PipelineError(Exception):
+    """Pipeline failed; ``state`` holds partial progress, ``query_id``, and ``error_class``."""
+
+    def __init__(self, state: dict[str, Any]):
+        self.state = state
+        super().__init__(state.get("error") or "pipeline error")
+
+
+def classify_pipeline_error(exc: BaseException) -> str:
+    """Map an exception to a coarse production error bucket."""
+    from arcs.clients.rate_limit import is_rate_limit
+
+    if is_rate_limit(exc):
+        return "rate_limit"
+
+    message = str(exc).lower()
+    module = str(getattr(type(exc), "__module__", "") or "").lower()
+
+    if "judge" in message and ("json" in message or "parse" in message):
+        return "judge_parse"
+    if "judge response is not" in message or "judge json" in message:
+        return "judge_parse"
+
+    if "sandbox" in message or "sandbox" in module:
+        return "sandbox"
+    if "sandbox did not emit" in message:
+        return "sandbox"
+
+    if (
+        "no fenced code block" in message
+        or "no code block" in message
+        or "code cannot be empty" in message
+        or "empty code" in message
+    ):
+        return "empty_code"
+
+    return "unknown"
 
 
 def _elapsed_ms(started: float) -> int:
@@ -354,6 +399,7 @@ def run_pipeline(query: str) -> dict:
     components = _get_components()
 
     state: dict = {
+        "query_id": str(uuid4()),
         "query": query,
         "route": {},
         "pipeline": {},
@@ -365,131 +411,138 @@ def run_pipeline(query: str) -> dict:
     timing: dict[str, int] = {}
     pipeline_start = time.perf_counter()
 
-    with progress.step("Route query (local router)"):
-        step_start = time.perf_counter()
-        state["route"] = components["router"].route(query)
-        timing["route_ms"] = _elapsed_ms(step_start)
-        route = state["route"]
-        fallback_note = " → GENERAL fallback" if route.get("use_fallback") else ""
+    try:
+        with progress.step("Route query (local router)"):
+            step_start = time.perf_counter()
+            state["route"] = components["router"].route(query)
+            timing["route_ms"] = _elapsed_ms(step_start)
+            route = state["route"]
+            fallback_note = " → GENERAL fallback" if route.get("use_fallback") else ""
+            progress.log(
+                f"  Domain: {route.get('domain')} "
+                f"(confidence {route.get('confidence', 0):.2f}){fallback_note}"
+            )
+
+        pipeline = resolve_pipeline(
+            route.get("domain", "GENERAL"),
+            use_fallback=bool(route.get("use_fallback")),
+        )
+        generator_model = pipeline.resolve_model()
+        state["pipeline"] = {
+            "pipeline_id": pipeline.pipeline_id,
+            "verifier": pipeline.verifier,
+            "tools": list(pipeline.tools),
+            "max_retries": pipeline.max_retries,
+            "generator_model": generator_model,
+        }
         progress.log(
-            f"  Domain: {route.get('domain')} "
-            f"(confidence {route.get('confidence', 0):.2f}){fallback_note}"
+            f"  Pipeline: {pipeline.pipeline_id} "
+            f"(verifier={pipeline.verifier}, model={generator_model})"
         )
 
-    pipeline = resolve_pipeline(
-        route.get("domain", "GENERAL"),
-        use_fallback=bool(route.get("use_fallback")),
-    )
-    generator_model = pipeline.resolve_model()
-    state["pipeline"] = {
-        "pipeline_id": pipeline.pipeline_id,
-        "verifier": pipeline.verifier,
-        "tools": list(pipeline.tools),
-        "max_retries": pipeline.max_retries,
-        "generator_model": generator_model,
-    }
-    progress.log(
-        f"  Pipeline: {pipeline.pipeline_id} "
-        f"(verifier={pipeline.verifier}, model={generator_model})"
-    )
+        if pipeline.verifier == "sandbox":
+            # On the coding path the sandbox is authoritative and the spec is only
+            # retained for logging, so generate it concurrently with the sandbox
+            # work instead of blocking the answer on it.
+            spec_start = time.perf_counter()
+            spec_pool = ThreadPoolExecutor(max_workers=1)
+            spec_future = spec_pool.submit(components["spec_generator"].run, query)
 
-    if pipeline.verifier == "sandbox":
-        # On the coding path the sandbox is authoritative and the spec is only
-        # retained for logging, so generate it concurrently with the sandbox
-        # work instead of blocking the answer on it.
-        spec_start = time.perf_counter()
-        spec_pool = ThreadPoolExecutor(max_workers=1)
-        spec_future = spec_pool.submit(components["spec_generator"].run, query)
-
-        with progress.step(
-            f"Generate + verify ({pipeline.pipeline_id} sandbox, "
-            f"up to {pipeline.max_retries} attempt(s))"
-        ):
-            step_start = time.perf_counter()
-            specialist_result, verification, tooling = _run_sandbox_pipeline(
-                query=query,
-                pipeline=pipeline,
-                specification={},
-                components=components,
-            )
-            state["specialist"] = specialist_result
-            state["verification"] = verification
-            state["tooling"] = tooling
-            timing["specialist_ms"] = _elapsed_ms(step_start)
-            timing["verification_ms"] = timing["specialist_ms"]
-            verdict = verification.get("verdict", "UNKNOWN")
-            progress.log(
-                f"  Verdict: {verdict} "
-                f"after {tooling.get('rounds_used', 1)} round(s)"
-            )
-            if tooling.get("delivery_warning"):
-                progress.log(f"  Warning: {tooling['delivery_warning']}")
-
-        try:
-            state["specification"] = spec_future.result()
-        except Exception as exc:  # spec is non-critical on the coding path
-            progress.log(f"  Spec generation failed (non-fatal): {exc}")
-            state["specification"] = {}
-        finally:
-            spec_pool.shutdown(wait=False)
-        timing["specification_ms"] = _elapsed_ms(spec_start)
-
-        # Coding answer wasn't Python-verifiable: use the judge (needs the spec).
-        if tooling.get("verifier_fallback") == "judge":
-            if state["specification"]:
-                with progress.step("Verify (LLM judge — coding fallback)"):
-                    judge_start = time.perf_counter()
-                    verification = _run_judge(
-                        query, specialist_result, state["specification"], components
-                    )
-                    timing["verification_ms"] = _elapsed_ms(judge_start)
-                state["verification"] = verification
-                state["pipeline"]["verifier"] = "llm_judge"
-                progress.log(
-                    f"  Verdict: {verification.get('verdict', 'UNKNOWN')} "
-                    f"(judge fallback, score {verification.get('score', 0):.2f})"
+            with progress.step(
+                f"Generate + verify ({pipeline.pipeline_id} sandbox, "
+                f"up to {pipeline.max_retries} attempt(s))"
+            ):
+                step_start = time.perf_counter()
+                specialist_result, verification, tooling = _run_sandbox_pipeline(
+                    query=query,
+                    pipeline=pipeline,
+                    specification={},
+                    components=components,
                 )
-            else:
-                progress.log("  No spec for judge fallback — leaving verdict UNKNOWN")
-    else:
-        with progress.step("Build specification (Qwen via Groq API)"):
-            step_start = time.perf_counter()
-            state["specification"] = components["spec_generator"].run(query)
-            timing["specification_ms"] = _elapsed_ms(step_start)
-            required = len(state["specification"].get("required_elements", []))
-            progress.log(f"  {required} required element(s) in spec")
+                state["specialist"] = specialist_result
+                state["verification"] = verification
+                state["tooling"] = tooling
+                timing["specialist_ms"] = _elapsed_ms(step_start)
+                timing["verification_ms"] = timing["specialist_ms"]
+                verdict = verification.get("verdict", "UNKNOWN")
+                progress.log(
+                    f"  Verdict: {verdict} "
+                    f"after {tooling.get('rounds_used', 1)} round(s)"
+                )
+                if tooling.get("delivery_warning"):
+                    progress.log(f"  Warning: {tooling['delivery_warning']}")
 
-        with progress.step(
-            f"Generate answer ({pipeline.pipeline_id} via {generator_model})"
-        ):
-            step_start = time.perf_counter()
-            state["specialist"] = pipeline.specialist.run(query, model=generator_model)
-            state["specialist"]["pipeline_id"] = pipeline.pipeline_id
-            state["specialist"]["generator_model"] = generator_model
-            timing["specialist_ms"] = _elapsed_ms(step_start)
-            answer_preview = state["specialist"].get("answer", "").replace("\n", " ")[:80]
-            if answer_preview:
-                progress.log(f"  Answer preview: {answer_preview}...")
+            try:
+                state["specification"] = spec_future.result()
+            except Exception as exc:  # spec is non-critical on the coding path
+                progress.log(f"  Spec generation failed (non-fatal): {exc}")
+                state["specification"] = {}
+            finally:
+                spec_pool.shutdown(wait=False)
+            timing["specification_ms"] = _elapsed_ms(spec_start)
 
-        with progress.step("Verify answer (LLM judge)"):
-            step_start = time.perf_counter()
-            state["verification"] = _run_judge(
-                query=query,
-                specialist_result=state["specialist"],
-                specification=state["specification"],
-                components=components,
-            )
-            timing["verification_ms"] = _elapsed_ms(step_start)
-            verdict = state["verification"].get("verdict", "UNKNOWN")
-            score = state["verification"].get("score")
-            score_note = f", score {score:.2f}" if isinstance(score, (int, float)) else ""
-            progress.log(f"  Verdict: {verdict}{score_note}")
+            # Coding answer wasn't Python-verifiable: use the judge (needs the spec).
+            if tooling.get("verifier_fallback") == "judge":
+                if state["specification"]:
+                    with progress.step("Verify (LLM judge — coding fallback)"):
+                        judge_start = time.perf_counter()
+                        verification = _run_judge(
+                            query, specialist_result, state["specification"], components
+                        )
+                        timing["verification_ms"] = _elapsed_ms(judge_start)
+                    state["verification"] = verification
+                    state["pipeline"]["verifier"] = "llm_judge"
+                    progress.log(
+                        f"  Verdict: {verification.get('verdict', 'UNKNOWN')} "
+                        f"(judge fallback, score {verification.get('score', 0):.2f})"
+                    )
+                else:
+                    progress.log("  No spec for judge fallback — leaving verdict UNKNOWN")
+        else:
+            with progress.step("Build specification (Qwen via Groq API)"):
+                step_start = time.perf_counter()
+                state["specification"] = components["spec_generator"].run(query)
+                timing["specification_ms"] = _elapsed_ms(step_start)
+                required = len(state["specification"].get("required_elements", []))
+                progress.log(f"  {required} required element(s) in spec")
 
-    timing["total_ms"] = _elapsed_ms(pipeline_start)
-    state["timing"] = timing
+            with progress.step(
+                f"Generate answer ({pipeline.pipeline_id} via {generator_model})"
+            ):
+                step_start = time.perf_counter()
+                state["specialist"] = pipeline.specialist.run(query, model=generator_model)
+                state["specialist"]["pipeline_id"] = pipeline.pipeline_id
+                state["specialist"]["generator_model"] = generator_model
+                timing["specialist_ms"] = _elapsed_ms(step_start)
+                answer_preview = state["specialist"].get("answer", "").replace("\n", " ")[:80]
+                if answer_preview:
+                    progress.log(f"  Answer preview: {answer_preview}...")
 
-    progress.log("Pipeline complete.")
-    return state
+            with progress.step("Verify answer (LLM judge)"):
+                step_start = time.perf_counter()
+                state["verification"] = _run_judge(
+                    query=query,
+                    specialist_result=state["specialist"],
+                    specification=state["specification"],
+                    components=components,
+                )
+                timing["verification_ms"] = _elapsed_ms(step_start)
+                verdict = state["verification"].get("verdict", "UNKNOWN")
+                score = state["verification"].get("score")
+                score_note = f", score {score:.2f}" if isinstance(score, (int, float)) else ""
+                progress.log(f"  Verdict: {verdict}{score_note}")
+
+        timing["total_ms"] = _elapsed_ms(pipeline_start)
+        state["timing"] = timing
+
+        progress.log("Pipeline complete.")
+        return state
+    except Exception as exc:
+        state["error"] = str(exc)
+        state["error_class"] = classify_pipeline_error(exc)
+        timing["total_ms"] = _elapsed_ms(pipeline_start)
+        state["timing"] = timing
+        raise PipelineError(state) from exc
 
 
 def main() -> None:
@@ -526,6 +579,12 @@ def main() -> None:
 
     try:
         state = run_pipeline(query)
+    except PipelineError as exc:
+        progress.log(
+            f"Pipeline error (query_id={exc.state.get('query_id')}): {exc}"
+        )
+        logger.log(exc.state)
+        raise SystemExit(1) from exc
     except Exception as exc:
         progress.log(f"Pipeline error: {exc}")
         raise

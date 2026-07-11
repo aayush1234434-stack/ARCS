@@ -27,7 +27,7 @@ from arcs.eval.metrics import (
     pipeline_summary,
     router_accuracy,
 )
-from arcs.main import run_pipeline
+from arcs.main import PipelineError, classify_pipeline_error, run_pipeline
 
 DEFAULT_INPUT = config.DATA_DIR / "eval_queries.jsonl"
 DOMAIN_SET = frozenset(VALID_DOMAINS)
@@ -101,6 +101,7 @@ def _build_row_result(
     state: dict[str, Any] | None,
     *,
     error: str | None = None,
+    error_class: str | None = None,
 ) -> dict[str, Any]:
     expected = _normalize_domain(row.get("expected_domain"))
     result: dict[str, Any] = {
@@ -112,13 +113,45 @@ def _build_row_result(
     if error:
         result["status"] = "ERROR"
         result["error"] = error
-        result["predicted_domain"] = None
-        result["router_confidence"] = None
-        result["use_fallback"] = None
+        result["error_class"] = (
+            error_class
+            or (state.get("error_class") if isinstance(state, dict) else None)
+            or classify_pipeline_error(Exception(error))
+        )
+        if isinstance(state, dict):
+            result["query_id"] = state.get("query_id")
+            route = state.get("route") or {}
+            pipeline = state.get("pipeline") or {}
+            timing = state.get("timing") or {}
+            predicted = route.get("domain") if isinstance(route, dict) else None
+            confidence = route.get("confidence") if isinstance(route, dict) else None
+            try:
+                confidence_f = float(confidence) if confidence is not None else None
+            except (TypeError, ValueError):
+                confidence_f = None
+            result["predicted_domain"] = (
+                str(predicted).strip().upper() if predicted is not None else None
+            )
+            result["router_confidence"] = confidence_f
+            result["use_fallback"] = (
+                bool(route.get("use_fallback")) if isinstance(route, dict) else None
+            )
+            result["pipeline_id"] = (
+                pipeline.get("pipeline_id") if isinstance(pipeline, dict) else None
+            )
+            result["verifier"] = (
+                pipeline.get("verifier") if isinstance(pipeline, dict) else None
+            )
+            result["timing"] = dict(timing) if isinstance(timing, dict) else {}
+        else:
+            result["query_id"] = None
+            result["predicted_domain"] = None
+            result["router_confidence"] = None
+            result["use_fallback"] = None
+            result["pipeline_id"] = None
+            result["verifier"] = None
+            result["timing"] = {}
         result["verification"] = {"verdict": None, "score": None}
-        result["pipeline_id"] = None
-        result["verifier"] = None
-        result["timing"] = {}
         return result
 
     assert state is not None
@@ -148,6 +181,7 @@ def _build_row_result(
         bool(route.get("use_fallback")) if isinstance(route, dict) else None
     )
     result["status"] = _derive_status(state, error=None)
+    result["query_id"] = state.get("query_id")
     result["verification"] = {
         "verdict": verification.get("verdict") if isinstance(verification, dict) else None,
         "score": score_f,
@@ -227,7 +261,10 @@ def _print_progress(
     total_ms = timing.get("total_ms") if isinstance(timing, dict) else None
     latency = f"  {int(total_ms)}ms" if isinstance(total_ms, (int, float)) else ""
     err = result.get("error")
+    error_class = result.get("error_class")
     extra = f"  error={err}" if err else ""
+    if error_class:
+        extra += f"  error_class={error_class}"
     print(
         f"[{index}/{total}] {row_id}  status={status}  "
         f"routed={routed}  expected={expected}{latency}{extra}",
@@ -267,6 +304,14 @@ def _print_summary(experiment: dict[str, Any], *, dry_run: bool, saved_to: Path 
         f"errors={pipeline.get('error_count', 0)}",
         file=sys.stderr,
     )
+    error_rows = [
+        row for row in (meta.get("rows") or []) if row.get("status") == "ERROR"
+    ]
+    if error_rows:
+        breakdown = Counter(str(row.get("error_class") or "unknown") for row in error_rows)
+        print("ERROR breakdown by error_class:", file=sys.stderr)
+        for cls, count in sorted(breakdown.items()):
+            print(f"  {cls}: {count}", file=sys.stderr)
     latency = (pipeline.get("latency_ms") or {}).get("total_ms") or {}
     if latency.get("count"):
         print(
@@ -342,13 +387,39 @@ def run_eval(
         try:
             state = run_pipeline(str(row["query"]).strip())
             result = _build_row_result(row, state)
+        except PipelineError as exc:
+            state = exc.state
+            result = _build_row_result(
+                row,
+                state,
+                error=str(state.get("error") or exc),
+                error_class=str(state.get("error_class") or "unknown"),
+            )
+            print(
+                f"  ERROR on {row_id} (query_id={state.get('query_id')}): "
+                f"{state.get('error')} [{state.get('error_class')}]",
+                file=sys.stderr,
+            )
+            if is_groq_tpd_exhausted(exc.__cause__ or exc):
+                results.append(result)
+                _print_progress(index, total, result)
+                counters["errors"] += 1
+                tpd_exhausted = True
+                print(
+                    "\nGroq daily token limit (TPD) exhausted — stopping early.",
+                    file=sys.stderr,
+                )
+                break
         except Exception as exc:
-            result = _build_row_result(row, None, error=str(exc))
+            result = _build_row_result(
+                row,
+                None,
+                error=str(exc),
+                error_class=classify_pipeline_error(exc),
+            )
             print(f"  ERROR on {row_id}: {exc}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
-            if is_groq_tpd_exhausted(exc):
-                # Daily token limit — not recoverable now. Record this row and
-                # stop so we can save partial progress and resume later.
+            if is_groq_tpd_exhausted(exc.__cause__ or exc):
                 results.append(result)
                 _print_progress(index, total, result)
                 counters["errors"] += 1

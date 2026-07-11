@@ -2,6 +2,8 @@ pandas
 numpy
 torch
 onnxruntime
+onnx
+onnxscript
 datasets
 transformers>=4.0
 accelerate>=1.1.0

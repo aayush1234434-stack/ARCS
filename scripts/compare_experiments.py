@@ -15,7 +15,12 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from arcs import config
-from arcs.eval.compare import diff_experiments, format_diff
+from arcs.eval.compare import (
+    diff_experiments,
+    format_diff,
+    format_orchestration_comparison,
+    is_naive_baseline,
+)
 from arcs.eval.experiments import latest_experiment, load_experiment
 
 
@@ -174,6 +179,19 @@ def main() -> None:
 
     diff = diff_experiments(exp_a, exp_b)
     print(format_diff(diff), file=sys.stderr)
+
+    naive_exp = arcs_exp = None
+    if is_naive_baseline(exp_a) and not is_naive_baseline(exp_b):
+        naive_exp, arcs_exp = exp_a, exp_b
+    elif is_naive_baseline(exp_b) and not is_naive_baseline(exp_a):
+        naive_exp, arcs_exp = exp_b, exp_a
+    if naive_exp is not None and arcs_exp is not None:
+        print(
+            "\n=== "
+            + format_orchestration_comparison(naive_exp, arcs_exp).rstrip(),
+            file=sys.stderr,
+        )
+
     if args.json:
         print(json.dumps(diff, indent=2, default=str))
 

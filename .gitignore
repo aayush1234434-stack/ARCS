@@ -4,13 +4,26 @@
 # Secrets
 .env
 
-# Generated artifacts and runtime logs
-artifacts/
-logs/
+# Local experiment outputs (keep README)
+artifacts/experiments/*
+!artifacts/experiments/README.md
 
-# OS / editor
-.DS_Store
+# Other generated artifacts (large / local-only)
+artifacts/router-model*/
+artifacts/router-checkpoints/
+artifacts/eval-results/
+artifacts/judge_ab_cache/
+artifacts/*.log
+
+# Runtime logs
+logs/**/*.jsonl
+
+# Python
 __pycache__/
 *.pyc
+
+# Editor / OS
+.DS_Store
+*.bak
 .ipynb_checkpoints/
 Untitled-1.ipynb

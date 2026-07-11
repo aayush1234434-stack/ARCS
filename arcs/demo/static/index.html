@@ -49,14 +49,18 @@
           </button>
         </div>
         <div id="domain-picker" class="domain-picker hidden" role="group" aria-label="Correct domain">
-          <p>Which domain should this have been routed to?</p>
+          <p class="domain-picker-lead">
+            <strong>Which domain should this have been routed to?</strong>
+            Pick one if routing was wrong — this label feeds router retrain (RQ1).
+          </p>
           <div class="domain-buttons">
             <button type="button" class="btn domain" data-domain="CODING">CODING</button>
             <button type="button" class="btn domain" data-domain="MEDICAL">MEDICAL</button>
             <button type="button" class="btn domain" data-domain="LEGAL">LEGAL</button>
             <button type="button" class="btn domain" data-domain="GENERAL">GENERAL</button>
-            <button type="button" class="btn domain skip" data-domain="">Skip</button>
+            <button type="button" class="btn domain skip" data-domain="">Skip (no domain label)</button>
           </div>
+          <p class="domain-picker-hint">Skip only if the domain was correct but the answer was bad.</p>
         </div>
         <p id="feedback-msg" class="feedback-msg hidden"></p>
       </div>
@@ -68,6 +72,13 @@
 
     <footer class="footer">
       <p>Query → Router → Pipeline → Verify → Your feedback → Attribution → Repair</p>
+      <p id="footer-query-id" class="footer-query-id hidden">
+        query_id: <code id="query-id-value"></code>
+      </p>
+      <p id="footer-label-hint" class="footer-label-hint hidden">
+        Label for repair:
+        <code id="label-cmd"></code>
+      </p>
     </footer>
   </div>
   <script src="/static/app.js"></script>

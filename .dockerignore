@@ -1,0 +1,34 @@
+# Local venv and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets — never bake into images
+.env
+.env.local
+
+# Runtime / generated (mount as volumes in compose)
+artifacts/
+logs/
+
+# Git and editor
+.git/
+.gitignore
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Docs and notebooks (not needed at runtime)
+docs/
+*.ipynb
+Untitled-1.ipynb
+
+# Docker build context noise
+Dockerfile
+docker-compose.yml
+.dockerignore

@@ -195,9 +195,22 @@ textarea:focus {
 .domain-picker {
   margin-top: 1rem;
   padding: 0.85rem 0.75rem;
-  border: 1px dashed var(--border);
+  border: 1px dashed #fbbf24;
   border-radius: 8px;
-  background: rgba(15, 20, 25, 0.45);
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.domain-picker-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.domain-picker-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .domain-picker p {
@@ -282,6 +295,28 @@ textarea:focus {
   margin-top: 2rem;
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.footer-query-id,
+.footer-label-hint {
+  margin-top: 0.65rem;
+  font-size: 0.75rem;
+}
+
+.footer code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+  color: #93c5fd;
+  word-break: break-all;
+}
+
+.footer-label-hint code {
+  display: block;
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(15, 20, 25, 0.6);
+  border-radius: 6px;
+  text-align: left;
 }
 
 .hidden {

@@ -16,7 +16,8 @@ process (the router caches its model in module globals).
 
 Usage:
     python scripts/rq1_run.py                 # dry-run: prints the plan only
-    python scripts/rq1_run.py --execute        # actually train + evaluate
+    python scripts/rq1_run.py --execute        # bootstrap corpus (default)
+    python scripts/rq1_run.py --execute --corpus real   # RQ1 v2 (real feedback)
     python scripts/rq1_run.py --execute --epochs 4 --keep-run-b
 """
 
@@ -47,14 +48,95 @@ RUN_B_TRAIN = RQ1_DATA_DIR / "run_b_train.csv"
 RUN_A_AUGMENT = RQ1_DATA_DIR / "run_a_augment.csv"
 RUN_B_AUGMENT = RQ1_DATA_DIR / "run_b_augment.csv"
 DEFAULT_CORPUS = config.DATA_DIR / "rq1" / "feedback_corpus.jsonl"
+REAL_CORPUS = config.DATA_DIR / "rq1" / "feedback_corpus_real.jsonl"
 EVAL_QUERIES = config.DATA_DIR / "eval_queries.jsonl"
+
+RQ1_V2_MIN_NEGATIVES = 40
+RQ1_V2_MIN_ROUTER = 15
 
 LIVE_MODEL_DIR = config.ROUTER_MODEL_DIR
 PRE_BACKUP_DIR = config.ARTIFACTS_DIR / "router-model-pre-rq1"
 RUN_A_MODEL_DIR = config.ARTIFACTS_DIR / "router-model-rq1-run-a"
 RUN_B_MODEL_DIR = config.ARTIFACTS_DIR / "router-model-rq1-run-b"
+RUN_A_MODEL_DIR_V2 = config.ARTIFACTS_DIR / "router-model-rq1-v2-run-a"
+RUN_B_MODEL_DIR_V2 = config.ARTIFACTS_DIR / "router-model-rq1-v2-run-b"
 
 EVAL_ROUTER = _ROOT / "scripts" / "eval_router.py"
+
+
+def _resolve_corpus(value: str) -> tuple[Path, str]:
+    """Return (corpus path, corpus_kind) where kind is bootstrap|real."""
+    if value == "real":
+        return REAL_CORPUS, "real"
+    if value == "bootstrap":
+        return DEFAULT_CORPUS, "bootstrap"
+    path = Path(value)
+    kind = "real" if "real" in path.name else "bootstrap"
+    return path, kind
+
+
+def _corpus_stats(path: Path) -> tuple[int, int]:
+    """Return (total negatives, ROUTER-attributed count) from a corpus JSONL."""
+    total = 0
+    router = 0
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            total += 1
+            if (record.get("attribution") or {}).get("component") == "ROUTER":
+                router += 1
+    return total, router
+
+
+def _require_real_corpus_ready(corpus_path: Path) -> None:
+    total, router = _corpus_stats(corpus_path)
+    errors: list[str] = []
+    if total < RQ1_V2_MIN_NEGATIVES:
+        errors.append(
+            f"total negatives {total} < {RQ1_V2_MIN_NEGATIVES} "
+            f"(need more live 👎 feedback in logs/requests.jsonl)"
+        )
+    if router < RQ1_V2_MIN_ROUTER:
+        errors.append(
+            f"ROUTER-attributed negatives {router} < {RQ1_V2_MIN_ROUTER} "
+            f"(need more router-blamed failures with correct_domain labels)"
+        )
+    if errors:
+        print("Error: RQ1 v2 (real feedback) corpus not ready:", file=sys.stderr)
+        for err in errors:
+            print(f"  - {err}", file=sys.stderr)
+        print(
+            f"\nCorpus: {corpus_path}\n"
+            "Build with: python scripts/bootstrap_rq1_corpus.py --real-only\n"
+            "Check readiness: python scripts/feedback_stats.py --requests-only",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
+def _rq1_names(corpus_kind: str) -> dict[str, str]:
+    if corpus_kind == "real":
+        return {
+            "pre": "rq1-v2-pre",
+            "run_a": "rq1-v2-run-a",
+            "run_b": "rq1-v2-run-b",
+            "manifest_slug": "rq1-v2",
+        }
+    return {
+        "pre": "rq1-pre",
+        "run_a": "rq1-run-a",
+        "run_b": "rq1-run-b",
+        "manifest_slug": "rq1",
+    }
+
+
+def _model_dirs(corpus_kind: str) -> tuple[Path, Path]:
+    if corpus_kind == "real":
+        return RUN_A_MODEL_DIR_V2, RUN_B_MODEL_DIR_V2
+    return RUN_A_MODEL_DIR, RUN_B_MODEL_DIR
 
 
 def _env() -> dict[str, str]:
@@ -150,6 +232,90 @@ def _test_acc(experiment: dict[str, Any]) -> float | None:
     return None if value is None else float(value)
 
 
+def _eval_queries_rows(experiment: dict[str, Any]) -> list[dict[str, Any]]:
+    block = experiment.get("eval_queries_router_accuracy") or {}
+    rows = block.get("rows")
+    return rows if isinstance(rows, list) else []
+
+
+def _row_id(row: dict[str, Any]) -> str:
+    for key in ("id", "query_id", "query"):
+        value = row.get(key)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _is_misroute(row: dict[str, Any]) -> bool:
+    expected = str(row.get("expected_domain") or "").strip().upper()
+    predicted = row.get("predicted_domain")
+    if not expected:
+        return False
+    if predicted is None:
+        return True
+    return str(predicted).strip().upper() != expected
+
+
+def _paired_misroute_comparison(
+    pre_exp: dict[str, Any] | None,
+    run_a_exp: dict[str, Any],
+    run_b_exp: dict[str, Any],
+) -> dict[str, Any]:
+    """McNemar-style counts on eval-queries misroutes fixed vs pre baseline."""
+    pre_rows = {_row_id(r): r for r in _eval_queries_rows(pre_exp or {}) if _row_id(r)}
+    a_rows = {_row_id(r): r for r in _eval_queries_rows(run_a_exp) if _row_id(r)}
+    b_rows = {_row_id(r): r for r in _eval_queries_rows(run_b_exp) if _row_id(r)}
+
+    ids = sorted(set(pre_rows) | set(a_rows) | set(b_rows))
+    pre_misroute_ids = [i for i in ids if pre_rows.get(i) and _is_misroute(pre_rows[i])]
+
+    def _fixed(rows: dict[str, dict[str, Any]], query_id: str) -> bool:
+        row = rows.get(query_id)
+        return bool(row) and not _is_misroute(row)
+
+    fixed_by_a = sum(1 for i in pre_misroute_ids if _fixed(a_rows, i))
+    fixed_by_b = sum(1 for i in pre_misroute_ids if _fixed(b_rows, i))
+    b_only = sum(
+        1
+        for i in pre_misroute_ids
+        if _fixed(b_rows, i) and not _fixed(a_rows, i)
+    )
+    a_only = sum(
+        1
+        for i in pre_misroute_ids
+        if _fixed(a_rows, i) and not _fixed(b_rows, i)
+    )
+
+    run_a_misroutes = sum(1 for i in ids if a_rows.get(i) and _is_misroute(a_rows[i]))
+    run_b_misroutes = sum(1 for i in ids if b_rows.get(i) and _is_misroute(b_rows[i]))
+
+    note_parts = [
+        "McNemar-style paired comparison on eval-queries router misroutes vs pre:",
+        f"pre had {len(pre_misroute_ids)} misroute(s);",
+        f"Run A fixed {fixed_by_a}, Run B fixed {fixed_by_b};",
+        f"discordant pairs (B-only fixes, A-only fixes) = ({b_only}, {a_only}).",
+    ]
+    if b_only + a_only == 0:
+        note_parts.append("Arms agree on every pre misroute (no discordant pairs).")
+    elif b_only > a_only:
+        note_parts.append("Run B fixed more exclusive pre misroutes than Run A.")
+    elif a_only > b_only:
+        note_parts.append("Run A fixed more exclusive pre misroutes than Run B.")
+    else:
+        note_parts.append("Discordant pair counts tied.")
+
+    return {
+        "pre_misroute_count": len(pre_misroute_ids),
+        "run_a_misroute_count": run_a_misroutes,
+        "run_b_misroute_count": run_b_misroutes,
+        "misroutes_fixed_by_run_a_vs_pre": fixed_by_a,
+        "misroutes_fixed_by_run_b_vs_pre": fixed_by_b,
+        "mcnemar_discordant_b_only": b_only,
+        "mcnemar_discordant_a_only": a_only,
+        "note": " ".join(note_parts),
+    }
+
+
 def _eval_queries_acc(experiment: dict[str, Any]) -> float | None:
     block = experiment.get("eval_queries_router_accuracy") or {}
     metrics = block.get("metrics") or {}
@@ -205,29 +371,65 @@ def _conclusion(
     )
 
 
-def _print_plan(epochs: int | None, skip_pre_eval: bool, keep_run_b: bool) -> None:
-    print("RQ1 plan (dry-run — no training). Re-run with --execute to run it.\n")
-    print("Prerequisites:")
+def _print_plan(
+    *,
+    epochs: int | None,
+    skip_pre_eval: bool,
+    keep_run_b: bool,
+    corpus_path: Path,
+    corpus_kind: str,
+    names: dict[str, str],
+    run_a_model: Path,
+    run_b_model: Path,
+) -> None:
+    label = "RQ1 v2" if corpus_kind == "real" else "RQ1"
+    print(f"{label} plan (dry-run — no training). Re-run with --execute to run it.\n")
+    print(f"Corpus ({corpus_kind}): {corpus_path}")
+    print("\nPrerequisites:")
     for path in (RUN_A_TRAIN, RUN_B_TRAIN):
         mark = "OK" if path.exists() else "MISSING"
         print(f"  [{mark}] {path}")
     backup = "exists" if PRE_BACKUP_DIR.exists() else "will be created from " + str(LIVE_MODEL_DIR)
     print(f"  backup: {PRE_BACKUP_DIR} ({backup})")
+    if corpus_kind == "real":
+        total, router = _corpus_stats(corpus_path) if corpus_path.exists() else (0, 0)
+        ready = total >= RQ1_V2_MIN_NEGATIVES and router >= RQ1_V2_MIN_ROUTER
+        print(
+            f"  RQ1 v2 thresholds: negatives {total}/{RQ1_V2_MIN_NEGATIVES}, "
+            f"ROUTER {router}/{RQ1_V2_MIN_ROUTER} "
+            f"({'ready' if ready else 'NOT READY'})"
+        )
     print("\nSteps:")
     step = 1
     if not skip_pre_eval:
-        print(f"  {step}. eval PRE model ({PRE_BACKUP_DIR if PRE_BACKUP_DIR.exists() else LIVE_MODEL_DIR}) -> name rq1-pre")
+        print(
+            f"  {step}. eval PRE model "
+            f"({PRE_BACKUP_DIR if PRE_BACKUP_DIR.exists() else LIVE_MODEL_DIR}) "
+            f"-> name {names['pre']}"
+        )
         step += 1
     ep = f" --epochs {epochs}" if epochs is not None else ""
-    print(f"  {step}. train Run A: {RUN_A_TRAIN} -> {RUN_A_MODEL_DIR}{ep}; eval -> rq1-run-a")
+    print(
+        f"  {step}. train Run A: {RUN_A_TRAIN} -> {run_a_model}{ep}; "
+        f"eval -> {names['run_a']}"
+    )
     step += 1
-    print(f"  {step}. train Run B: {RUN_B_TRAIN} -> {RUN_B_MODEL_DIR}{ep}; eval -> rq1-run-b")
+    print(
+        f"  {step}. train Run B: {RUN_B_TRAIN} -> {run_b_model}{ep}; "
+        f"eval -> {names['run_b']}"
+    )
     step += 1
-    print(f"  {step}. write manifest under artifacts/experiments/<ts>_rq1/manifest.json")
+    print(
+        f"  {step}. write manifest under "
+        f"artifacts/experiments/<ts>_{names['manifest_slug']}/manifest.json"
+    )
     step += 1
     final = "keep Run B as live model" if keep_run_b else "restore live model from pre-rq1 backup"
     print(f"  {step}. {final}")
-    print(f"\nAugment rows: run_a={_augment_row_count(RUN_A_AUGMENT)}  run_b={_augment_row_count(RUN_B_AUGMENT)}")
+    print(
+        f"\nAugment rows: run_a={_augment_row_count(RUN_A_AUGMENT)}  "
+        f"run_b={_augment_row_count(RUN_B_AUGMENT)}"
+    )
 
 
 def main() -> None:
@@ -255,9 +457,11 @@ def main() -> None:
     )
     parser.add_argument(
         "--corpus",
-        type=Path,
-        default=DEFAULT_CORPUS,
-        help=f"Feedback corpus path recorded in the manifest (default: {DEFAULT_CORPUS})",
+        default="bootstrap",
+        help=(
+            'Corpus kind: "bootstrap", "real", or a path to a feedback JSONL '
+            f"(default: bootstrap -> {DEFAULT_CORPUS})"
+        ),
     )
     parser.add_argument(
         "--keep-run-b",
@@ -265,11 +469,33 @@ def main() -> None:
         help="Leave Run B as the live router model instead of restoring the backup.",
     )
     args = parser.parse_args()
+    corpus_path, corpus_kind = _resolve_corpus(args.corpus)
+    names = _rq1_names(corpus_kind)
+    run_a_model_dir, run_b_model_dir = _model_dirs(corpus_kind)
 
     # --dry-run is explicit and always wins; otherwise dry-run unless --execute.
     if args.dry_run or not args.execute:
-        _print_plan(args.epochs, args.skip_pre_eval, args.keep_run_b)
+        _print_plan(
+            epochs=args.epochs,
+            skip_pre_eval=args.skip_pre_eval,
+            keep_run_b=args.keep_run_b,
+            corpus_path=corpus_path,
+            corpus_kind=corpus_kind,
+            names=names,
+            run_a_model=run_a_model_dir,
+            run_b_model=run_b_model_dir,
+        )
         return
+
+    if corpus_kind == "real":
+        if not corpus_path.exists():
+            print(f"Error: real corpus not found: {corpus_path}", file=sys.stderr)
+            print(
+                "Build with: python scripts/bootstrap_rq1_corpus.py --real-only",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        _require_real_corpus_ready(corpus_path)
 
     # ── Prerequisites ──
     missing = [str(p) for p in (RUN_A_TRAIN, RUN_B_TRAIN) if not p.exists()]
@@ -297,7 +523,8 @@ def main() -> None:
             "feedback (Run B) than on all negative feedback (Run A): targeted "
             "repair beats blanket repair."
         ),
-        "corpus": str(args.corpus),
+        "corpus_kind": corpus_kind,
+        "corpus": str(corpus_path),
         "augment_rows": {
             "run_a": _augment_row_count(RUN_A_AUGMENT),
             "run_b": _augment_row_count(RUN_B_AUGMENT),
@@ -308,11 +535,12 @@ def main() -> None:
     }
 
     metrics: dict[str, dict[str, float | None]] = {}
+    pre_exp: dict[str, Any] | None = None
 
     # ── Step 1: PRE baseline ──
     if not args.skip_pre_eval:
         pre_model = PRE_BACKUP_DIR if PRE_BACKUP_DIR.exists() else LIVE_MODEL_DIR
-        pre_dir = _eval_router(pre_model, "rq1-pre")
+        pre_dir = _eval_router(pre_model, names["pre"])
         pre_exp = load_experiment(pre_dir)
         metrics["pre"] = {
             "test_acc": _test_acc(pre_exp),
@@ -323,8 +551,8 @@ def main() -> None:
         metrics["pre"] = {"test_acc": None, "eval_queries_acc": None}
 
     # ── Step 2: Run A ──
-    _train(RUN_A_TRAIN, RUN_A_MODEL_DIR, args.epochs)
-    run_a_dir = _eval_router(RUN_A_MODEL_DIR, "rq1-run-a")
+    _train(RUN_A_TRAIN, run_a_model_dir, args.epochs)
+    run_a_dir = _eval_router(run_a_model_dir, names["run_a"])
     run_a_exp = load_experiment(run_a_dir)
     metrics["run_a"] = {
         "test_acc": _test_acc(run_a_exp),
@@ -333,8 +561,8 @@ def main() -> None:
     manifest["experiments"]["run_a"] = str(run_a_dir)
 
     # ── Step 3: Run B ──
-    _train(RUN_B_TRAIN, RUN_B_MODEL_DIR, args.epochs)
-    run_b_dir = _eval_router(RUN_B_MODEL_DIR, "rq1-run-b")
+    _train(RUN_B_TRAIN, run_b_model_dir, args.epochs)
+    run_b_dir = _eval_router(run_b_model_dir, names["run_b"])
     run_b_exp = load_experiment(run_b_dir)
     metrics["run_b"] = {
         "test_acc": _test_acc(run_b_exp),
@@ -351,13 +579,19 @@ def main() -> None:
         }
         for arm, vals in metrics.items()
     }
+    manifest["eval_queries_paired_comparison"] = _paired_misroute_comparison(
+        pre_exp, run_a_exp, run_b_exp
+    )
     manifest["winner"] = winner
     manifest["winner_criteria"] = "eval_queries accuracy (primary), test accuracy (secondary)"
     manifest["conclusion"] = _conclusion(
         winner, metrics["pre"], metrics["run_a"], metrics["run_b"]
     )
 
-    run_id = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S") + "_rq1"
+    run_id = (
+        datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")
+        + f"_{names['manifest_slug']}"
+    )
     manifest_dir = config.EXPERIMENTS_DIR / run_id
     manifest_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = manifest_dir / "manifest.json"
@@ -374,12 +608,18 @@ def main() -> None:
             file=sys.stderr,
         )
     print(f"winner: {winner}", file=sys.stderr)
+    paired = manifest.get("eval_queries_paired_comparison") or {}
+    if paired.get("note"):
+        print(f"\nPaired misroutes: {paired['note']}", file=sys.stderr)
     print(f"\nManifest: {manifest_path}", file=sys.stderr)
 
     # ── Step 5: restore or keep ──
     if args.keep_run_b:
-        print(f"Installing Run B as live model: {RUN_B_MODEL_DIR} -> {LIVE_MODEL_DIR}", file=sys.stderr)
-        _copytree(RUN_B_MODEL_DIR, LIVE_MODEL_DIR)
+        print(
+            f"Installing Run B as live model: {run_b_model_dir} -> {LIVE_MODEL_DIR}",
+            file=sys.stderr,
+        )
+        _copytree(run_b_model_dir, LIVE_MODEL_DIR)
     else:
         print(f"Restoring live model from backup: {PRE_BACKUP_DIR} -> {LIVE_MODEL_DIR}", file=sys.stderr)
         _copytree(PRE_BACKUP_DIR, LIVE_MODEL_DIR)
