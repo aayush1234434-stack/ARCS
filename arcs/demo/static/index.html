@@ -3,85 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ARCS Demo</title>
+  <title>ARCS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <div class="page">
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <div class="shell">
     <div id="public-banner" class="public-banner hidden" role="status"></div>
-    <header class="header">
-      <h1>ARCS</h1>
-      <p class="subtitle">Adaptive Routing &amp; Correction System</p>
+
+    <header class="chat-header">
+      <div class="brand-block">
+        <h1 class="brand">ARCS</h1>
+        <p class="tagline">Adaptive Routing &amp; Correction</p>
+      </div>
+      <p class="header-hint">Route · generate · verify</p>
     </header>
 
-    <section class="card ask-card">
-      <label for="query">Your question</label>
-      <textarea
-        id="query"
-        rows="3"
-        placeholder="e.g. What are the symptoms of diabetes?"
-      ></textarea>
-      <button id="submit" type="button" class="btn primary">Ask ARCS</button>
-    </section>
-
-    <section id="loading" class="loading hidden" aria-live="polite">
-      <div class="spinner"></div>
-      <p>Routing, generating, and verifying…</p>
-      <p class="loading-hint">First request can take 2–4 minutes. Do not refresh.</p>
-    </section>
-
-    <section id="result" class="card result-card hidden">
-      <div class="meta">
-        <span id="meta-domain" class="pill"></span>
-        <span id="meta-verdict" class="pill"></span>
-        <span id="meta-timing" class="pill muted"></span>
+    <main id="transcript" class="transcript" aria-live="polite">
+      <div id="empty-state" class="empty-state">
+        <p class="empty-lead">Ask anything across coding, medical, legal, or general.</p>
+        <p class="empty-sub">Each reply is routed to a specialist pipeline, then verified.</p>
       </div>
-      <h2>Answer</h2>
-      <div id="answer" class="answer"></div>
+    </main>
 
-      <div id="feedback-section" class="feedback-section">
-        <p>Was this answer helpful?</p>
-        <div class="feedback-buttons">
-          <button id="btn-positive" type="button" class="btn feedback positive" title="Helpful">
-            👍 Yes
-          </button>
-          <button id="btn-negative" type="button" class="btn feedback negative" title="Not helpful">
-            👎 No
-          </button>
-        </div>
-        <div id="domain-picker" class="domain-picker hidden" role="group" aria-label="Correct domain">
-          <p class="domain-picker-lead">
-            <strong>Which domain should this have been routed to?</strong>
-            Pick one if routing was wrong — this label feeds router retrain (RQ1).
-          </p>
-          <div class="domain-buttons">
-            <button type="button" class="btn domain" data-domain="CODING">CODING</button>
-            <button type="button" class="btn domain" data-domain="MEDICAL">MEDICAL</button>
-            <button type="button" class="btn domain" data-domain="LEGAL">LEGAL</button>
-            <button type="button" class="btn domain" data-domain="GENERAL">GENERAL</button>
-            <button type="button" class="btn domain skip" data-domain="">Skip (no domain label)</button>
-          </div>
-          <p class="domain-picker-hint">Skip only if the domain was correct but the answer was bad.</p>
-        </div>
-        <p id="feedback-msg" class="feedback-msg hidden"></p>
-      </div>
-    </section>
-
-    <section id="error" class="card error-card hidden" role="alert">
-      <p id="error-text"></p>
-    </section>
-
-    <footer class="footer">
-      <p>Query → Router → Pipeline → Verify → Your feedback → Attribution → Repair</p>
-      <p id="footer-query-id" class="footer-query-id hidden">
-        query_id: <code id="query-id-value"></code>
-      </p>
-      <p id="footer-label-hint" class="footer-label-hint hidden">
-        Label for repair:
-        <code id="label-cmd"></code>
-      </p>
+    <footer class="composer-wrap">
+      <form id="composer" class="composer" autocomplete="off">
+        <label class="sr-only" for="query">Message</label>
+        <textarea
+          id="query"
+          rows="1"
+          placeholder="Message ARCS…"
+          maxlength="4000"
+        ></textarea>
+        <button id="submit" type="submit" class="send-btn" aria-label="Send">
+          <span class="send-label">Send</span>
+        </button>
+      </form>
+      <p class="composer-hint">Enter to send · Shift+Enter for newline · first reply can take a few minutes</p>
     </footer>
   </div>
+
   <script src="/static/app.js"></script>
 </body>
 </html>
