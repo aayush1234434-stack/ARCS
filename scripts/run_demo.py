@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -11,10 +12,30 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 
+def _default_port() -> int:
+    """Respect PLATFORM PORT (Railway/Render/Fly) when set."""
+    raw = os.getenv("PORT", "").strip()
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            pass
+    return 8000
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the ARCS demo web UI.")
-    parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    parser.add_argument(
+        "--host",
+        default=os.getenv("ARCS_DEMO_HOST", "127.0.0.1"),
+        help="Bind host (default: 127.0.0.1; Docker/cloud: 0.0.0.0)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=_default_port(),
+        help="Bind port (default: PORT env or 8000)",
+    )
     parser.add_argument("--reload", action="store_true", help="Auto-reload on code changes")
     args = parser.parse_args()
 
