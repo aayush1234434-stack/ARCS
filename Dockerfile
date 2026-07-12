@@ -50,11 +50,6 @@ COPY scripts/ scripts/
 COPY data/ data/
 COPY requirements.txt .
 
-# Bake DistilBERT router for cloud deploys (ONNX + tokenizer; no volume required).
-# Local Compose still mounts ./artifacts/router-model over this path.
-# Requires model.onnx — run: python scripts/export_router_onnx.py
-COPY artifacts/router-model/ artifacts/router-model/
-
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
