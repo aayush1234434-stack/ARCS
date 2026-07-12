@@ -7,7 +7,7 @@ at most one missing required element, no incorrect claims).
 
 Usage:
     python scripts/eval_judge_modes.py --compare \\
-        artifacts/experiments/2026-07-11T12-36-52_post-fix-v2-merged
+        artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
     python scripts/eval_judge_modes.py --compare <path> --fail-only
 """
 

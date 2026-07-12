@@ -7,7 +7,7 @@ This directory holds **local eval run outputs**. Contents are **gitignored** exc
 Each run is a timestamped folder:
 
 ```
-artifacts/experiments/2026-07-11T12-36-52_post-fix-v2-merged/
+artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged/
 ├── experiment.json   # router + pipeline metrics and per-row results
 └── summary.txt       # human-readable snapshot (when generated)
 ```
@@ -19,7 +19,7 @@ Naming pattern: `{ISO-timestamp}_{slug}` (e.g. `baseline-v1-full-pipeline`, `pos
 | Slug | Role |
 |---|---|
 | `2026-07-10T07-24-20_baseline-v1-full-pipeline` | Pre-repair end-to-end baseline |
-| `2026-07-11T12-36-52_post-fix-v2-merged` | Post-fix FINAL (merged domain runs + resume) |
+| `2026-07-11T13-45-31_post-fix-v2-merged` | Post-fix FINAL (48/48, 0 ERROR, 47.9% PASS) |
 | `2026-07-11T08-38-52_rq1/` | RQ1 manifest (Run A vs Run B) |
 | `2026-07-11T11-22-52_repair_ablation/` | RQ1-bis router ablation |
 

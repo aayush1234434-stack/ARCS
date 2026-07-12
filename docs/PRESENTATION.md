@@ -1,6 +1,6 @@
 # ARCS — Committee / Portfolio Presentation
 
-*10-minute talking outline. Numbers from `2026-07-11T12-36-52_post-fix-v2-merged` and RQ1 manifest.*
+*10-minute talking outline. Numbers from `2026-07-11T13-45-31_post-fix-v2-merged` and RQ1 bootstrap manifest.*
 
 ---
 
@@ -35,20 +35,20 @@ Demo: `python -m arcs.demo.app` or Docker ([DEPLOY.md](DEPLOY.md)).
 | Run | PASS | FAIL | ERROR | PASS% (completed) |
 |---|---:|---:|---:|---:|
 | Baseline | 16 | 28 | 4 | **36.4%** |
-| Post-fix FINAL | 20 | 28 | 0 | **41.7%** |
+| Post-fix FINAL | 23 | 25 | 0 | **47.9%** |
 
-**+5.3 pp** on completed rows; **0 ERROR** after merge/resume.
+**+11.5 pp** on completed rows; **0 ERROR** in canonical FINAL merge (48/48).
 
 Per-domain highlights:
 
 | Domain | Δ |
 |---|---:|
+| CODING | **+42 pp** |
 | LEGAL | **+31 pp** |
-| CODING | **+17 pp** |
 | MEDICAL | −8 pp |
 | GENERAL | −9 pp |
 
-Repairs were targeted; regressions show the cost of prompt experiments without full re-eval.
+Repairs were targeted; MEDICAL/GENERAL did not gain in this cycle.
 
 ---
 
@@ -68,7 +68,7 @@ eval FAIL (SPECIALIST) → specialist_queue.jsonl
 | Extract | `repair.py --component SPECIALIST --domain CODING` | From demo/eval failures |
 | Optimize | `optimize_coding.py` | COPRO on queue; **needs GROQ**; writes sidecar only |
 | Apply | `apply_sidecar.py --dry-run` then apply | Never auto-applied; creates `coding.py.bak` |
-| Verify | `eval_pipeline --domains CODING --name post-fix-coding-v4` | CODING PASS: **25% → 42%** (+17 pp) in FINAL merge |
+| Verify | `eval_pipeline --domains CODING --name post-fix-coding-v4` | CODING PASS: **25% → 67%** in FINAL merge |
 
 One-shot: `./scripts/run_coding_repair.sh` (use `--dry-run` to plan without API writes). Groq COPRO defaults: **`--breadth 2 --depth 2`** (`n=1` per API call).
 
@@ -76,7 +76,7 @@ One-shot: `./scripts/run_coding_repair.sh` (use `--dry-run` to plan without API 
 
 ---
 
-## 4. Results — RQ1 (2 min)
+## 4. Results — RQ1 bootstrap (2 min)
 
 **Hypothesis:** Router retrain on ROUTER-attributed negatives (Run B) beats blanket negatives (Run A).
 
@@ -86,15 +86,15 @@ One-shot: `./scripts/run_coding_repair.sh` (use `--dry-run` to plan without API 
 | Run A (all negatives) | 97.92% | 99.0% |
 | Run B (ROUTER-only) | 97.92% | 99.0% |
 
-**Winner: tie.** Retraining helps (+4.17 pp routing); attribution filtering **not distinguished** on bootstrap corpus (*n* augment: 38 vs 12).
+**Outcome: tie (bootstrap complete).** Retraining helps (+4.17 pp routing); attribution filtering **inconclusive** at bootstrap *N* (38 vs 12 augment rows). Corpus is synthetic — reconstructed from eval artifacts, not live 👎.
 
-**Next:** RQ1 v2 on real demo feedback (≥40 negatives, ≥15 ROUTER).
+**RQ1 v2 (real feedback):** future work — requires ≥40 👎 and ≥15 ROUTER-attributed (currently **2 / 0**). Bootstrap manifest is the authoritative RQ1 result until v2 runs.
 
 ---
 
 ## 5. Engineering credibility (1 min)
 
-- **90 pytest tests**, CI on push, optional smoke-e2e with secrets
+- **119 pytest tests**, CI on push, optional smoke-e2e with secrets
 - Eval **resume/merge** after Groq TPD; `error_class` for debugging
 - **Docker + ONNX router** path for production-shaped deploy
 - Full reproducibility docs: [RESULTS.md](RESULTS.md), [reproduce.sh](../scripts/reproduce.sh)
@@ -104,27 +104,35 @@ One-shot: `./scripts/run_coding_repair.sh` (use `--dry-run` to plan without API 
 ## 6. Honest limitations (1 min)
 
 - Small eval set (*n* = 48); post-fix FINAL is a **stitched merge** of partial runs
+- **RQ1 bootstrap tied** — attribution hypothesis not confirmed at this *N*; v2 explicitly deferred
 - **Naive baseline** (single LLM, same judge) wired but not run at full scale
 - **Not deployed** publicly; free-tier API limits drove infra complexity
-- MEDICAL/GENERAL repairs did not generalize in this cycle
 
 See [SCORECARD.md](SCORECARD.md) for 1–10 self-ratings.
 
 ---
 
-## 7. Ask / next steps (1 min)
+## 7. Scope closed / optional follow-ups (1 min)
 
-1. Run naive baseline → quantify orchestration lift
-2. Collect real user 👎 → RQ1 v2
-3. Tag release + artifact checksums for thesis appendix
+**Shipped in MVP (this document):**
+
+1. End-to-end orchestration + eval harness + **47.9%** FINAL merge (48/48, 0 ERROR)
+2. Bootstrap RQ1 controlled A/B — **tie reported honestly**
+3. Reproduce path + tagged release (`v1.0.0-mvp`)
+
+**Explicitly future work (not blockers):**
+
+1. RQ1 v2 on real demo feedback (≥40 / ≥15 gates)
+2. Full 48-row naive baseline ablation
+3. Path from 47.9% → 60% PASS (specialist + judge levers in [RESULTS.md §7](RESULTS.md#7-path-to-60--specialist--judge-levers-2026-07-11))
 
 ---
 
 ## Slide checklist
 
 - [ ] CODING specialist repair flow (section 3b)
-- [ ] Baseline vs post-fix table
-- [ ] RQ1 tie chart (pre / Run A / Run B)
+- [ ] Baseline vs post-fix table (47.9%)
+- [ ] RQ1 tie chart (pre / Run A / Run B) + “bootstrap complete, v2 future”
 - [ ] Demo screenshot or 30s screen recording
 - [ ] SCORECARD summary radar or table
 - [ ] Limitations slide (required for committee trust)
