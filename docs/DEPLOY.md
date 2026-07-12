@@ -31,6 +31,8 @@ python scripts/export_router_onnx.py
 docker compose up --build
 ```
 
+Validate config without printing secrets: `docker compose config --quiet`
+
 Open **http://127.0.0.1:8000**
 
 ---
