@@ -39,3 +39,8 @@ artifacts/router-model-rq1-run-b/
 # Torch weights — ONNX path does not need these (~255MB each)
 artifacts/router-model/model.safetensors
 artifacts/router-model/training_args.bin
+
+# model.onnx (~256MB) exceeds Railway `up` per-file upload limits (~250MB).
+# Bake it via local `docker build` + registry push instead (see docs/DEPLOY.md).
+# Do not remove this line unless you switch to an image-based deploy only.
+artifacts/router-model/model.onnx
