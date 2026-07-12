@@ -23,6 +23,22 @@
   let currentQueryId = null;
   let feedbackSent = false;
 
+  async function loadPublicBanner() {
+    const banner = $("public-banner");
+    if (!banner) return;
+    try {
+      const res = await fetch("/health");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.public_demo && data.disclaimer) {
+        banner.textContent = data.disclaimer;
+        banner.classList.remove("hidden");
+      }
+    } catch (_) {
+      /* ignore — banner is optional */
+    }
+  }
+
   function hideQueryIdFooter() {
     footerQueryId.classList.add("hidden");
     footerLabelHint.classList.add("hidden");
@@ -68,7 +84,15 @@
     domainPicker.classList.remove("hidden");
   }
 
-  function formatErrorDetail(data) {
+  function formatErrorDetail(data, status) {
+    if (status === 429) {
+      return (data && typeof data.detail === "string" && data.detail)
+        || "Rate limit exceeded. Please wait and try again.";
+    }
+    if (status === 503) {
+      return (data && typeof data.detail === "string" && data.detail)
+        || "Service temporarily unavailable. Please try again shortly.";
+    }
     if (!data || data.detail == null) return "Request failed";
     const detail = data.detail;
     if (typeof detail === "string") return detail;
@@ -101,9 +125,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(formatErrorDetail(data));
+        throw new Error(formatErrorDetail(data, res.status));
       }
 
       currentQueryId = data.query_id;
@@ -152,9 +176,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(formatErrorDetail(data));
+        throw new Error(formatErrorDetail(data, res.status));
       }
 
       feedbackSent = true;
@@ -204,4 +228,6 @@
     }
     sendFeedback("NEGATIVE", domain || undefined);
   });
+
+  loadPublicBanner();
 })();

@@ -9,17 +9,30 @@
 # Optional ONNX export for faster startup:
 #   python scripts/export_router_onnx.py
 #   ARCS_ROUTER_BACKEND=onnx in .env
+#
+# Public demo hardening (optional):
+#   ARCS_DEMO_PUBLIC=1
+#   ARCS_DEMO_RATE_LIMIT=8
+#   ARCS_DEMO_PIPELINE_TIMEOUT=180
 
 services:
   demo:
     build: .
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:8000"
     # Use .env (from .env.example template) — never commit .env with real keys
     env_file:
       - .env
     environment:
       ARCS_ROUTER_BACKEND: ${ARCS_ROUTER_BACKEND:-onnx}
+      ARCS_DEMO_PUBLIC: ${ARCS_DEMO_PUBLIC:-0}
+      ARCS_DEMO_RATE_LIMIT: ${ARCS_DEMO_RATE_LIMIT:-8}
+      ARCS_DEMO_RATE_WINDOW: ${ARCS_DEMO_RATE_WINDOW:-60}
+      ARCS_DEMO_FEEDBACK_RATE_LIMIT: ${ARCS_DEMO_FEEDBACK_RATE_LIMIT:-30}
+      ARCS_DEMO_PIPELINE_TIMEOUT: ${ARCS_DEMO_PIPELINE_TIMEOUT:-180}
+      # Container always listens on 8000; host map uses ${PORT:-8000}:8000
+      PORT: "8000"
+      ARCS_DEMO_HOST: "0.0.0.0"
     volumes:
       - ./artifacts/router-model:/app/artifacts/router-model:ro
       - ./logs:/app/logs
