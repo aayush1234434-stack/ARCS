@@ -50,9 +50,10 @@ COPY scripts/ scripts/
 COPY data/ data/
 COPY requirements.txt .
 
-# Optional: when building for cloud without a volume, uncomment after placing
-# a trained checkpoint under artifacts/router-model/ (and allow it in .dockerignore):
-# COPY artifacts/router-model/ artifacts/router-model/
+# Bake DistilBERT router for cloud deploys (ONNX + tokenizer; no volume required).
+# Local Compose still mounts ./artifacts/router-model over this path.
+# Requires model.onnx — run: python scripts/export_router_onnx.py
+COPY artifacts/router-model/ artifacts/router-model/
 
 EXPOSE 8000
 

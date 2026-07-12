@@ -12,6 +12,12 @@ __pycache__/
 
 # Runtime / generated (mount as volumes in compose)
 artifacts/
+# Allow router checkpoint in image builds (needed for Railway/Render bake).
+# Keep torch weights out of the image when using ONNX (~255MB savings).
+!artifacts/router-model/
+!artifacts/router-model/**
+artifacts/router-model/model.safetensors
+artifacts/router-model/training_args.bin
 logs/
 
 # Git and editor

@@ -131,66 +131,158 @@ python scripts/smoke_e2e.py --json --quiet
 
 ---
 
-## Cloud deploy (Railway / Render / Fly)
+## Cloud deploy (Railway recommended; Render alternative)
 
-These platforms build a container, inject secrets as env vars, and expose `PORT`. ARCS is a **single-process demo** — no Postgres, Redis, or auth.
+Use branch **`cursor/production-demo-hardening`** (or merge [PR #7](https://github.com/aayush1234434-stack/ARCS/pull/7) first). That branch respects platform `PORT` and defaults to ONNX in the image.
 
-### Shared setup
+ARCS is a **single-process demo** — no Postgres, Redis, or auth.
 
-1. Train/export the router locally:
-   ```bash
-   python -m arcs.router.train   # if needed
-   python scripts/export_router_onnx.py
-   ```
-2. Set secrets in the platform dashboard (never in git):
-   - `GROQ_API_KEY`
-   - `NVIDIA_API_KEY`
-3. Set non-secret env:
-   - `ARCS_ROUTER_BACKEND=onnx`
-   - `ARCS_DEMO_PUBLIC=1` (recommended for internet-facing demos)
-   - `ARCS_DEMO_RATE_LIMIT=8`
-   - `ARCS_DEMO_PIPELINE_TIMEOUT=180`
-4. **Router weights:** `artifacts/` is gitignored and excluded from the default Docker build context. For cloud you must either:
-   - **Bake at build time:** place `artifacts/router-model/` on the build machine, allow it in `.dockerignore` (`!artifacts/router-model/`), uncomment the `COPY artifacts/router-model/` line in the Dockerfile, build and push the image; or
-   - **Mount a volume** (Fly volumes / Render disks) at `/app/artifacts/router-model`.
-5. Health check path: `/health` (HTTP). Start period ≥ 60s (ONNX/torch cold start).
+### How the router gets into the container
 
-### Railway
+`artifacts/router-model/` is **gitignored** (do not commit weights). Two options:
 
-- New project → Deploy from GitHub (or deploy a pre-built image).
-- Variables: paste the secrets/env above. Railway sets `PORT` automatically; `scripts/run_demo.py` respects it.
-- If building from git without router weights, push a **pre-built image** that already contains `artifacts/router-model` (ONNX + config).
-- Public URL smoke:
-  ```bash
-  curl -sS https://YOUR_APP.up.railway.app/health
-  curl -sS -X POST https://YOUR_APP.up.railway.app/api/query \
-    -H 'Content-Type: application/json' \
-    -d '{"query":"Hello"}'
-  ```
+| Method | When to use | How |
+|---|---|---|
+| **Bake (recommended)** | Railway/Render build from your laptop or CI that has the checkpoint | Dockerfile `COPY artifacts/router-model/` — already enabled. Image includes ONNX + tokenizer (~260MB). Torch `model.safetensors` is excluded via `.dockerignore`. |
+| **Volume / disk** | Persistent host storage (Compose, Fly volume, Render disk) | Mount host dir → `/app/artifacts/router-model`. Compose does this locally. |
 
-### Render
-
-- New **Web Service** from repo, or deploy a Docker image.
-- Docker command is the image `CMD` (no change needed).
-- Health check: `/health`.
-- Disk (optional): mount at `/app/artifacts/router-model` and `/app/logs`, or bake the router into the image as above.
-- Same env vars as Railway.
-
-### Fly.io
+Before any cloud build on your machine:
 
 ```bash
-fly launch          # create app from Dockerfile
-fly secrets set GROQ_API_KEY=... NVIDIA_API_KEY=...
-fly volumes create arcs_router --size 1   # optional persistent router/logs
-# mount in fly.toml under [mounts], destination /app/artifacts/router-model
-fly deploy
+ls artifacts/router-model/config.json artifacts/router-model/model.onnx
+# if model.onnx missing:
+python scripts/export_router_onnx.py
 ```
 
-Set `ARCS_ROUTER_BACKEND=onnx` and `ARCS_DEMO_PUBLIC=1` in `fly.toml` `[env]` or via secrets/config.
+Required files for `ARCS_ROUTER_BACKEND=onnx`: `config.json`, `model.onnx`, `tokenizer.json`, `tokenizer_config.json`.
+
+### Required environment variables
+
+| Name | Value |
+|---|---|
+| `GROQ_API_KEY` | your Groq secret |
+| `NVIDIA_API_KEY` | your NVIDIA secret |
+| `ARCS_ROUTER_BACKEND` | `onnx` |
+| `ARCS_DEMO_PUBLIC` | `1` (recommended for public URL) |
+
+Optional: `ARCS_DEMO_RATE_LIMIT=8`, `ARCS_DEMO_PIPELINE_TIMEOUT=180`.
+
+---
+
+### Railway — exact steps (CLI, bake on your machine)
+
+**Why CLI + local bake:** GitHub builds cannot see gitignored weights. Building from your laptop uploads the Docker context (including `artifacts/router-model/`) so the checkpoint is baked.
+
+1. **Install + login**
+   ```bash
+   npm i -g @railway/cli    # or: brew install railway
+   railway login            # browser OAuth
+   ```
+
+2. **Use the deploy branch**
+   ```bash
+   cd /Users/aayushsingh/Developer/ARCS
+   git checkout cursor/production-demo-hardening
+   git pull
+   ls artifacts/router-model/model.onnx   # must exist
+   ```
+
+3. **Create project (click path once)**
+   - Open [https://railway.app/new](https://railway.app/new)
+   - **Empty Project** → name it `arcs-demo`
+   - In the project: **+ Create** → **Empty Service** → name `demo`
+   - Or from CLI in the repo:
+     ```bash
+     railway init    # link / create project
+     railway link    # if project already exists
+     ```
+
+4. **Set variables (click path)**
+   - Project → service **demo** → **Variables** → **+ New Variable** (or Raw Editor):
+     ```
+     GROQ_API_KEY=...
+     NVIDIA_API_KEY=...
+     ARCS_ROUTER_BACKEND=onnx
+     ARCS_DEMO_PUBLIC=1
+     ```
+   - Or CLI (paste real keys in your terminal only):
+     ```bash
+     railway variables set ARCS_ROUTER_BACKEND=onnx ARCS_DEMO_PUBLIC=1
+     railway variables set GROQ_API_KEY=YOUR_KEY NVIDIA_API_KEY=YOUR_KEY
+     ```
+
+5. **Generate a public URL (click path)**
+   - Service → **Settings** → **Networking** → **Generate Domain**
+   - Health check path (if asked): `/health`
+   - Railway sets `PORT` automatically; the image CMD uses `${PORT:-8000}`.
+
+6. **Deploy (CLI — bakes router)**
+   ```bash
+   # From repo root; uploads build context including artifacts/router-model/
+   railway up --detach
+   ```
+   Watch the build on the Railway dashboard until **Success**.
+
+7. **Smoke**
+   ```bash
+   curl -sS https://YOUR_APP.up.railway.app/health | python -m json.tool
+   # expect: status=ok, router_backend=onnx, groq_configured=true, nvidia_configured=true
+
+   curl -sS -X POST https://YOUR_APP.up.railway.app/api/query \
+     -H 'Content-Type: application/json' \
+     -d '{"query":"What is a Python list comprehension?"}' | python -m json.tool
+   ```
+
+**Railway + GitHub (no local bake):** only works if you push a **pre-built image** to a registry that already contains `/app/artifacts/router-model`, or you add a private download step in the Dockerfile. Plain “Deploy from GitHub” will **not** include the router.
+
+---
+
+### Render — exact steps (alternative)
+
+Render Git builds also lack gitignored files. Prefer **Deploy an existing image** you built locally, or a Render **Disk** you populate once.
+
+#### Option A — local image → Render (simplest)
+
+```bash
+git checkout cursor/production-demo-hardening
+docker build -t arcs-demo:onnx .
+# Tag + push to Docker Hub or GHCR, e.g.:
+docker tag arcs-demo:onnx YOUR_DOCKERHUB_USER/arcs-demo:onnx
+docker push YOUR_DOCKERHUB_USER/arcs-demo:onnx
+```
+
+Click path:
+
+1. [https://dashboard.render.com](https://dashboard.render.com) → **New +** → **Web Service**
+2. **Existing Image** → `YOUR_DOCKERHUB_USER/arcs-demo:onnx`
+3. Instance: free/starter is fine for demos
+4. **Environment** → add `GROQ_API_KEY`, `NVIDIA_API_KEY`, `ARCS_ROUTER_BACKEND=onnx`, `ARCS_DEMO_PUBLIC=1`
+5. Health check path: `/health`
+6. **Create Web Service**
+
+#### Option B — GitHub + Disk (no bake in image)
+
+1. **New +** → **Web Service** → connect `aayush1234434-stack/ARCS`
+2. Branch: `cursor/production-demo-hardening`
+3. Runtime: **Docker**
+4. Add a **Disk** mounted at `/app/artifacts/router-model`
+5. After first deploy, upload checkpoint onto the disk (Render Shell / one-shot `scp` pattern) — `config.json`, `model.onnx`, tokenizer files
+6. Same env vars as above
+
+---
+
+### Fly.io (optional)
+
+```bash
+fly launch          # Dockerfile
+fly secrets set GROQ_API_KEY=... NVIDIA_API_KEY=...
+fly volumes create arcs_router --size 1   # optional
+fly deploy          # bake works if router present in build context
+```
 
 ### What not to add
 
-No Postgres, Redis, OAuth, multi-tenant SaaS, or eval/RQ1 jobs on this deploy path. Feedback stays in `logs/requests.jsonl` on the container filesystem (or a mounted volume).
+No Postgres, Redis, OAuth, multi-tenant SaaS, or eval/RQ1 jobs on this deploy path. Feedback stays in `logs/requests.jsonl` on the container filesystem (ephemeral on Railway unless you add a volume).
 
 ---
 
