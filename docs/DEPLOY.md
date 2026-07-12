@@ -217,10 +217,17 @@ Optional: `ARCS_DEMO_RATE_LIMIT=8`, `ARCS_DEMO_PIPELINE_TIMEOUT=180`.
    - Railway sets `PORT` automatically; the image CMD uses `${PORT:-8000}`.
 
 6. **Deploy (CLI — bakes router)**
+
+   Do **not** paste `# comments` on the same line as commands.
+
    ```bash
-   # From repo root; uploads build context including artifacts/router-model/
-   railway up --detach
+   # From repo root. --no-gitignore is required because router weights are
+   # gitignored; .railwayignore still excludes .venv and spare checkpoints.
+   railway up --detach --no-gitignore
    ```
+
+   Expected upload size is roughly **~300–500MB** (ONNX + tokenizer + source), not multi‑GB. If you see `413 Payload Too Large` (~2GB), `.venv` was included — confirm `.railwayignore` exists and lists `.venv/`.
+
    Watch the build on the Railway dashboard until **Success**.
 
 7. **Smoke**
