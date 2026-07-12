@@ -29,8 +29,8 @@ if [[ ! -f artifacts/router-model/config.json ]]; then
   exit 1
 fi
 
-echo "Building ${IMAGE} (ONNX router baked; safetensors excluded by .dockerignore)..."
-docker build -t "${IMAGE}" .
+echo "Building ${IMAGE} for linux/amd64 (Railway/cloud; ONNX baked)..."
+docker build --platform linux/amd64 -t "${IMAGE}" .
 
 echo "Pushing ${IMAGE}..."
 docker push "${IMAGE}"
