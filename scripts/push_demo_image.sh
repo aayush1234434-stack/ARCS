@@ -29,20 +29,20 @@ if [[ ! -f artifacts/router-model/config.json ]]; then
   exit 1
 fi
 
-echo "Building $IMAGE (ONNX router baked; safetensors excluded by .dockerignore)…"
-docker build -t "$IMAGE" .
+echo "Building ${IMAGE} (ONNX router baked; safetensors excluded by .dockerignore)..."
+docker build -t "${IMAGE}" .
 
-echo "Pushing $IMAGE…"
-docker push "$IMAGE"
+echo "Pushing ${IMAGE}..."
+docker push "${IMAGE}"
 
 cat <<EOF
 
-Pushed: $IMAGE
+Pushed: ${IMAGE}
 
 Railway click path:
   1. Open your ARCS service
-  2. Settings → Source / Network (or New Service → Docker Image)
-  3. Image: $IMAGE
+  2. Settings → change source to Docker Image (or New → Docker Image)
+  3. Image: ${IMAGE}
   4. Variables: GROQ_API_KEY, NVIDIA_API_KEY, ARCS_ROUTER_BACKEND=onnx, ARCS_DEMO_PUBLIC=1
   5. Settings → Networking → Generate Domain
   6. curl https://YOUR_DOMAIN/health
