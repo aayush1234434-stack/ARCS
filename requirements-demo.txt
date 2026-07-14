@@ -1,0 +1,15 @@
+# Slim runtime deps for the public demo image (ONNX router, no training/DSPy).
+# Keep torch out — it pulls multi‑GB CUDA wheels and breaks Railway/local disk builds.
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-dotenv
+groq
+openai
+numpy
+onnxruntime
+transformers>=4.0
+tokenizers
+huggingface-hub
+safetensors
+pydantic
+httpx
