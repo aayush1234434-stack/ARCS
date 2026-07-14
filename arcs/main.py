@@ -137,11 +137,16 @@ def _sandbox_feedback(verification: dict) -> str:
         parts.append("Issues:\n- " + "\n- ".join(str(item) for item in issues[:8]))
     if not parts:
         parts.append("Sandbox verification failed.")
+    parts.append(
+        "Revise SOLUTION so failing asserts pass: define every name the tests "
+        "reference (functions, variables like ipv4_regex, endpoints, helpers) "
+        "exactly as spelled in the assertions, not only under alternate aliases."
+    )
     return "\n".join(parts)
 
 
 def _effective_specialist_answer(specialist_result: dict) -> str:
-    """Best-effort full answer text for verification (judge or code extraction).
+    """Best-effort text for code extraction / sandbox (prefer SOLUTION).
 
     The CODING specialist stores code in ``answer`` (SOLUTION section) and prose
     in ``explanation`` / other fields. Prose-only queries (eval-042) may leave
@@ -156,6 +161,23 @@ def _effective_specialist_answer(specialist_result: dict) -> str:
         if value is not None and str(value).strip():
             parts.append(str(value).strip())
     return "\n\n".join(parts)
+
+
+def _full_specialist_answer_for_judge(specialist_result: dict) -> str:
+    """Full specialist text for the LLM judge (code + prose sections).
+
+    Unlike ``_effective_specialist_answer`` (which prefers SOLUTION alone for
+    sandbox extraction), the judge needs the complete specialist output so a
+    sandbox-incompatible but substantively correct answer can still PASS.
+    """
+    parts: list[str] = []
+    for key in ("answer", "explanation", "complexity", "edge_cases", "caveats"):
+        value = specialist_result.get(key)
+        if value is not None and str(value).strip():
+            parts.append(str(value).strip())
+    if parts:
+        return "\n\n".join(parts)
+    return _effective_specialist_answer(specialist_result)
 
 
 def _should_defer_to_judge(specialist_result: dict) -> bool:
@@ -209,7 +231,7 @@ def _run_judge(
     components: dict,
 ) -> dict:
     progress.log("  Calling LLM judge (NVIDIA API)...")
-    answer = _effective_specialist_answer(specialist_result)
+    answer = _full_specialist_answer_for_judge(specialist_result)
     if not answer.strip():
         return _empty_answer_verification()
     return components["judge"].run(
@@ -379,13 +401,45 @@ def _run_sandbox_pipeline(
         "max_retries": pipeline.max_retries,
         "verified": verification.get("verdict") == "PASS",
     }
-    if verification.get("verdict") != "PASS":
-        tooling["delivery_warning"] = (
-            "Code could not be verified after "
-            f"{pipeline.max_retries} sandbox attempt(s)."
-        )
+    if verification.get("verdict") == "PASS":
+        # Real executable success: sandbox remains authoritative — do not judge.
+        _ = specification
+        return specialist_result, verification, tooling
 
-    # Spec is retained for logging / future hybrid checks; sandbox is authoritative.
+    # Sandbox still FAIL after retries. If the specialist produced non-empty
+    # text (code and/or prose), fall back to the LLM judge on the full answer —
+    # same pattern as prose-only CODING — rather than hard-failing on harness
+    # / API mismatches. Empty answers stay as sandbox FAIL.
+    answer_text = _full_specialist_answer_for_judge(specialist_result)
+    if answer_text.strip():
+        progress.log(
+            "  Sandbox FAIL with non-empty answer — deferring to LLM judge"
+        )
+        tooling.update(
+            _judge_fallback_tooling(
+                test_bundle,
+                test_cases,
+                model=model,
+                pipeline_id=pipeline.pipeline_id,
+                reason=(
+                    "sandbox FAIL after retries; judging full specialist answer "
+                    "(harness/API mismatch safety net)"
+                ),
+            )
+        )
+        tooling["sandbox_attempts"] = attempts
+        tooling["sandbox_last_verification"] = verification
+        tooling["delivery_warning"] = (
+            "Sandbox could not verify after "
+            f"{pipeline.max_retries} attempt(s); falling back to LLM judge."
+        )
+        _ = specification
+        return specialist_result, {}, tooling
+
+    tooling["delivery_warning"] = (
+        "Code could not be verified after "
+        f"{pipeline.max_retries} sandbox attempt(s)."
+    )
     _ = specification
     return specialist_result, verification, tooling
 

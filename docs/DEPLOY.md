@@ -169,74 +169,70 @@ Optional: `ARCS_DEMO_RATE_LIMIT=8`, `ARCS_DEMO_PIPELINE_TIMEOUT=180`.
 
 ---
 
-### Railway — exact steps (CLI, bake on your machine)
+### Railway — exact steps (Docker image; required)
 
-**Why CLI + local bake:** GitHub builds cannot see gitignored weights. Building from your laptop uploads the Docker context (including `artifacts/router-model/`) so the checkpoint is baked.
+**Why not `railway up`:** Cloudflare/Railway reject individual files over ~250MB.  
+`artifacts/router-model/model.onnx` is **~256MB**, so `railway up --no-gitignore` always fails with `413 Payload Too Large` once `.venv` is excluded.  
+**Fix:** build the image on your Mac (local Docker can read the file), push to Docker Hub/GHCR, point Railway at that image.
 
-1. **Install + login**
+1. **Install + login (once)**
    ```bash
-   npm i -g @railway/cli    # or: brew install railway
-   railway login            # browser OAuth
+   brew install railway
+   railway login
+   docker login
    ```
 
-2. **Use the deploy branch**
+2. **Build + push image (bakes ONNX)**
+
+   Replace `YOURUSER` with your Docker Hub username:
    ```bash
    cd /Users/aayushsingh/Developer/ARCS
-   git checkout cursor/production-demo-hardening
-   git pull
-   ls artifacts/router-model/model.onnx   # must exist
+   git checkout demo-chat-ui
+   ls artifacts/router-model/model.onnx
+   chmod +x scripts/push_demo_image.sh
+   ./scripts/push_demo_image.sh YOURUSER/arcs-demo:onnx
    ```
 
-3. **Create project (click path once)**
-   - Open [https://railway.app/new](https://railway.app/new)
-   - **Empty Project** → name it `arcs-demo`
-   - In the project: **+ Create** → **Empty Service** → name `demo`
-   - Or from CLI in the repo:
-     ```bash
-     railway init    # link / create project
-     railway link    # if project already exists
-     ```
+   Or manually:
+   ```bash
+   docker build -t YOURUSER/arcs-demo:onnx .
+   docker push YOURUSER/arcs-demo:onnx
+   ```
 
-4. **Set variables (click path)**
-   - Project → service **demo** → **Variables** → **+ New Variable** (or Raw Editor):
+3. **Wire Railway to the image (click path)**
+   - Open your **ARCS** service on Railway
+   - **Settings** → find **Source** / **Deploy** / **Docker Image**
+   - Set image to: `YOURUSER/arcs-demo:onnx`
+   - Save / redeploy
+
+   If the service is GitHub-connected and won’t switch: **+ New** → **Docker Image** service → same image tag, then move variables / domain over.
+
+4. **Variables (click path)**
+   - **Variables** tab:
      ```
      GROQ_API_KEY=...
      NVIDIA_API_KEY=...
      ARCS_ROUTER_BACKEND=onnx
      ARCS_DEMO_PUBLIC=1
      ```
-   - Or CLI (paste real keys in your terminal only):
-     ```bash
-     railway variables set ARCS_ROUTER_BACKEND=onnx ARCS_DEMO_PUBLIC=1
-     railway variables set GROQ_API_KEY=YOUR_KEY NVIDIA_API_KEY=YOUR_KEY
-     ```
 
-5. **Generate a public URL (click path)**
-   - Service → **Settings** → **Networking** → **Generate Domain**
-   - Health check path (if asked): `/health`
-   - Railway sets `PORT` automatically; the image CMD uses `${PORT:-8000}`.
+5. **Public URL**
+   - **Settings** → **Networking** → **Generate Domain**
 
-6. **Deploy (CLI — bakes router)**
+6. **Smoke**
    ```bash
-   # From repo root; uploads build context including artifacts/router-model/
-   railway up --detach
-   ```
-   Watch the build on the Railway dashboard until **Success**.
-
-7. **Smoke**
-   ```bash
-   curl -sS https://YOUR_APP.up.railway.app/health | python -m json.tool
-   # expect: status=ok, router_backend=onnx, groq_configured=true, nvidia_configured=true
-
-   curl -sS -X POST https://YOUR_APP.up.railway.app/api/query \
-     -H 'Content-Type: application/json' \
-     -d '{"query":"What is a Python list comprehension?"}' | python -m json.tool
+   curl -sS https://YOUR_APP.up.railway.app/health
    ```
 
-**Railway + GitHub (no local bake):** only works if you push a **pre-built image** to a registry that already contains `/app/artifacts/router-model`, or you add a private download step in the Dockerfile. Plain “Deploy from GitHub” will **not** include the router.
+**Do not use** `railway up --no-gitignore` for this project — the ONNX file cannot upload.
 
 ---
 
+### Railway — legacy note (`railway up`)
+
+Only useful for tiny apps without a 256MB bake. Kept for reference; **not supported for ARCS router bake**.
+
+---
 ### Render — exact steps (alternative)
 
 Render Git builds also lack gitignored files. Prefer **Deploy an existing image** you built locally, or a Render **Disk** you populate once.

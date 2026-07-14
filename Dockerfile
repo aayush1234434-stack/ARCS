@@ -18,13 +18,13 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY requirements-demo.txt .
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements-demo.txt
 
 
 FROM python:3.12-slim-bookworm AS runtime
@@ -48,6 +48,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 COPY arcs/ arcs/
 COPY scripts/ scripts/
 COPY data/ data/
+COPY requirements-demo.txt .
 COPY requirements.txt .
 
 # Bake DistilBERT router for cloud deploys (ONNX + tokenizer; no volume required).
