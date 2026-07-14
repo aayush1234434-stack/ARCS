@@ -31,3 +31,8 @@ __pycache__/
 *.bak
 .ipynb_checkpoints/
 Untitled-1.ipynb
+
+# Local scratch DB (sandbox demo artifact)
+example.db
+*.sqlite
+*.sqlite3
