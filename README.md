@@ -2,7 +2,6 @@
 
 > Most LLM apps answer every question with one prompt and hope it's right. ARCS routes each query to a domain pipeline, **verifies the answer before delivery**, and, when a user says it's wrong, assigns blame to a component *before* any retraining.
 
-**Status:** MVP complete — router, four specialist pipelines, verification, eval harness, RQ1 bootstrap, repair loop, demo UI.
 
 **One-liner architecture:** `route (DistilBERT) → resolve domain pipeline → generate answer → build spec → verify (sandbox for code, LLM judge for prose) → deliver → attribute feedback`.
 
