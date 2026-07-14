@@ -177,22 +177,22 @@ Results will be recorded in a new `*_rq1-v2/manifest.json` without overwriting b
 
 | System | PASS rate (48) |
 |---|---:|
-| Naive LLM + judge | TBD |
+| Naive LLM + judge | **62.5%** |
 | ARCS post-fix | **47.9%** |
 
-*ARCS figure from `2026-07-11T13-45-31_post-fix-v2-merged` (23/48 PASS, 0 ERROR). Naive row pending full 48-row run.*
+*Naive from `2026-07-14T10-49-55_naive-baseline-v2` (30/48 PASS, 18 FAIL, 0 ERROR). ARCS from `2026-07-11T13-45-31_post-fix-v2-merged` (23/48 PASS, 0 ERROR). ARCS − naive: **−14.6 pts** on completed rows (naive higher PASS%).*
 
 Full run + delta vs ARCS:
 
 ```bash
-python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1 \
+python scripts/eval_naive_baseline.py --name naive-baseline-v2 --sleep-between 1 \
   --baseline-experiment artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
 ```
 
 Dry-run compare on saved artifacts (no API):
 
 ```bash
-python scripts/eval_naive_baseline.py --compare-only artifacts/experiments/<naive-run> \
+python scripts/eval_naive_baseline.py --compare-only artifacts/experiments/2026-07-14T10-49-55_naive-baseline-v2 \
   --baseline-experiment artifacts/experiments/2026-07-11T13-45-31_post-fix-v2-merged
 ```
 
@@ -274,7 +274,7 @@ On the 2026-07-11 FINAL merged artifact: **0 flips** (no FAIL row with score ≥
 
 5. **Single generator family** — All domains share one Groq Llama backend today; RQ2 (heterogeneous specialists) is not tested.
 
-6. **Naive baseline pending** — Full 48-row naive-vs-ARCS orchestration ablation not yet completed (§6).
+6. **Naive baseline (orchestration ablation)** — On the held-out 48, naive single-LLM + same judge outperforms post-fix ARCS (**62.5%** vs **47.9%**, −14.6 pts for ARCS; §6). Orchestration does not yet improve PASS under this frozen generator/verifier setup.
 
 7. **End-to-end PASS below thesis target** — 47.9% PASS on 48/48 completed rows; 60% target not reached in this cycle.
 
@@ -334,7 +334,7 @@ python scripts/rq1_run.py --execute
 python scripts/eval_repair_ablation.py --execute
 
 # ── Naive orchestration ablation ──
-python scripts/eval_naive_baseline.py --name naive-baseline-v1 --sleep-between 1
+python scripts/eval_naive_baseline.py --name naive-baseline-v2 --sleep-between 1
 
 # ── Judge calibration ablation (dry-run, no API) ──
 python scripts/eval_judge_modes.py --compare \
