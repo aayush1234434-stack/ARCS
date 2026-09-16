@@ -139,6 +139,9 @@ def _call_model(query: str, retry: bool = False) -> tuple[str, str, dict[str, in
             {"role": "user", "content": user_content},
         ],
         temperature=0.1,
+        # Keep the request below Groq's 1,000 output-token ceiling for this
+        # model/tier. Structured specifications fit comfortably within 800.
+        max_tokens=800,
     )
     raw = response.choices[0].message.content or ""
     return raw, response.model, response_usage(response)

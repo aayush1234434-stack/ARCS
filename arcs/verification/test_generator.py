@@ -149,6 +149,7 @@ def run(query: str, *, model: str | None = None) -> dict:
             },
         ],
         temperature=0.1,
+        max_tokens=800,
     )
     usages = [response_usage(response)]
     raw = response.choices[0].message.content or ""
@@ -178,6 +179,7 @@ def run(query: str, *, model: str | None = None) -> dict:
                 },
             ],
             temperature=0.0,
+            max_tokens=800,
         )
         usages.append(response_usage(response))
         raw = response.choices[0].message.content or ""
