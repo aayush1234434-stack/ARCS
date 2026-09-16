@@ -71,6 +71,7 @@ def run(
             {"role": "user", "content": user_content},
         ],
         temperature=0.3,
+        max_tokens=config.GENERATOR_MAX_TOKENS,
     )
     raw = response.choices[0].message.content or ""
     result = parse_response(raw, model=response.model)

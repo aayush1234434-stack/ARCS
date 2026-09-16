@@ -63,6 +63,7 @@ DOMAIN_MODEL_OVERRIDES: dict[str, str | None] = {
 }
 
 CODING_MAX_RETRIES = int(os.getenv("ARCS_CODING_MAX_RETRIES", "3"))
+GENERATOR_MAX_TOKENS = int(os.getenv("ARCS_GENERATOR_MAX_TOKENS", "900"))
 ROUTER_CONFIDENCE_THRESHOLD = float(os.getenv("ARCS_ROUTER_CONFIDENCE", "0.75"))
 
 # Router inference backend. ``sklearn`` is the artifact-free reproducible

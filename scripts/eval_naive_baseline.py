@@ -137,6 +137,7 @@ def _naive_answer(query: str, *, model: str) -> tuple[str, dict[str, int], str]:
         model=model,
         messages=[{"role": "user", "content": NAIVE_PROMPT.format(query=query)}],
         temperature=0.1,
+        max_tokens=config.GENERATOR_MAX_TOKENS,
     )
     return (
         response.choices[0].message.content or "",
