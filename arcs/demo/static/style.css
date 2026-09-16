@@ -156,6 +156,30 @@ body {
   max-width: 36ch;
 }
 
+.example-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}
+
+.example-prompts button {
+  cursor: pointer;
+  border: 1px solid rgba(94, 196, 154, 0.3);
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  background: rgba(61, 155, 122, 0.09);
+  color: var(--fog-dim);
+  font: 500 0.72rem var(--font-ui);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.example-prompts button:hover {
+  color: var(--fog);
+  border-color: rgba(94, 196, 154, 0.58);
+  background: rgba(61, 155, 122, 0.16);
+}
+
 .empty-state.hidden {
   display: none;
 }
@@ -194,6 +218,21 @@ body {
   border-bottom-left-radius: 6px;
 }
 
+.bubble.assistant pre {
+  margin: 0.25rem 0 0.75rem;
+  padding: 0.8rem;
+  overflow-x: auto;
+  border: 1px solid rgba(94, 196, 154, 0.2);
+  border-radius: 10px;
+  background: rgba(7, 15, 12, 0.72);
+  white-space: pre;
+}
+
+.bubble.assistant code {
+  font: 0.84rem/1.55 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  color: #cfe7dc;
+}
+
 .bubble.error {
   align-self: flex-start;
   border-color: rgba(212, 101, 90, 0.45);
@@ -208,6 +247,83 @@ body {
   align-self: flex-start;
   max-width: min(92%, 560px);
   animation: fade-in 0.5s ease 0.12s both;
+}
+
+.trace-panel {
+  align-self: flex-start;
+  width: min(92%, 560px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(12, 22, 19, 0.42);
+  overflow: hidden;
+}
+
+.trace-panel summary {
+  cursor: pointer;
+  padding: 0.65rem 0.8rem;
+  color: var(--fog-dim);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.trace-panel[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.trace-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 0.8rem 0.25rem;
+}
+
+.trace-step {
+  position: relative;
+  margin-left: 0.28rem;
+  padding: 0 0 0.9rem 1.1rem;
+  border-left: 1px solid rgba(94, 196, 154, 0.3);
+}
+
+.trace-step::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 0.28rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint-bright);
+}
+
+.trace-step.fail::before,
+.trace-step.unknown::before {
+  background: var(--fail);
+}
+
+.trace-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--fog);
+  font-size: 0.76rem;
+}
+
+.trace-head span,
+.trace-step p,
+.trace-usage {
+  color: var(--fog-dim);
+  font-size: 0.68rem;
+}
+
+.trace-step p {
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.trace-usage {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-top: 1px solid var(--line);
 }
 
 .chip {

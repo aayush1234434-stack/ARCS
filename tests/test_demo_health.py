@@ -6,6 +6,7 @@ import asyncio
 from unittest.mock import patch
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 
 from arcs import config
@@ -55,6 +56,10 @@ def test_health_endpoint(monkeypatch):
     assert body["router_backend"] == "torch"
     assert body["public_demo"] is False
     assert body["disclaimer"] is None
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_health_public_demo_disclaimer(monkeypatch):
@@ -83,6 +88,35 @@ def test_api_health_alias(monkeypatch):
     assert body["groq_configured"] is False
     assert body["nvidia_configured"] is True
     assert body["router_backend"] == "torch"
+
+
+def test_offline_demo_needs_no_keys_and_returns_trace(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", "")
+    monkeypatch.setenv("NVIDIA_API_KEY", "")
+    monkeypatch.setattr(demo_app, "DEMO_OFFLINE", True)
+    monkeypatch.setattr(
+        demo_app, "_query_limiter", InMemoryRateLimiter(100, 60.0)
+    )
+
+    client = TestClient(app)
+    health_body = client.get("/health").json()
+    assert health_body["demo_mode"] == "offline"
+
+    response = client.post(
+        "/api/query",
+        json={"query": "Write a Python function that reverses a string"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["demo_mode"] == "offline"
+    assert body["domain"] == "CODING"
+    assert [step["stage"] for step in body["trace"]] == [
+        "route",
+        "specification",
+        "generation",
+        "verification",
+    ]
+    assert body["usage"]["total"]["api_calls"] == 0
 
 
 def test_query_missing_keys_returns_503_without_key_names_leak(monkeypatch):
@@ -193,6 +227,20 @@ def test_rate_limiter_unit():
     assert retry > 0
     # Other IPs unaffected
     assert limiter.check("ip-b")[0] is True
+
+
+def test_spoofed_forwarded_ip_is_ignored_by_default(monkeypatch):
+    monkeypatch.setattr(demo_app, "DEMO_TRUST_PROXY_HEADERS", False)
+    request = Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/health",
+            "headers": [(b"x-forwarded-for", b"203.0.113.10")],
+            "client": ("testclient", 123),
+        }
+    )
+    assert demo_app._client_ip(request) == "testclient"
 
 
 @pytest.mark.integration

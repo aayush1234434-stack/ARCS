@@ -1,5 +1,6 @@
 from arcs import config
 from arcs.clients.groq import get_client
+from arcs.clients.usage import response_usage
 from arcs.pipelines.specialists.common import extract_sections, parse_bullets, parse_uncertainty
 
 SYSTEM_PROMPT = """You are a knowledgeable general-purpose assistant. You handle questions that span multiple domains, are ambiguous between domains, or do not fit cleanly into coding, medical, or legal categories.
@@ -72,4 +73,6 @@ def run(
         temperature=0.3,
     )
     raw = response.choices[0].message.content or ""
-    return parse_response(raw, model=response.model)
+    result = parse_response(raw, model=response.model)
+    result["usage"] = response_usage(response)
+    return result

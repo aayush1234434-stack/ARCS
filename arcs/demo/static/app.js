@@ -29,6 +29,10 @@
         publicBanner.textContent = data.disclaimer;
         publicBanner.classList.remove("hidden");
       }
+      if (data.demo_mode === "offline") {
+        publicBanner.textContent = "Offline product tour — deterministic sample output; no live model or sandbox is running.";
+        publicBanner.classList.remove("hidden");
+      }
     } catch (_) {
       /* optional */
     }
@@ -113,6 +117,27 @@
     return el;
   }
 
+  function renderAnswer(container, value) {
+    const text = value || "(No answer text)";
+    const fence = /```(?:[a-zA-Z0-9_+#.-]+)?\s*\n?([\s\S]*?)```/g;
+    let cursor = 0;
+    let match;
+    while ((match = fence.exec(text)) !== null) {
+      if (match.index > cursor) {
+        container.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+      }
+      const pre = document.createElement("pre");
+      const code = document.createElement("code");
+      code.textContent = match[1].trim();
+      pre.appendChild(code);
+      container.appendChild(pre);
+      cursor = fence.lastIndex;
+    }
+    if (cursor < text.length) {
+      container.appendChild(document.createTextNode(text.slice(cursor)));
+    }
+  }
+
   function clearThinking(el) {
     clearInterval(thinkingTimer);
     thinkingTimer = null;
@@ -122,7 +147,7 @@
   function appendAssistantMessage(turn, data) {
     const bubble = document.createElement("div");
     bubble.className = "bubble assistant";
-    bubble.textContent = data.answer || "(No answer text)";
+    renderAnswer(bubble, data.answer);
     turn.appendChild(bubble);
 
     const meta = document.createElement("div");
@@ -149,6 +174,45 @@
     }
 
     turn.appendChild(meta);
+
+    if (Array.isArray(data.trace) && data.trace.length) {
+      const details = document.createElement("details");
+      details.className = "trace-panel";
+      const summary = document.createElement("summary");
+      summary.textContent = "Inspect execution trace";
+      details.appendChild(summary);
+
+      const list = document.createElement("ol");
+      list.className = "trace-list";
+      data.trace.forEach((step) => {
+        const item = document.createElement("li");
+        item.className = `trace-step ${step.status || "unknown"}`;
+        const head = document.createElement("div");
+        head.className = "trace-head";
+        const label = document.createElement("strong");
+        label.textContent = step.label || step.stage || "Step";
+        const timing = document.createElement("span");
+        timing.textContent = step.timing_ms == null ? "" : `${step.timing_ms} ms`;
+        head.append(label, timing);
+        const detail = document.createElement("p");
+        detail.textContent = step.detail || "";
+        item.append(head, detail);
+        list.appendChild(item);
+      });
+      details.appendChild(list);
+
+      const total = data.usage && data.usage.total;
+      if (total && Number(total.api_calls) >= 0) {
+        const usage = document.createElement("p");
+        usage.className = "trace-usage";
+        usage.textContent = `${total.api_calls || 0} API call(s) · ${total.total_tokens || 0} measured tokens`;
+        details.appendChild(usage);
+      }
+      details.addEventListener("toggle", () => {
+        if (details.open) scrollToBottom();
+      });
+      turn.appendChild(details);
+    }
 
     const feedback = buildFeedbackBlock(data.query_id);
     turn.appendChild(feedback);
@@ -344,6 +408,14 @@
   });
 
   queryEl.addEventListener("input", autoResize);
+
+  document.querySelectorAll("[data-example]").forEach((button) => {
+    button.addEventListener("click", () => {
+      queryEl.value = button.getAttribute("data-example") || "";
+      autoResize();
+      queryEl.focus();
+    });
+  });
 
   loadPublicBanner();
   autoResize();

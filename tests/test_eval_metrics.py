@@ -57,6 +57,14 @@ def test_pipeline_summary_status_and_latency():
                 "specialist_ms": 800,
                 "verification_ms": 190,
             },
+            "usage": {
+                "total": {
+                    "api_calls": 3,
+                    "prompt_tokens": 100,
+                    "completion_tokens": 50,
+                    "total_tokens": 150,
+                }
+            },
         },
         {
             "status": "FAIL",
@@ -98,6 +106,9 @@ def test_pipeline_summary_status_and_latency():
     assert total["mean"] == 1137.5
     assert total["p50"] == 1500.0
     assert total["p95"] == 2000.0
+    assert result["usage"]["rows_with_usage"] == 1
+    assert result["usage"]["totals"]["api_calls"] == 3
+    assert result["usage"]["totals"]["total_tokens"] == 150
 
 
 def test_pipeline_summary_empty():

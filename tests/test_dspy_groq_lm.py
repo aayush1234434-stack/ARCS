@@ -29,7 +29,7 @@ def test_groq_copro_default_breadth_is_minimum():
 
 
 def test_configure_groq_lm_returns_dspy_lm_subclass(monkeypatch):
-    import dspy
+    dspy = pytest.importorskip("dspy", reason="install the optimization extra to test DSPy")
 
     monkeypatch.setenv("GROQ_API_KEY", "test-key")
     lm = configure_groq_lm(model="llama-3.3-70b-versatile")

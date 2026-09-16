@@ -4,6 +4,7 @@
 
 from arcs import config
 from arcs.clients.groq import get_client
+from arcs.clients.usage import response_usage
 from arcs.pipelines.specialists.common import extract_sections, parse_bullets, parse_uncertainty
 
 SYSTEM_PROMPT = """You are an expert medical information specialist. You provide clear, evidence-based health information for educational purposes only.
@@ -75,4 +76,6 @@ def run(
         temperature=0.2,
     )
     raw = response.choices[0].message.content or ""
-    return parse_response(raw, model=response.model)
+    result = parse_response(raw, model=response.model)
+    result["usage"] = response_usage(response)
+    return result

@@ -1,5 +1,12 @@
 # ARCS — Experimental Results
 
+> **Historical development report.** The 48 queries below are no longer described
+> as held out because their failures informed prompt and pipeline changes. These
+> results are useful engineering history, not a sealed-test claim. The referenced
+> raw runs were local and are absent from a fresh clone. New evidence must follow
+> [BENCHMARKING.md](BENCHMARKING.md) and be published as a checksummed bundle under
+> `results/`.
+
 *Paper-style summary of the MVP evaluation harness. All numbers below are pulled from saved artifacts under `artifacts/experiments/` unless noted as pending.*
 
 **Canonical end-to-end result:** `2026-07-11T13-45-31_post-fix-v2-merged` — **23/48 PASS (47.9%)**, **0 ERROR**.
@@ -19,7 +26,7 @@
 
 ## 1. Abstract
 
-ARCS (Adaptive Routing & Correction System) is a modular orchestration stack that routes each user query to a domain-specific pipeline, verifies the answer against an independently generated specification, and attributes failures to router, specialist, verifier, or ambiguous causes before any retraining. We evaluate on a held-out set of 48 multi-domain queries (`data/eval_queries.jsonl`) and a frozen router test set of 200 examples (`data/router/router_test.csv`). After domain-targeted repairs (prompt hardening, coding-path fixes, router retrain), end-to-end PASS rate on completed eval rows rises from **36.4%** (baseline) to **47.9%** (post-fix FINAL), with the largest per-domain gains on CODING (+41.7 pts) and LEGAL (+30.8 pts). Bootstrap RQ1 shows router retraining on synthetic negative feedback improves eval-queries routing accuracy from **93.75%** to **97.92%**, but Run A (all negatives) and Run B (ROUTER-only) **tie** — attribution filtering is **inconclusive** at bootstrap *N*, not confirmed. A naive single-LLM baseline (same generator and judge, no orchestration) is wired but not yet run at full scale. RQ1 v2 on real demo feedback is explicitly scoped as future work (≥40 negatives, ≥15 ROUTER-attributed; currently 2 / 0).
+ARCS (Adaptive Routing & Correction System) is a modular orchestration stack that routes each user query to a domain-specific pipeline, verifies the answer against an independently generated specification, and attributes failures to router, specialist, verifier, or ambiguous causes before any retraining. We evaluate on a 48-query multi-domain development set (`data/eval_queries.jsonl`) and a frozen router test set of 200 examples (`data/router/router_test.csv`). After domain-targeted repairs (prompt hardening, coding-path fixes, router retrain), end-to-end PASS rate on completed eval rows rises from **36.4%** (baseline) to **47.9%** (post-fix FINAL), with the largest per-domain gains on CODING (+41.7 pts) and LEGAL (+30.8 pts). Bootstrap RQ1 shows router retraining on synthetic negative feedback improves eval-queries routing accuracy from **93.75%** to **97.92%**, but Run A (all negatives) and Run B (ROUTER-only) **tie** — attribution filtering is **inconclusive** at bootstrap *N*, not confirmed. RQ1 v2 on real demo feedback is explicitly scoped as future work (≥40 negatives, ≥15 ROUTER-attributed; currently 2 / 0).
 
 ---
 
@@ -39,7 +46,7 @@ User query → DistilBERT router → domain pipeline (prompt · contract · veri
 
 | Pipeline | Verifier | Toolchain | Default generator |
 |---|---|---|---|
-| CODING | Python sandbox (+ subprocess fallback) | Independent test generator, up to 3 retries | Groq `llama-3.3-70b-versatile` |
+| CODING | Hardened Docker sandbox (fail closed) | Independent test generator, up to 3 retries | Groq `llama-3.3-70b-versatile` |
 | MEDICAL / LEGAL / GENERAL | LLM judge (NVIDIA API) | Spec checklist | Groq `llama-3.3-70b-versatile` |
 
 Attribution runs *after* inference. Only ROUTER-, SPECIALIST-, and VERIFIER-blamed failures enter retraining queues; AMBIGUOUS rows are logged but not used for repair.
@@ -67,7 +74,7 @@ Eval queries are stratified across CODING (12), MEDICAL (12), LEGAL (13), and GE
 | Spec generator | `qwen/qwen3-32b` | Groq |
 | Test generator (CODING) | `qwen/qwen3-32b` | Groq |
 | LLM judge | `meta/llama-3.1-8b-instruct` | NVIDIA integrate API |
-| Coding sandbox | `python:3.11-slim` (Docker; subprocess fallback) | Local |
+| Coding sandbox | `python:3.11-slim` (hardened Docker; fail closed) | Local |
 
 ### 3.3 Metrics
 
@@ -361,7 +368,7 @@ Each subcommand prints at the end: *Full eval requires GROQ_API_KEY and NVIDIA_A
 From repository root with `.venv` activated and `.env` configured (Groq + NVIDIA keys):
 
 ```bash
-# ── Validate held-out set ──
+# ── Validate development benchmark ──
 python scripts/validate_eval_queries.py
 
 # ── Baseline snapshot (router + pipeline) ──

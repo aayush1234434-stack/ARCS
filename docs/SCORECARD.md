@@ -1,5 +1,9 @@
 # ARCS — Project Scorecard
 
+> **Historical snapshot (2026-07-11).** This self-assessment predates the 66.7%
+> development run and the reproducibility/security overhaul. Treat it as project
+> history, not current independent evidence.
+
 *Honest self-assessment for portfolio / thesis committee. Scores use saved artifacts as of **2026-07-11** (`post-fix-v2-merged`, RQ1 manifest). Not a marketing doc.*
 
 **Primary evidence**
@@ -274,7 +278,7 @@ Development was organized in four agent phases. Use this for thesis “methods t
 
 ## Recommended committee narrative (one paragraph)
 
-> ARCS demonstrates that **attribution-gated repair loops** can be engineered end-to-end: a router dispatches queries to verifiable domain pipelines, failures are blamed before retraining, and held-out eval shows **+11.5 percentage points** on PASS rate (36.4% → **47.9%**, 23/48) after targeted LEGAL/CODING repairs, with **zero ERROR rows** in the FINAL merged eval. Bootstrap RQ1 (synthetic corpus) shows router retraining improves held-out routing from **93.75% to 97.92%**, but **Run A vs Run B ties** — attribution filtering is **inconclusive at bootstrap *N***, not refuted; real-feedback RQ1 v2 is explicitly future work (≥40 / ≥15 gates). The system is a **credible MVP** with strong documentation and eval hygiene.
+> ARCS demonstrates that **attribution-gated repair loops** can be engineered end-to-end: a router dispatches queries to verifiable domain pipelines, failures are blamed before retraining, and the development benchmark shows **+11.5 percentage points** on PASS rate (36.4% → **47.9%**, 23/48) after targeted LEGAL/CODING repairs, with **zero ERROR rows** in the FINAL merged eval. Bootstrap RQ1 (synthetic corpus) shows router retraining improves routing from **93.75% to 97.92%**, but **Run A vs Run B ties** — attribution filtering is **inconclusive at bootstrap *N***, not refuted; real-feedback RQ1 v2 and a sealed test are future work. The system is a **credible MVP** with strong documentation and eval hygiene.
 
 ---
 

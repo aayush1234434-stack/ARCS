@@ -27,6 +27,7 @@ from typing import Any
 from uuid import uuid4
 
 from arcs import progress
+from arcs.clients.usage import combine_usage
 from arcs.pipelines import Pipeline, resolve_pipeline
 from arcs.pipelines.specialists.common import extract_code_block
 from arcs.post import feedback, logger
@@ -202,10 +203,37 @@ def _judge_fallback_tooling(
         "test_generator_model": test_bundle.get("model"),
         "test_case_count": len(test_cases),
         "test_cases": test_cases,
+        "test_generator_usage": test_bundle.get("usage", {}),
         "verifier_fallback": "judge",
         "fallback_reason": reason,
         "generator_model": model,
         "pipeline_id": pipeline_id,
+    }
+
+
+def _usage_summary(state: dict[str, Any]) -> dict[str, Any]:
+    """Aggregate provider token counters without estimating volatile prices."""
+    specification = state.get("specification") or {}
+    specialist = state.get("specialist") or {}
+    verification = state.get("verification") or {}
+    tooling = state.get("tooling") or {}
+
+    generation_attempts = tooling.get("generator_attempt_usage") or []
+    generation_usage = combine_usage(generation_attempts)
+    if not generation_usage:
+        generation_usage = specialist.get("usage") or {}
+
+    components = {
+        "specification": specification.get("usage") or {},
+        "generation": generation_usage,
+        "test_generation": tooling.get("test_generator_usage") or {},
+        "verification": verification.get("usage") or {},
+    }
+    return {
+        "total": combine_usage(components.values()),
+        "components": components,
+        "cost_usd": None,
+        "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
     }
 
 
@@ -331,6 +359,7 @@ def _run_sandbox_pipeline(
             pipeline_id=pipeline.pipeline_id,
             reason="answer is not Python-verifiable (non-Python code, prose-only, or empty code block)",
         )
+        tooling["generator_attempt_usage"] = [specialist_result.get("usage", {})]
         return specialist_result, {}, tooling
 
     specialist_result: dict = {}
@@ -365,6 +394,9 @@ def _run_sandbox_pipeline(
                 reason="answer is not Python-verifiable (non-Python code, prose-only, or empty code block)",
             )
             tooling["rounds_used"] = round_index
+            tooling["generator_attempt_usage"] = [
+                attempt.get("usage", {}) for attempt in attempts
+            ] + [specialist_result.get("usage", {})]
             return specialist_result, {}, tooling
 
         code = extract_code_block(_effective_specialist_answer(specialist_result))
@@ -383,6 +415,7 @@ def _run_sandbox_pipeline(
                 "verdict": verification.get("verdict"),
                 "score": verification.get("score"),
                 "issues_found": verification.get("issues_found", []),
+                "usage": specialist_result.get("usage", {}),
             }
         )
 
@@ -400,6 +433,8 @@ def _run_sandbox_pipeline(
         "rounds_used": len(attempts),
         "max_retries": pipeline.max_retries,
         "verified": verification.get("verdict") == "PASS",
+        "test_generator_usage": test_bundle.get("usage", {}),
+        "generator_attempt_usage": [attempt.get("usage", {}) for attempt in attempts],
     }
     if verification.get("verdict") == "PASS":
         # Real executable success: sandbox remains authoritative — do not judge.
@@ -588,6 +623,7 @@ def run_pipeline(query: str) -> dict:
 
         timing["total_ms"] = _elapsed_ms(pipeline_start)
         state["timing"] = timing
+        state["usage"] = _usage_summary(state)
 
         progress.log("Pipeline complete.")
         return state
@@ -596,6 +632,7 @@ def run_pipeline(query: str) -> dict:
         state["error_class"] = classify_pipeline_error(exc)
         timing["total_ms"] = _elapsed_ms(pipeline_start)
         state["timing"] = timing
+        state["usage"] = _usage_summary(state)
         raise PipelineError(state) from exc
 
 

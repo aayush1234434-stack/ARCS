@@ -18,6 +18,7 @@ artifacts/router-checkpoints/
 artifacts/eval-results/
 artifacts/judge_ab_cache/
 artifacts/*.log
+artifacts/human-eval/
 
 # Runtime logs
 logs/**/*.jsonl
@@ -25,12 +26,19 @@ logs/**/*.jsonl
 # Python
 __pycache__/
 *.pyc
+build/
+dist/
+*.egg-info/
 
 # Editor / OS
 .DS_Store
 *.bak
 .ipynb_checkpoints/
 Untitled-1.ipynb
+
+# Local agent / review workspace
+work/
+outputs/
 
 # Local scratch DB (sandbox demo artifact)
 example.db

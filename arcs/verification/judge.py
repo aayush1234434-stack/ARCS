@@ -18,6 +18,8 @@ import re
 import sys
 from typing import Any
 
+from arcs.clients.usage import response_usage
+
 from dotenv import load_dotenv
 
 from arcs import config
@@ -323,6 +325,7 @@ def _call_judge(
     parsed = _extract_json(raw)
     result = _normalize_result(parsed)
     result["model"] = model
+    result["usage"] = response_usage(response)
     return result
 
 

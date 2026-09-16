@@ -109,6 +109,8 @@ def _run_in_docker(script: str) -> tuple[int, str, str]:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as handle:
         handle.write(script)
         script_path = handle.name
+    # The container runs as an unprivileged uid and only needs read access.
+    os.chmod(script_path, 0o444)
 
     try:
         completed = subprocess.run(
@@ -118,10 +120,29 @@ def _run_in_docker(script: str) -> tuple[int, str, str]:
                 "--rm",
                 "--network",
                 "none",
+                "--read-only",
+                "--workdir",
+                "/tmp",
                 "--memory",
+                "128m",
+                "--memory-swap",
                 "128m",
                 "--cpus",
                 "0.5",
+                "--pids-limit",
+                "64",
+                "--cap-drop",
+                "ALL",
+                "--security-opt",
+                "no-new-privileges",
+                "--user",
+                "65534:65534",
+                "--ulimit",
+                "nofile=64:64",
+                "--ulimit",
+                "fsize=1048576:1048576",
+                "--tmpfs",
+                "/tmp:rw,noexec,nosuid,size=16m",
                 "-v",
                 f"{script_path}:/script.py:ro",
                 DOCKER_IMAGE,
@@ -138,7 +159,12 @@ def _run_in_docker(script: str) -> tuple[int, str, str]:
 
 
 def _run_in_subprocess(script: str) -> tuple[int, str, str]:
-    """Fallback runner when Docker is unavailable."""
+    """Unsafe developer-only fallback when Docker is unavailable.
+
+    ``python -I`` reduces accidental environment coupling, but it is not a
+    security boundary. Production and public-demo paths must never call this
+    function for model-generated code.
+    """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as handle:
         handle.write(script)
         script_path = handle.name
@@ -159,26 +185,43 @@ def _run_in_subprocess(script: str) -> tuple[int, str, str]:
         os.unlink(script_path)
 
 
-def _execute_script(script: str) -> tuple[int, str, str, list[str]]:
-    issues: list[str] = []
-    docker_error = ""
+def _unsafe_subprocess_enabled() -> bool:
+    """Return whether the explicitly unsafe local fallback is enabled."""
+    raw = os.getenv("ARCS_ALLOW_UNSAFE_SUBPROCESS", "0").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
+
+def _execute_script(script: str) -> tuple[int, str, str, list[str]]:
     try:
         return_code, stdout, stderr = _run_in_docker(script)
-        if return_code == 0:
-            return return_code, stdout, stderr, issues
-        docker_error = stderr.strip() or f"Docker exit code {return_code}"
+        # A non-zero return code can be the untrusted program failing inside a
+        # healthy container. Never re-run that program on the host.
+        return return_code, stdout, stderr, []
     except FileNotFoundError:
         docker_error = "Docker executable not found"
     except subprocess.TimeoutExpired:
-        return -1, "", f"Execution exceeded {TIMEOUT_SECONDS}s timeout", issues
+        return -1, "", f"Execution exceeded {TIMEOUT_SECONDS}s timeout", []
+    except OSError as exc:
+        docker_error = f"Docker could not start: {type(exc).__name__}"
 
-    issues.append("Docker unavailable or failed; used isolated subprocess fallback.")
-    if docker_error:
-        issues.append(docker_error[:500])
+    if not _unsafe_subprocess_enabled():
+        return (
+            -1,
+            "",
+            (
+                f"{docker_error}. Sandbox failed closed: untrusted code was not "
+                "executed on the host; host fallback is disabled. Start Docker "
+                "or configure a remote sandbox."
+            ),
+            ["Secure container sandbox unavailable; host fallback is disabled."],
+        )
 
+    warning = (
+        "UNSAFE developer override enabled: executed generated code in a local "
+        "subprocess because Docker was unavailable."
+    )
     return_code, stdout, stderr = _run_in_subprocess(script)
-    return return_code, stdout, stderr, issues
+    return return_code, stdout, stderr, [warning, docker_error]
 
 
 def _parse_execution_output(stdout: str) -> dict[str, Any]:

@@ -12,6 +12,7 @@ import re
 import sys
 
 from arcs.clients.groq import get_client
+from arcs.clients.usage import combine_usage, response_usage
 from arcs import config
 
 # Deliberately different model family from the Llama-based generator by default.
@@ -122,7 +123,7 @@ def parse_response(raw: str, model: str) -> dict:
     }
 
 
-def _call_model(query: str, retry: bool = False) -> tuple[str, str]:
+def _call_model(query: str, retry: bool = False) -> tuple[str, str, dict[str, int]]:
     user_content = query
     if retry:
         user_content = (
@@ -140,7 +141,7 @@ def _call_model(query: str, retry: bool = False) -> tuple[str, str]:
         temperature=0.1,
     )
     raw = response.choices[0].message.content or ""
-    return raw, response.model
+    return raw, response.model, response_usage(response)
 
 
 def run(query: str) -> dict:
@@ -148,11 +149,12 @@ def run(query: str) -> dict:
     if not query:
         raise ValueError("Query cannot be empty.")
 
-    raw, model = _call_model(query)
+    raw, model, usage = _call_model(query)
     parsed = parse_response(raw, model=model)
 
     if _looks_like_template(parsed):
-        raw, model = _call_model(query, retry=True)
+        raw, model, retry_usage = _call_model(query, retry=True)
+        usage = combine_usage((usage, retry_usage))
         parsed = parse_response(raw, model=model)
 
     if _looks_like_template(parsed):
@@ -161,6 +163,7 @@ def run(query: str) -> dict:
             "Try a specific user question."
         )
 
+    parsed["usage"] = usage
     return parsed
 
 

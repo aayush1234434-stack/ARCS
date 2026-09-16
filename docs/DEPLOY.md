@@ -63,6 +63,9 @@ Copy from `.env.example`. **Do not commit `.env`** with real secrets.
 | `NVIDIA_API_KEY` | Yes (for queries) | — | LLM judge |
 | `ARCS_ROUTER_BACKEND` | No | `torch` | **`onnx` recommended in Docker/cloud** |
 | `ARCS_ROUTER_CONFIDENCE` | No | `0.75` | Router fallback threshold |
+| `ARCS_ALLOW_UNSAFE_SUBPROCESS` | No | `0` | Developer-only host execution override; never enable in deployment |
+| `ARCS_DEMO_OFFLINE` | No | `0` | Deterministic product tour with no external model calls |
+| `ARCS_TRUST_PROXY_HEADERS` | No | `0` | Trust `X-Forwarded-For` only behind a proxy that overwrites it |
 | `ARCS_GENERATOR_MODEL` | No | `llama-3.3-70b-versatile` | Default Groq model |
 | `NVIDIA_JUDGE_MODEL` | No | `meta/llama-3.1-8b-instruct` | Judge model |
 | `PORT` | No | `8000` | Listen port (Railway/Render/Fly set this) |

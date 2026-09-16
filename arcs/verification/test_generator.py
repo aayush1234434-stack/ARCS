@@ -11,6 +11,7 @@ import json
 import re
 
 from arcs.clients.groq import get_client
+from arcs.clients.usage import combine_usage, response_usage
 from arcs import config
 
 SYSTEM_PROMPT = """You generate Python assert-based test snippets for verifying a coding solution.
@@ -149,6 +150,7 @@ def run(query: str, *, model: str | None = None) -> dict:
         ],
         temperature=0.1,
     )
+    usages = [response_usage(response)]
     raw = response.choices[0].message.content or ""
     try:
         parsed = _extract_json_list(raw)
@@ -177,6 +179,7 @@ def run(query: str, *, model: str | None = None) -> dict:
             ],
             temperature=0.0,
         )
+        usages.append(response_usage(response))
         raw = response.choices[0].message.content or ""
         parsed = _extract_json_list(raw)
     tests = _normalize_tests(parsed)
@@ -185,4 +188,5 @@ def run(query: str, *, model: str | None = None) -> dict:
         "test_cases": tests,
         "model": response.model,
         "count": len(tests),
+        "usage": combine_usage(usages),
     }

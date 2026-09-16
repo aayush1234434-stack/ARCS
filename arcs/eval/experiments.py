@@ -7,13 +7,19 @@ Side effects are limited to ``save_experiment`` (and optional git metadata).
 from __future__ import annotations
 
 import json
+import hashlib
+import os
+import platform
 import re
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from arcs import config
+
+EXPERIMENT_SCHEMA_VERSION = "1.0"
 
 
 def _slug(name: str) -> str:
@@ -44,6 +50,74 @@ def _git_commit() -> str | None:
         return None
     commit = (result.stdout or "").strip()
     return commit or None
+
+
+def _git_dirty() -> bool | None:
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=str(config.PROJECT_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    return bool((result.stdout or "").strip())
+
+
+def sha256_file(path: Path) -> str:
+    """Return a streaming SHA-256 digest for an artifact or dataset."""
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _data_manifest() -> list[dict[str, Any]]:
+    """Fingerprint the canonical evaluation inputs when present."""
+    candidates = (
+        config.DATA_DIR / "eval_queries.jsonl",
+        config.ROUTER_DATA_DIR / "router_train.csv",
+        config.ROUTER_DATA_DIR / "router_test.csv",
+    )
+    manifest: list[dict[str, Any]] = []
+    for path in candidates:
+        if not path.is_file():
+            continue
+        manifest.append(
+            {
+                "path": str(path.relative_to(config.PROJECT_ROOT)),
+                "bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+            }
+        )
+    return manifest
+
+
+def _reproducibility_metadata() -> dict[str, Any]:
+    """Capture non-secret context required to interpret a run."""
+    return {
+        "schema_version": EXPERIMENT_SCHEMA_VERSION,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "command": list(sys.argv),
+        "git_dirty": _git_dirty(),
+        "datasets": _data_manifest(),
+        "configuration": {
+            "generator_model": config.DEFAULT_GENERATOR_MODEL,
+            "spec_model": config.DEFAULT_SPEC_MODEL,
+            "test_generator_model": config.DEFAULT_TEST_GENERATOR_MODEL,
+            "judge_model": config.DEFAULT_JUDGE_MODEL,
+            "router_backend": config.ROUTER_BACKEND,
+            "judge_strict": os.getenv("JUDGE_STRICT", "1"),
+            "router_confidence_threshold": config.ROUTER_CONFIDENCE_THRESHOLD,
+            "coding_max_retries": config.CODING_MAX_RETRIES,
+        },
+    }
 
 
 def _format_summary(result: dict[str, Any]) -> str:
@@ -117,6 +191,8 @@ def save_experiment(
     meta.setdefault("name", name)
     meta.setdefault("run_id", run_id)
     meta.setdefault("created_at", datetime.now(timezone.utc).isoformat())
+    for key, value in _reproducibility_metadata().items():
+        meta.setdefault(key, value)
     commit = _git_commit()
     if commit and "git_commit" not in meta:
         meta["git_commit"] = commit

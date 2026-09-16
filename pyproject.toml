@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,10 +8,52 @@ version = "0.1.0"
 description = "Adaptive Routing & Correction System"
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Aayush Singh"}]
+keywords = ["llm", "orchestration", "evaluation", "verification", "routing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "accelerate>=1.1.0",
+    "datasets",
+    "fastapi>=0.115.0",
+    "groq",
+    "numpy",
+    "onnx",
+    "onnxruntime",
+    "onnxscript",
+    "openai",
+    "pandas",
+    "python-dotenv",
+    "scikit-learn",
+    "torch",
+    "transformers>=4.0",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.optional-dependencies]
+dev = ["build>=1.2", "pytest>=8.0"]
+optimization = ["dspy==3.2.1", "matplotlib"]
+
+[project.scripts]
+arcs = "arcs.main:main"
+arcs-report = "arcs.eval.report:main"
+
+[project.urls]
+Repository = "https://github.com/aayush1234434-stack/ARCS"
+Issues = "https://github.com/aayush1234434-stack/ARCS/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["arcs*"]
+
+[tool.setuptools.package-data]
+"arcs.demo" = ["static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

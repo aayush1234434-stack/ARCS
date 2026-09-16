@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 
 from arcs import config, progress
 from arcs.main import PipelineError, run_pipeline
+from arcs.demo.mock import run_pipeline as run_mock_pipeline
 from arcs.post import attribution, feedback, log_entry
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -75,6 +76,8 @@ DEMO_FEEDBACK_RATE_WINDOW = _env_float("ARCS_DEMO_FEEDBACK_RATE_WINDOW", 60.0)
 # Wall-clock timeout for a single pipeline call (seconds).
 DEMO_PIPELINE_TIMEOUT = _env_float("ARCS_DEMO_PIPELINE_TIMEOUT", 180.0)
 DEMO_PUBLIC = _env_bool("ARCS_DEMO_PUBLIC", False)
+DEMO_OFFLINE = _env_bool("ARCS_DEMO_OFFLINE", False)
+DEMO_TRUST_PROXY_HEADERS = _env_bool("ARCS_TRUST_PROXY_HEADERS", False)
 
 PUBLIC_DISCLAIMER = (
     "Public demo — educational use only. Answers may be wrong. "
@@ -86,6 +89,30 @@ app = FastAPI(
     description="Adaptive Routing & Correction System — presentation UI",
     version="0.1.0",
 )
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    """Apply a restrictive browser policy to every demo response."""
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; "
+        "connect-src 'self'; "
+        "img-src 'self' data:; "
+        "base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    )
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    if request.url.path.startswith("/api/") or request.url.path == "/health":
+        response.headers["Cache-Control"] = "no-store"
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 # Suppress stderr progress spam during API calls (JSON/UI stays clean).
 progress.set_verbose(False)
@@ -129,7 +156,7 @@ _feedback_limiter = InMemoryRateLimiter(
 
 def _client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
+    if forwarded and DEMO_TRUST_PROXY_HEADERS:
         # First hop is the original client when behind a reverse proxy.
         return forwarded.split(",")[0].strip() or "unknown"
     if request.client and request.client.host:
@@ -149,6 +176,8 @@ def _enforce_rate_limit(limiter: InMemoryRateLimiter, request: Request) -> None:
 
 
 def _check_api_keys() -> None:
+    if DEMO_OFFLINE:
+        return
     missing: list[str] = []
     if not os.getenv("GROQ_API_KEY", "").strip():
         missing.append("GROQ_API_KEY")
@@ -168,6 +197,8 @@ class HealthResponse(BaseModel):
     router_backend: str
     public_demo: bool = False
     disclaimer: str | None = None
+    demo_mode: str = "live"
+    secure_sandbox_required: bool = True
 
 
 def _health_payload() -> HealthResponse:
@@ -178,6 +209,8 @@ def _health_payload() -> HealthResponse:
         router_backend=config.ROUTER_BACKEND,
         public_demo=DEMO_PUBLIC,
         disclaimer=PUBLIC_DISCLAIMER if DEMO_PUBLIC else None,
+        demo_mode="offline" if DEMO_OFFLINE else "live",
+        secure_sandbox_required=True,
     )
 
 
@@ -197,6 +230,9 @@ class QueryResponse(BaseModel):
     score: float | None
     status: str
     timing_ms: int | None
+    trace: list[dict[str, Any]] = Field(default_factory=list)
+    usage: dict[str, Any] = Field(default_factory=dict)
+    demo_mode: str = "live"
 
 
 VALID_FEEDBACK_DOMAINS = frozenset({"CODING", "MEDICAL", "LEGAL", "GENERAL"})
@@ -214,6 +250,55 @@ class FeedbackResponse(BaseModel):
     attribution: dict[str, Any] | None
     correct_domain: str | None = None
     message: str
+
+
+def _build_trace(entry: dict[str, Any]) -> list[dict[str, Any]]:
+    route = entry.get("route") or {}
+    pipeline = entry.get("pipeline") or {}
+    specification = entry.get("specification") or {}
+    verification = entry.get("verification") or {}
+    tooling = entry.get("tooling") or {}
+    timing = entry.get("timing") or {}
+    confidence = route.get("confidence")
+    confidence_text = (
+        f"{100 * float(confidence):.0f}% confidence"
+        if isinstance(confidence, (int, float))
+        else "confidence unavailable"
+    )
+    required = specification.get("required_elements") or []
+    return [
+        {
+            "stage": "route",
+            "label": "Route",
+            "status": "complete",
+            "detail": f"{route.get('domain', 'UNKNOWN')} · {confidence_text}",
+            "timing_ms": timing.get("route_ms"),
+        },
+        {
+            "stage": "specification",
+            "label": "Specify",
+            "status": "complete" if specification else "skipped",
+            "detail": f"{len(required)} required element(s) · {specification.get('model', 'unavailable')}",
+            "timing_ms": timing.get("specification_ms"),
+        },
+        {
+            "stage": "generation",
+            "label": "Generate",
+            "status": "complete",
+            "detail": str(pipeline.get("generator_model") or "model unavailable"),
+            "timing_ms": timing.get("specialist_ms"),
+        },
+        {
+            "stage": "verification",
+            "label": "Verify",
+            "status": str(verification.get("verdict") or "unknown").lower(),
+            "detail": (
+                f"{pipeline.get('verifier', 'unknown')} · score "
+                f"{verification.get('score', 'n/a')} · {tooling.get('rounds_used', 1)} round(s)"
+            ),
+            "timing_ms": timing.get("verification_ms"),
+        },
+    ]
 
 
 def _summarize_entry(entry: dict[str, Any]) -> QueryResponse:
@@ -247,6 +332,9 @@ def _summarize_entry(entry: dict[str, Any]) -> QueryResponse:
         score=score_f,
         status=str(entry.get("status", "UNKNOWN")),
         timing_ms=int(total_ms) if isinstance(total_ms, (int, float)) else None,
+        trace=_build_trace(entry),
+        usage=entry.get("usage") if isinstance(entry.get("usage"), dict) else {},
+        demo_mode=str(entry.get("demo_mode") or ("offline" if DEMO_OFFLINE else "live")),
     )
 
 
@@ -288,7 +376,7 @@ async def api_query(body: QueryRequest, request: Request) -> QueryResponse:
 
     try:
         state = await asyncio.wait_for(
-            run_in_threadpool(run_pipeline, query),
+            run_in_threadpool(run_mock_pipeline if DEMO_OFFLINE else run_pipeline, query),
             timeout=DEMO_PIPELINE_TIMEOUT,
         )
     except asyncio.TimeoutError:

@@ -191,6 +191,8 @@ def _build_row_result(
     )
     result["verifier"] = pipeline.get("verifier") if isinstance(pipeline, dict) else None
     result["timing"] = dict(timing) if isinstance(timing, dict) else {}
+    usage = state.get("usage")
+    result["usage"] = dict(usage) if isinstance(usage, dict) else {}
     result["error"] = None
 
     specification = state.get("specification")

@@ -7,9 +7,47 @@ No LLM calls, no I/O — deterministic aggregation only.
 from __future__ import annotations
 
 from collections import Counter
+from math import sqrt
 from typing import Any
 
 VALID_DOMAINS = ("CODING", "MEDICAL", "LEGAL", "GENERAL")
+
+
+def wilson_interval(
+    successes: int,
+    total: int,
+    *,
+    z: float = 1.959963984540054,
+) -> dict[str, float | int | None]:
+    """Return a Wilson score confidence interval for a binomial proportion.
+
+    Wilson intervals remain useful for small samples where the usual normal
+    approximation is misleading. The default ``z`` produces a 95% interval.
+    """
+    if isinstance(successes, bool) or isinstance(total, bool):
+        raise TypeError("successes and total must be integers")
+    if not isinstance(successes, int) or not isinstance(total, int):
+        raise TypeError("successes and total must be integers")
+    if total < 0 or successes < 0 or successes > total:
+        raise ValueError("require 0 <= successes <= total")
+    if total == 0:
+        return {"successes": successes, "n": total, "low": None, "high": None}
+
+    proportion = successes / total
+    z2 = z * z
+    denominator = 1 + z2 / total
+    center = (proportion + z2 / (2 * total)) / denominator
+    margin = (
+        z
+        * sqrt((proportion * (1 - proportion) / total) + z2 / (4 * total * total))
+        / denominator
+    )
+    return {
+        "successes": successes,
+        "n": total,
+        "low": round(max(0.0, center - margin), 6),
+        "high": round(min(1.0, center + margin), 6),
+    }
 
 
 def _norm_domain(value: Any) -> str | None:
@@ -140,6 +178,8 @@ def pipeline_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "specialist_ms": [],
         "verification_ms": [],
     }
+    usage_totals: Counter[str] = Counter()
+    rows_with_usage = 0
 
     for row in rows:
         if not isinstance(row, dict):
@@ -191,6 +231,18 @@ def pipeline_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 except (TypeError, ValueError):
                     continue
 
+        usage = row.get("usage") or {}
+        usage_total = usage.get("total") if isinstance(usage, dict) else {}
+        if isinstance(usage_total, dict) and usage_total:
+            rows_with_usage += 1
+            for key in ("api_calls", "prompt_tokens", "completion_tokens", "total_tokens"):
+                try:
+                    value = int(usage_total.get(key, 0))
+                except (TypeError, ValueError):
+                    continue
+                if value >= 0:
+                    usage_totals[key] += value
+
     n = len([r for r in rows if isinstance(r, dict)])
     rates = {
         "PASS": (status_counts.get("PASS", 0) / n) if n else None,
@@ -198,6 +250,8 @@ def pipeline_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "UNKNOWN": (status_counts.get("UNKNOWN", 0) / n) if n else None,
         "ERROR": (error_n / n) if n else None,
     }
+    completed = status_counts.get("PASS", 0) + status_counts.get("FAIL", 0)
+    completed_pass_ci = wilson_interval(status_counts.get("PASS", 0), completed)
 
     per_domain_out: dict[str, Any] = {}
     for domain in VALID_DOMAINS:
@@ -216,12 +270,27 @@ def pipeline_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "n": n,
         "status_counts": dict(status_counts),
         "status_rates": rates,
+        "completed_n": completed,
+        "completed_pass_rate": (
+            status_counts.get("PASS", 0) / completed if completed else None
+        ),
+        "completed_pass_ci95": completed_pass_ci,
         "error_count": error_n,
         "verdict_counts": dict(verdict_counts),
         "per_domain": per_domain_out,
         "unknown_expected_domain_n": unknown_domain_n,
         "latency_ms": {
             key: _latency_stats(values) for key, values in latency_buckets.items()
+        },
+        "usage": {
+            "rows_with_usage": rows_with_usage,
+            "totals": dict(usage_totals),
+            "mean_per_evaluated_row": {
+                key: round(value / rows_with_usage, 3) if rows_with_usage else None
+                for key, value in usage_totals.items()
+            },
+            "cost_usd": None,
+            "cost_note": "Measured token counts only; provider pricing is not hard-coded.",
         },
     }
 

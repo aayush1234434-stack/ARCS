@@ -30,6 +30,8 @@ services:
       ARCS_DEMO_RATE_WINDOW: ${ARCS_DEMO_RATE_WINDOW:-60}
       ARCS_DEMO_FEEDBACK_RATE_LIMIT: ${ARCS_DEMO_FEEDBACK_RATE_LIMIT:-30}
       ARCS_DEMO_PIPELINE_TIMEOUT: ${ARCS_DEMO_PIPELINE_TIMEOUT:-180}
+      # Never execute model-generated code directly on the application host.
+      ARCS_ALLOW_UNSAFE_SUBPROCESS: "0"
       # Container always listens on 8000; host map uses ${PORT:-8000}:8000
       PORT: "8000"
       ARCS_DEMO_HOST: "0.0.0.0"

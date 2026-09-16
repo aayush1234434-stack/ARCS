@@ -22,7 +22,7 @@ Query → DistilBERT router → domain pipeline → spec (Qwen) → sandbox/judg
                                             feedback + blame (ROUTER / SPECIALIST / VERIFIER)
 ```
 
-- **48-query held-out eval** across CODING, MEDICAL, LEGAL, GENERAL
+- **48-query development benchmark** across CODING, MEDICAL, LEGAL, GENERAL
 - **Independent verifier** per domain (sandbox for code, LLM judge for prose)
 - **Repair queues** feed router retrain or DSPy prompt optimization — not blanket fine-tuning
 
