@@ -1,0 +1,11 @@
+{
+  "evidence_note": "Contains redacted row-level evidence.",
+  "experiment_sha256": "84a167ee44ad8e4de5878a3c9750a1a3a6f3cfaaa2907ea5951dfc432012d23f",
+  "published_at": "2026-09-16T11:35:20.719759+00:00",
+  "report_sha256": "195d1657a6d8c31fe535e850b1a04ce5572d9bfdfa80871eb1d182ae159a80a0",
+  "row_count": 40,
+  "row_level_evidence": true,
+  "run_id": "2026-09-16T10-36-44_sealed-v1-naive-gpt20b",
+  "schema_version": "1.0",
+  "source_sha256": "3ff0aad4ce1f7d1f72f099f13c9e6e65801163200375933e097323e9fd3338d4"
+}

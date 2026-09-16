@@ -1,0 +1,2055 @@
+{
+  "meta": {
+    "command": [
+      "scripts/eval_pipeline.py",
+      "--input",
+      "data/sealed/arcs_sealed_pilot_v1.jsonl",
+      "--name",
+      "sealed-v1-full-arcs-gpt20b",
+      "--resume-from",
+      "artifacts/experiments/2026-09-16T11-21-32_sealed-v1-full-arcs-gpt20b",
+      "--sleep-between",
+      "1",
+      "--quiet"
+    ],
+    "configuration": {
+      "coding_max_retries": 3,
+      "generator_model": "openai/gpt-oss-20b",
+      "judge_model": "meta/llama-3.2-11b-vision-instruct",
+      "judge_strict": "1",
+      "router_backend": "sklearn",
+      "router_confidence_threshold": 0.75,
+      "spec_model": "qwen/qwen3.8-27b",
+      "test_generator_model": "qwen/qwen3.8-27b"
+    },
+    "counters": {
+      "errors": 1,
+      "fail": 0,
+      "ok": 0,
+      "pass": 0,
+      "resumed_total": 20,
+      "total": 1,
+      "unknown": 0
+    },
+    "created_at": "2026-09-16T11:22:36.818215+00:00",
+    "datasets": [
+      {
+        "bytes": 9056,
+        "path": "data/eval_queries.jsonl",
+        "sha256": "75b8b14778beb19e9d65897267a178e6ea446508f064c92d64bf94353b73b89f"
+      },
+      {
+        "bytes": 46064,
+        "path": "data/router/router_train.csv",
+        "sha256": "b9b165833e9f114d8476330aa7c81a932bb00a603b3bf49ff88bdeba3b400b31"
+      },
+      {
+        "bytes": 11346,
+        "path": "data/router/router_test.csv",
+        "sha256": "f4a2e80dd5fbcb2f04be2a6e566e69742a89bebf256ff716accb8642e0aa0c1d"
+      },
+      {
+        "bytes": 14522,
+        "path": "data/sealed/arcs_sealed_pilot_v1.jsonl",
+        "sha256": "a66c29c07a601f559c205ff5950d3b51789960a2922c5a77230bc38a397ae8f3"
+      }
+    ],
+    "git_commit": "30ebd267dc6ec93eed7c9b17b8f5d27369cfc239",
+    "git_dirty": false,
+    "input": "data/sealed/arcs_sealed_pilot_v1.jsonl",
+    "n_rows": 20,
+    "name": "sealed-v1-full-arcs-gpt20b",
+    "platform": "macOS-26.0.1-arm64-arm-64bit",
+    "python": "3.11.5",
+    "resumed_from": "artifacts/experiments/2026-09-16T11-21-32_sealed-v1-full-arcs-gpt20b",
+    "rows": [
+      {
+        "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01ktzxkfmxfq4ves01r14ew9ry` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199679, Requested 757. Please try again in 3m8.352s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+        "error_class": "rate_limit",
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-020",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "MEDICAL",
+        "query": "A recreational runner gets chest pressure during exercise that stops with rest. What are the important possible causes, red flags, and next steps, and why is it unsafe to diagnose this from fitness level alone?",
+        "query_id": "7463ef7f-1a35-4009-9b79-a22ac7dac6c6",
+        "router_confidence": 0.6978360426309836,
+        "status": "ERROR",
+        "timing": {
+          "route_ms": 2067,
+          "specification_ms": 1634,
+          "total_ms": 3742
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": null,
+          "verdict": null
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-019",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "MEDICAL",
+        "query": "Explain how clinicians generally distinguish iron-deficiency anemia from anemia of chronic inflammation using history, complete blood count patterns, ferritin, transferrin saturation, and follow-up testing.",
+        "query_id": "9a914688-7133-4ee1-bb47-e6fb6fa6ea0b",
+        "router_confidence": 0.728316164662582,
+        "specialist": {
+          "answer": "**Distinguishing Iron‑Deficiency Anemia (IDA) from Anemia of Chronic Inflammation (ACI)**  \nClinicians use a combination of clinical context, routine laboratory data, and targeted iron‑status tests to differentiate these two common microcytic anemias. The approach is systematic: start with the patient’s history, then interpret the complete blood count (CBC) and basic iron studies, and finally confirm the diagnosis with follow‑up testing or additional markers when needed.\n\n---\n\n### 1. Clinical History\n| Feature | IDA | ACI |\n|---------|-----|-----|\n| **Etiology** | Nutritional deficiency, chronic blood loss (GI bleeding, menorrhagia), malabsorption, pregnancy | Chronic disease (autoimmune disorders, chronic infections, malignancy, chronic kidney disease), inflammatory states |\n| **Symptoms** | Fatigue, pallor, brittle nails, spoon nails, pica (especially iron‑pica) | Fatigue, pallor, but often accompanied by symptoms of the underlying disease (pain, fever, weight loss) |\n| **Risk Factors** | Female of reproductive age, vegetarian diet, low iron intake, GI disorders (celiac, Crohn’s) | Chronic inflammatory conditions, chronic infections, malignancy, chronic kidney disease, long‑term steroid use |\n| **History of Response to Iron** | Often improves with oral iron therapy | Usually poor or delayed response; may require intravenous iron or treatment of underlying disease |\n\n**Key point:** A strong history of chronic disease or inflammation leans toward ACI, whereas a history of iron‑poor diet or overt bleeding points to IDA.\n\n---\n\n### 2. Complete Blood Count (CBC) Patterns\n| Parameter | IDA | ACI |\n|-----------|-----|-----|\n| **MCV (Mean Corpuscular Volume)** | Low (<80 fL) | Low or normal (80–100 fL) |\n| **MCH (Mean Corpuscular Hemoglobin)** | Low | Low or normal |\n| **RDW (Red Cell Distribution Width)** | Elevated (≥15%) | Normal or mildly elevated |\n| **Hb/Hct** | Low | Low |\n| **Reticulocyte Count** | Low or normal (unless recent transfusion) | Low or normal |\n\n**Interpretation:**  \n- **Microcytosis + high RDW** strongly suggests IDA.  \n- **Microcytosis with normal RDW** is more typical of ACI.  \n- **Macrocytosis** (MCV >100 fL) would point away from both and toward other causes (folate/ B12 deficiency, liver disease).\n\n---\n\n### 3. Basic Iron Studies\n| Test | IDA | ACI |\n|------|-----|-----|\n| **Serum Ferritin** | Low (<15 ng/mL; <30 ng/mL in some guidelines) | Normal or high (>100 ng/mL) – may be elevated due to inflammation |\n| **Serum Iron** | Low | Low or normal |\n| **Total Iron‑Binding Capacity (TIBC)** | High | Low or normal |\n| **Transferrin Saturation (TSAT)** | Low (<15%) | Normal or high (>20%) |\n| **Transferrin** | High | Low or normal |\n\n**Key thresholds (common in practice):**  \n- Ferritin <15 ng/mL → IDA (unless acute infection).  \n- Ferritin >100 ng/mL → ACI (unless iron overload).  \n- TSAT <15 % → IDA.  \n- TSAT >20 % → ACI.\n\n**Caveat:** Ferritin is an acute‑phase reactant; inflammation can mask low iron stores by raising ferritin. In such cases, additional markers are needed.\n\n---\n\n### 4. Follow‑Up Testing & Confirmation\n| Test | Purpose | Interpretation |\n|------|---------|----------------|\n| **Repeat Iron Studies after 2–4 weeks of iron therapy** | Assess response | In IDA, ferritin rises, serum iron increases, TIBC falls, TSAT improves. In ACI, minimal change. |\n| **Reticulocyte Count after 1–2 weeks of therapy** | Early response | A rise >1% suggests adequate iron absorption (supports IDA). |\n| **Soluble Transferrin Receptor (sTfR)** | Distinguishes iron deficiency from anemia of chronic disease | Elevated sTfR in IDA; normal/low in ACI. |\n| **sTfR/Ferritin Index** | Quantitative differentiation | Index >2.5 → IDA; <2.5 → ACI. |\n| **CRP/ESR** | Evaluate inflammation | Elevated values support ACI. |\n| **Bone Marrow Iron Staining (rare)** | Definitive confirmation | Iron‑depleted marrow → IDA; iron‑replete marrow with normal erythropoiesis → ACI. |\n\n**Typical algorithm:**  \n1. **Initial work‑up**: CBC + ferritin + TSAT.  \n2. **If ferritin <15 ng/mL** → diagnose IDA; start iron therapy.  \n3. **If ferritin ≥100 ng/mL** → diagnose ACI; treat underlying disease, consider IV iron if needed.  \n4. **If ferritin 15–100 ng/mL** → ambiguous; order sTfR or sTfR/ferritin index, check CRP/ESR, and consider repeat iron studies after a short iron trial.\n\n---\n\n### 5. Practical Tips for Clinicians\n- **Always consider the clinical context**: A patient with rheumatoid arthritis and microcytic anemia is more likely to have ACI.  \n- **Use ferritin as the first discriminator**; it is inexpensive and widely available.  \n- **Beware of “normal” ferritin in ACI**: Inflammation can keep ferritin high even when iron stores are low.  \n- **Monitor response to therapy**: A robust reticulocyte rise within 7–10 days is a hallmark of IDA.  \n- **When in doubt, use sTfR**: It is not affected by inflammation and provides a clear cut‑off.  \n\n---",
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer correctly identifies that ferritin is an acute-phase reactant and therefore unreliable as a sole marker for iron stores in the presence of inflammation.",
+            "The answer accurately states that TIBC is inversely related to iron stores (high in IDA, low in ACI).",
+            "The answer acknowledges the \"overlap\" scenario where long-standing ACI can present with microcytosis, making CBC alone insufficient for differentiation.",
+            "The answer correctly interprets that a low ferritin in the presence of inflammation is highly specific for concurrent iron deficiency."
+          ],
+          "disqualifying_conditions": [
+            "Claiming that ACI always presents with microcytosis or that IDA always presents with macrocytosis.",
+            "Suggesting that a normal ferritin level rules out iron deficiency in a patient with active inflammation.",
+            "Omitting the role of TIBC or transferrin saturation in the differentiation process.",
+            "Recommending empirical iron therapy without diagnostic confirmation as the primary method of distinction."
+          ],
+          "intent": "The user seeks a clinical framework for differentiating iron-deficiency anemia (IDA) from anemia of chronic inflammation (ACI) by analyzing specific diagnostic markers and historical context.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A comparison of the typical Complete Blood Count (CBC) patterns for both conditions, specifically noting that IDA is microcytic/hypochromic while ACI is typically normocytic/normochromic (though it can become microcytic in long-standing cases).",
+            "An explanation of the expected ferritin levels: low in IDA (typically <30 ng/mL) versus normal or elevated in ACI (due to acute phase reactant properties).",
+            "An explanation of transferrin saturation (TSAT) and total iron-binding capacity (TIBC): low TSAT in both, but low TIBC in ACI versus high TIBC in IDA.",
+            "A description of the relevant history factors: signs of blood loss or malabsorption for IDA versus signs of chronic infection, autoimmune disease, or malignancy for ACI.",
+            "A mention of follow-up testing, specifically the use of soluble transferrin receptor (sTfR) or bone marrow biopsy as definitive differentiators when serum markers are ambiguous."
+          ],
+          "scope": "The answer should focus strictly on the diagnostic differentiation between IDA and ACI. It should not provide detailed treatment protocols for either condition, nor should it cover other causes of anemia (e.g., thalassemia, B12 deficiency) unless necessary to explain differential diagnosis pitfalls. The context is adult clinical practice; pediatric or specific population nuances are out of scope unless explicitly requested.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 554,
+            "prompt_tokens": 303,
+            "total_tokens": 857
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 2025,
+          "specialist_ms": 12730,
+          "specification_ms": 1739,
+          "total_ms": 24382,
+          "verification_ms": 7888
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 1837,
+              "prompt_tokens": 510,
+              "total_tokens": 2347
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 554,
+              "prompt_tokens": 303,
+              "total_tokens": 857
+            },
+            "test_generation": {},
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 206,
+              "prompt_tokens": 2341,
+              "total_tokens": 2547
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 2597,
+            "prompt_tokens": 3154,
+            "total_tokens": 5751
+          }
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": 0.9,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-018",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "MEDICAL",
+        "query": "What is migraine with aura, which symptoms can resemble a neurologic emergency, and when should a first or unusual episode be evaluated urgently rather than managed as a familiar migraine?",
+        "query_id": "af928aac-fe81-4f60-bd35-f3d03fd63113",
+        "router_confidence": 0.5496722852226784,
+        "specialist": {
+          "answer": "**Migraine with Aura (MA)**  \nMigraine with aura is a subtype of migraine in which transient focal neurological symptoms (the aura) precede or accompany the headache. The aura typically lasts 5–60 minutes and resolves before the headache peaks. It is usually self‑limited and reversible, but certain aura manifestations can mimic acute neurologic emergencies.\n\n---\n\n### 1. Definition & Pathophysiology  \n**Mechanism** – Cortical spreading depression (CSD) is the leading hypothesis: a wave of neuronal depolarization followed by suppression of cortical activity travels across the occipital and cerebral cortex, producing visual, sensory, or speech disturbances.  \n**Typical aura** – Visual (scintillating scotoma, fortification spectra), sensory (tingling, numbness), speech (aphasia), motor (weakness), or autonomic (flushing, lacrimation).  \n**Epidemiology** – MA accounts for ~15–20 % of migraine sufferers; it is more common in women and often begins in adolescence or early adulthood.\n\n---\n\n### 2. Symptoms That Resemble a Neurologic Emergency  \n| Symptom | Typical MA presentation | Emergency‑like presentation | Why it can be confusing |\n|---------|------------------------|-----------------------------|--------------------------|\n| **Sudden, severe unilateral weakness** | Rare; usually mild, transient | Could indicate stroke, TIA, or demyelinating event | Overlaps with hemiplegic migraine |\n| **Rapidly progressive visual loss** | Usually scintillating scotoma, reversible | Could be retinal detachment, optic neuritis, or ischemic optic neuropathy | Similar visual field defects |\n| **Severe headache with vomiting, neck stiffness** | Classic migraine pain, nausea | Could be meningitis, subarachnoid hemorrhage | Similar acute onset, meningeal signs |\n| **Seizure‑like activity** | Occasional aura‑associated seizures | Could be epilepsy or status epilepticus | Aura‑related EEG changes vs. epileptiform discharges |\n| **Sudden speech difficulty** | Transient aphasia | Could be stroke or transient ischemic attack | Overlap in language deficits |\n| **Loss of consciousness or syncope** | Rare, usually brief | Could be syncope, cardiac arrhythmia, or stroke | Similar transient loss of consciousness |\n\n---\n\n### 3. Red‑Flag (Urgent‑Evaluation) Criteria  \nThese are the “red‑flag” symptoms that should prompt immediate imaging or specialist referral rather than routine migraine treatment.\n\n| Red‑Flag | Rationale | Typical Investigation |\n|----------|-----------|------------------------|\n| **New‑onset headache after age 50** | Higher risk of secondary causes (e.g., aneurysm, tumor) | MRI/MRA or CT angiography |\n| **Sudden, severe “thunderclap” headache** | Possible subarachnoid hemorrhage | CT head, lumbar puncture |\n| **Headache with focal neurologic deficit that worsens or does not resolve within 24 h** | Possible stroke or demyelinating disease | MRI brain with diffusion weighting |\n| **Headache accompanied by fever, neck stiffness, photophobia** | Possible meningitis or encephalitis | Lumbar puncture, CSF analysis |\n| **Headache with visual loss that is progressive or bilateral** | Possible optic neuritis or ischemic optic neuropathy | Ophthalmologic exam, MRI orbit |\n| **Headache with seizures or status epilepticus** | Could be epilepsy or metabolic disturbance | EEG, metabolic panel |\n| **Headache with unexplained weight loss, night sweats, or systemic symptoms** | Possible malignancy or infection | Full blood count, imaging |\n| **Headache in a patient with known vascular risk factors (HTN, DM, smoking) and new focal deficits** | Stroke risk | CT/MRI, vascular imaging |\n| **Headache that does not respond to standard migraine therapy** | Possible secondary headache | Re‑evaluation, imaging |\n\n---\n\n### 4. When to Evaluate Urgently vs. Manage as Familiar Migraine  \n| Scenario | Urgent Evaluation Recommended | Rationale |\n|----------|------------------------------|-----------|\n| **First ever migraine episode** | Yes | No prior history; risk of secondary cause higher |\n| **Unusual aura (e.g., motor weakness, speech loss, or bilateral visual loss)** | Yes | Could be hemiplegic migraine or stroke |\n| **Aura lasting >60 min or not resolving** | Yes | Suggests alternative diagnosis |\n| **Headache with associated fever, neck stiffness, or photophobia** | Yes | Possible meningitis or encephalitis |\n| **Headache that worsens after treatment or recurs within 24 h** | Yes | Possible secondary headache or medication overuse |\n| **Patient has new onset of neurologic deficits after migraine** | Yes | Could be stroke or demyelinating event |\n| **Headache in a patient with significant vascular risk factors** | Yes | Stroke risk elevated |\n| **Headache in a patient with a known brain lesion (e.g., tumor, aneurysm)** | Yes | Secondary headache likely |\n| **Headache that is atypical in pattern (e.g., constant, not throbbing, not relieved by usual meds)** | Yes | Consider other headache disorders |\n\nIf none of the red‑flag criteria are present and the aura and headache follow a classic migraine pattern (transient, reversible, self‑limited), the episode can be managed with standard acute migraine therapy (NSAIDs, triptans, anti‑emetics) and preventive measures if recurrent.\n\n---\n\n### 5. Practical Steps for a Primary Care Provider  \n1. **History** – Onset, duration, aura characteristics, associated symptoms, prior episodes, medication use, vascular risk factors.  \n2. **Physical & Neurologic Exam** – Look for focal deficits, papilledema, meningeal signs.  \n3. **Red‑Flag Check** – Apply the table above.  \n4. **Imaging** – If red‑flag present, order MRI/MRA or CT head promptly.  \n5. **Referral** – Send to a neurologist if:  \n   - The aura is atypical or prolonged.  \n   - There is any focal neurologic deficit.  \n   - Imaging is abnormal or inconclusive.  \n6. **Acute Management** – For confirmed MA without red‑flags:  \n   - NSAIDs (e.g., ibuprofen 400–600 mg) or acetaminophen.  \n   - Triptans (sumatriptan 50 mg) if within 4 h of onset.  \n   - Anti‑emetics (metoclopramide 10 mg) for nausea/vomiting.  \n   - Rest in a dark, quiet room.  \n7. **Preventive Therapy** – Consider if >2 attacks/month, severe disability, or medication overuse. Options: beta‑blockers, topiramate, CGRP‑mAbs, etc.\n\n---\n\n### 6. Key Take‑Away Points  \n- **Migraine with aura** is usually benign and self‑limited but can mimic serious neurologic conditions.  \n- **Red‑flag symptoms** (new‑onset, sudden severe headache, focal deficits, fever, neck stiffness, progressive visual loss, etc.) warrant urgent imaging and specialist referral.  \n- **First‑time or atypical episodes** should be evaluated urgently; recurrent, classic MA can be managed conservatively.  \n- **Early recognition** of red‑flags prevents missed strokes, aneurysms, or other treatable conditions.\n\n---",
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must correctly identify that aura symptoms are typically reversible and transient, distinguishing them from the permanent deficits seen in stroke, while acknowledging the diagnostic challenge.",
+            "The answer must specify that \"first episode\" is a primary indicator for urgent evaluation, as it is impossible to establish a baseline of \"familiar\" symptoms without prior history.",
+            "The answer must include the time criterion: if aura symptoms persist beyond 60 minutes, it is no longer a typical migraine aura and requires urgent workup to rule out TIA or stroke.",
+            "The answer must avoid stating that all migraines are benign; it must explicitly warn that new neurological deficits require ruling out vascular or structural causes."
+          ],
+          "disqualifying_conditions": [
+            "Stating that migraine with aura is identical to migraine without aura except for \"headache intensity\" (aura is defined by neurological symptoms, not pain severity).",
+            "Advising that a first-time episode of hemiplegia or aphasia can be managed at home with standard migraine medication without medical evaluation.",
+            "Omitting the time-based criterion (60 minutes) for distinguishing typical aura from prolonged neurological deficits.",
+            "Failing to distinguish between aura (reversible) and stroke (often permanent) in the context of emergency evaluation.",
+            "Providing vague advice such as \"see a doctor if it feels bad\" without specifying objective red flags or timeframes."
+          ],
+          "intent": "The user seeks a clinical definition of migraine with aura, a list of specific aura symptoms that mimic acute neurologic emergencies (such as stroke), and clear criteria for when a first-time or atypical migraine episode requires immediate emergency evaluation versus routine management.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A definition of migraine with aura that distinguishes it from migraine without aura, specifically noting the presence of reversible neurological symptoms (visual, sensory, or speech/language) that typically develop gradually over 5–60 minutes.",
+            "A list of specific aura symptoms that resemble neurologic emergencies, including but not limited to: unilateral visual loss or scotomata, hemisensory deficits (numbness/tingling on one side), aphasia or dysarthria (speech difficulties), and hemiparesis (weakness on one side).",
+            "Explicit criteria for urgent evaluation, including: the first-ever occurrence of aura symptoms, symptoms that do not resolve within 60 minutes, symptoms that are \"worst ever\" or significantly different from the patient's typical migraine pattern, and the presence of \"red flag\" signs such as fever, neck stiffness, or altered consciousness.",
+            "A clear distinction between \"familiar\" migraine management (e.g., rest, abortive medication) and emergency management (e.g., CT/MRI, neurology consult) based on the above criteria."
+          ],
+          "scope": "The answer should cover the clinical definition, differential diagnosis (specifically stroke/TIA), and triage guidelines. It should not provide a full treatment protocol for chronic migraine management, nor should it delve into the pathophysiology of cortical spreading depression unless directly relevant to the symptom timeline. The focus must remain on the intersection of migraine symptoms and emergency neurology.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 650,
+            "prompt_tokens": 301,
+            "total_tokens": 951
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 1971,
+          "specialist_ms": 2499,
+          "specification_ms": 1942,
+          "total_ms": 12253,
+          "verification_ms": 5841
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 1840,
+              "prompt_tokens": 509,
+              "total_tokens": 2349
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 650,
+              "prompt_tokens": 301,
+              "total_tokens": 951
+            },
+            "test_generation": {},
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 140,
+              "prompt_tokens": 2689,
+              "total_tokens": 2829
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 2630,
+            "prompt_tokens": 3499,
+            "total_tokens": 6129
+          }
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": 1.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-017",
+        "pipeline_id": "MEDICAL",
+        "predicted_domain": "MEDICAL",
+        "query": "Someone taking amoxicillin develops diarrhea. Describe features that suggest a common mild side effect versus possible C. difficile infection or an allergic emergency, and when they should seek care.",
+        "query_id": "aa922ad2-c255-4a94-a10e-5380ba42c905",
+        "router_confidence": 0.7598897645672648,
+        "specialist": {
+          "pipeline_id": "MEDICAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must correctly identify that anaphylaxis is an immediate hypersensitivity reaction (onset <1 hour typically) whereas *C. difficile* is a delayed infectious complication (onset days later).",
+            "The answer must distinguish between local GI symptoms (common side effect) and systemic inflammatory or allergic signs (CDI or anaphylaxis).",
+            "The answer must specify that bloody diarrhea is a red flag for CDI or other serious pathology, not a typical mild side effect.",
+            "The answer must recommend stopping the medication and seeking care if signs of anaphylaxis are present, rather than just monitoring.",
+            "The answer must avoid diagnosing the patient but instead provide decision-making criteria for the user to assess their situation."
+          ],
+          "disqualifying_conditions": [
+            "Stating that bloody diarrhea is a normal or mild side effect of amoxicillin.",
+            "Suggesting that anaphylaxis symptoms (like breathing difficulty) can be managed at home with antihistamines without emergency evaluation.",
+            "Failing to differentiate between the timing of onset for allergic reactions vs. *C. difficile* infection.",
+            "Recommending continuing amoxicillin without medical consultation if severe symptoms (fever, blood, dehydration) are present.",
+            "Providing specific dosage adjustments or alternative antibiotic recommendations without a physician’s input."
+          ],
+          "intent": "The user seeks a clinical differentiation guide to distinguish between benign antibiotic-associated diarrhea, *Clostridioides difficile* infection (CDI), and severe allergic reactions (anaphylaxis) in a patient taking amoxicillin, including specific red flags and criteria for seeking medical attention.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A clear description of features typical of a common, mild side effect (e.g., loose stools, mild cramping, onset within days of starting medication, no systemic symptoms).",
+            "Specific clinical features suggestive of *C. difficile* infection (e.g., watery diarrhea occurring 1–10 days after starting or after finishing antibiotics, fever, abdominal pain, potential blood/mucus in stool, history of recent hospitalization or severe illness).",
+            "Specific clinical features suggestive of an allergic emergency/anaphylaxis (e.g., onset within minutes to hours of dose, hives/rash, swelling of lips/tongue/throat, wheezing, difficulty breathing, hypotension/dizziness).",
+            "Explicit criteria for when to seek immediate emergency care (e.g., signs of anaphylaxis, severe dehydration, high fever, bloody diarrhea, or inability to keep fluids down).",
+            "Explicit criteria for when to seek non-emergency medical advice (e.g., diarrhea persisting beyond 2–3 days, worsening symptoms, or if the patient is elderly or immunocompromised)."
+          ],
+          "scope": "The answer should cover the three specified conditions (mild side effect, *C. difficile*, allergic emergency) and provide actionable guidance on when to seek care. It should not provide a differential diagnosis for other causes of diarrhea (e.g., viral gastroenteritis, food poisoning) unless relevant to distinguishing from the specified conditions. It should not include detailed treatment protocols for *C. difficile* or anaphylaxis beyond the immediate step of seeking care. The context is a layperson or patient self-assessing symptoms; the tone should be clear, urgent where appropriate, and non-alarmist for mild cases.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 700,
+            "prompt_tokens": 302,
+            "total_tokens": 1002
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 2098,
+          "specialist_ms": 1878,
+          "specification_ms": 1960,
+          "total_ms": 5937,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 942,
+              "prompt_tokens": 581,
+              "total_tokens": 1523
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 700,
+              "prompt_tokens": 302,
+              "total_tokens": 1002
+            },
+            "test_generation": {},
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 2,
+            "completion_tokens": 1642,
+            "prompt_tokens": 883,
+            "total_tokens": 2525
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-001",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Implement a Python LRUCache class with O(1) get and put operations. Capacity is a positive integer; get must return -1 for a missing key, put must update existing keys, and inserting past capacity must evict the least recently used key.",
+        "query_id": "7812f2e4-87f9-4acd-a4ae-2bfcd90d57f2",
+        "router_confidence": 0.7937868842418612,
+        "specialist": {
+          "answer": "```python\n# LRUCache implementation with O(1) get and put operations.\n# The class uses a hash map for key-to-node lookup and a\n# doubly‑linked list to maintain the order of usage.\n\nclass LRUCache:\n    \"\"\"\n    LRU (Least Recently Used) cache.\n\n    Parameters\n    ----------\n    capacity : int\n        Maximum number of items the cache can hold. Must be a positive integer.\n\n    Methods\n    -------\n    get(key: int) -> int\n        Return the value associated with `key` if present, otherwise -1.\n    put(key: int, value: int) -> None\n        Insert or update the value for `key`. If the cache exceeds its\n        capacity, evict the least recently used item.\n    \"\"\"\n\n    class _Node:\n        \"\"\"Internal doubly‑linked list node.\"\"\"\n        __slots__ = (\"key\", \"value\", \"prev\", \"next\")\n\n        def __init__(self, key: int, value: int):\n            self.key = key\n            self.value = value\n            self.prev = None\n            self.next = None\n\n    def __init__(self, capacity: int):\n        if capacity <= 0:\n            raise ValueError(\"Capacity must be a positive integer\")\n        self.capacity = capacity\n        self.cache = {}  # key -> node\n\n        # Dummy head and tail nodes to avoid edge checks\n        self.head = self._Node(0, 0)\n        self.tail = self._Node(0, 0)\n        self.head.next = self.tail\n        self.tail.prev = self.head\n\n    # Internal helper methods ------------------------------------------------\n\n    def _remove(self, node: \"_Node\") -> None:\n        \"\"\"Detach `node` from the linked list.\"\"\"\n        prev_node = node.prev\n        next_node = node.next\n        prev_node.next = next_node\n        next_node.prev = prev_node\n\n    def _add_to_front(self, node: \"_Node\") -> None:\n        \"\"\"Insert `node` right after the dummy head (most recently used).\"\"\"\n        node.next = self.head.next\n        node.prev = self.head\n        self.head.next.prev = node\n        self.head.next = node\n\n    # Public API -------------------------------------------------------------\n\n    def get(self, key: int) -> int:\n        \"\"\"Return the value for `key` if present; otherwise -1.\"\"\"\n        node = self.cache.get(key)\n        if node is None:\n            return -1\n        # Move accessed node to the front (most recently used)\n        self._remove(node)\n        self._add_to_front(node)\n        return node.value\n\n    def put(self, key: int, value: int) -> None:\n        \"\"\"Insert or update the value for `key`.\"\"\"\n        node = self.cache.get(key)\n        if node:\n            # Update existing node and move to front\n            node.value = value\n            self._remove(node)\n            self._add_to_front(node)\n        else:\n            # Insert new node\n            new_node = self._Node(key, value)\n            self.cache[key] = new_node\n            self._add_to_front(new_node)\n\n            if len(self.cache) > self.capacity:\n                # Evict least recently used (node before dummy tail)\n                lru = self.tail.prev\n                self._remove(lru)\n                del self.cache[lru.key]\n```",
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "c = LRUCache(2); c.put(1, 1); c.put(2, 2); assert c.get(1) == 1; assert c.get(2) == 2",
+            "c = LRUCache(2); c.put(1, 1); c.put(2, 2); c.put(3, 3); assert c.get(1) == -1; assert c.get(2) == 2; assert c.get(3) == 3",
+            "c = LRUCache(2); c.put(1, 1); c.put(2, 2); c.get(1); c.put(3, 3); assert c.get(2) == -1; assert c.get(1) == 1; assert c.get(3) == 3",
+            "c = LRUCache(2); c.put(1, 1); c.put(1, 10); assert c.get(1) == 10",
+            "c = LRUCache(1); c.put(1, 1); c.put(2, 2); assert c.get(1) == -1; assert c.get(2) == 2"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "`get(key)` returns the correct value for existing keys and `-1` for non-existent keys.",
+            "`put(key, value)` correctly adds new entries and updates existing entries without increasing the cache size beyond capacity.",
+            "When the cache is at capacity and a new key is added, the least recently used key is removed from the cache.",
+            "Accessing a key via `get` or updating it via `put` marks it as the most recently used, affecting future eviction order.",
+            "All operations (`get` and `put`) execute in O(1) average time complexity."
+          ],
+          "disqualifying_conditions": [
+            "Using a data structure that results in O(n) time complexity for `get` or `put` (e.g., using only a list without a hash map, or using a sorted list).",
+            "Failing to return `-1` for missing keys in `get`.",
+            "Failing to evict the least recently used key when capacity is exceeded.",
+            "Failing to update the recency of a key when it is accessed via `get` or updated via `put`.",
+            "Not handling the case where `put` is called with an existing key (should update value and move to MRU, not add a new entry)."
+          ],
+          "intent": "The user wants a Python implementation of an LRU Cache class that supports O(1) time complexity for both `get` and `put` operations, with specific behaviors for missing keys, key updates, and capacity-based eviction.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A class named `LRUCache` with an `__init__` method that accepts a positive integer `capacity` and initializes the cache structure.",
+            "A `get(key)` method that returns the value associated with the key if it exists, or `-1` if the key is not found, while updating the key's recency status.",
+            "A `put(key, value)` method that inserts or updates a key-value pair, evicting the least recently used key if the cache exceeds its capacity.",
+            "Internal data structures (typically a dictionary and a doubly-linked list) that enable O(1) lookup, insertion, deletion, and recency tracking.",
+            "Logic to handle edge cases: updating an existing key (which should move it to the most recently used position) and evicting the LRU key when capacity is exceeded."
+          ],
+          "scope": "The answer should provide a complete, runnable Python class implementation. It should not include external dependencies beyond the standard library. The implementation should be self-contained and clearly demonstrate the O(1) complexity through appropriate data structure choices.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 550,
+            "prompt_tokens": 319,
+            "total_tokens": 869
+          }
+        },
+        "status": "PASS",
+        "timing": {
+          "route_ms": 2122,
+          "specialist_ms": 46275,
+          "specification_ms": 46275,
+          "total_ms": 56352,
+          "verification_ms": 7954
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 3,
+              "completion_tokens": 2654,
+              "prompt_tokens": 1710,
+              "total_tokens": 4364
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 550,
+              "prompt_tokens": 319,
+              "total_tokens": 869
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 277,
+              "prompt_tokens": 257,
+              "total_tokens": 534
+            },
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 191,
+              "prompt_tokens": 1752,
+              "total_tokens": 1943
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 6,
+            "completion_tokens": 3672,
+            "prompt_tokens": 4038,
+            "total_tokens": 7710
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 1.0,
+          "verdict": "PASS"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-002",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Write a Python function merge_intervals(intervals) that accepts unsorted [start, end] integer pairs, merges touching as well as overlapping intervals, rejects pairs where start is greater than end, and does not mutate its input.",
+        "query_id": "ffe82c37-94c0-47ce-b9ea-56e2978f7f99",
+        "router_confidence": 0.9563356708844623,
+        "specialist": {
+          "answer": "```python\ndef merge_intervals(intervals):\n    \"\"\"\n    Merge a list of [start, end] integer intervals.\n\n    Parameters\n    ----------\n    intervals : list[list[int]]\n        A list of [start, end] pairs. The list may be unsorted and may contain\n        touching or overlapping intervals. The function does not modify the\n        input list or its sublists.\n\n    Returns\n    -------\n    list[list[int]]\n        A new list of merged intervals sorted by start.\n\n    Raises\n    ------\n    ValueError\n        If any interval has start > end.\n    \"\"\"\n    # Validate input and create a shallow copy of each interval\n    validated = []\n    for idx, pair in enumerate(intervals):\n        if not isinstance(pair, (list, tuple)) or len(pair) != 2:\n            raise ValueError(f\"Interval at index {idx} is not a 2‑element pair: {pair}\")\n        start, end = pair\n        if not isinstance(start, int) or not isinstance(end, int):\n            raise ValueError(f\"Interval at index {idx} contains non‑int values: {pair}\")\n        if start > end:\n            raise ValueError(f\"Start greater than end in interval {pair}\")\n        # Copy the pair to avoid mutating the original\n        validated.append([start, end])\n\n    # Sort by start value\n    validated.sort(key=lambda x: x[0])\n\n    merged = []\n    for interval in validated:\n        if not merged:\n            merged.append(interval)\n            continue\n\n        last = merged[-1]\n        # If current interval starts at or before the end of the last merged interval,\n        # they overlap or touch. Merge them.\n        if interval[0] <= last[1]:\n            last[1] = max(last[1], interval[1])\n        else:\n            merged.append(interval)\n\n    # Return a new list to ensure callers cannot mutate our internal list\n    return [list(iv) for iv in merged]\n```",
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "1\n3",
+            "2\n6",
+            "8\n10",
+            "15\n18"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The function correctly merges `[1, 3]` and `[2, 4]` into `[1, 4]`.",
+            "The function correctly merges `[1, 2]` and `[2, 3]` into `[1, 3]` (touching intervals are merged).",
+            "The function raises an exception (e.g., `ValueError`) when given a pair like `[5, 2]` where start > end.",
+            "The original input list remains unchanged after the function call (e.g., if `intervals = [[1, 3], [2, 4]]`, `intervals` is still `[[1, 3], [2, 4]]` after calling `merge_intervals(intervals)`).",
+            "The function handles unsorted input correctly (e.g., `[[2, 4], [1, 3]]` results in `[[1, 4]]`)."
+          ],
+          "disqualifying_conditions": [
+            "The function mutates the input list (e.g., sorts it in place or modifies the inner lists).",
+            "The function fails to merge touching intervals (e.g., `[1, 2]` and `[2, 3]` remain separate).",
+            "The function does not validate that `start <= end` and silently accepts or mishandles invalid pairs.",
+            "The function assumes the input is already sorted and fails on unsorted input."
+          ],
+          "intent": "The user wants a Python function implementation that merges overlapping and touching intervals from an unsorted list, validates input pairs, and ensures input immutability.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A function definition named `merge_intervals` that accepts a single parameter `intervals`.",
+            "Logic to validate each pair: if `start > end`, the function must reject the input (e.g., by raising a `ValueError` or similar exception).",
+            "Logic to merge intervals that overlap (e.g., `[1, 3]` and `[2, 4]` become `[1, 4]`) and intervals that touch (e.g., `[1, 2]` and `[2, 3]` become `[1, 3]`).",
+            "Logic to sort the intervals by start time before merging, as the input is unsorted.",
+            "A return value that is a new list of merged intervals, without modifying the original `intervals` list passed as an argument."
+          ],
+          "scope": "The answer should provide a complete, runnable Python function. It should not include extensive explanations or alternative implementations unless requested. The focus is on correctness regarding merging logic, validation, and immutability.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 557,
+            "prompt_tokens": 312,
+            "total_tokens": 869
+          }
+        },
+        "status": "PASS",
+        "timing": {
+          "route_ms": 14,
+          "specialist_ms": 4928,
+          "specification_ms": 41588,
+          "total_ms": 44332,
+          "verification_ms": 2730
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 3,
+              "completion_tokens": 2724,
+              "prompt_tokens": 1692,
+              "total_tokens": 4416
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 557,
+              "prompt_tokens": 312,
+              "total_tokens": 869
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 544,
+              "prompt_tokens": 250,
+              "total_tokens": 794
+            },
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 71,
+              "prompt_tokens": 1481,
+              "total_tokens": 1552
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 6,
+            "completion_tokens": 3896,
+            "prompt_tokens": 3735,
+            "total_tokens": 7631
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 1.0,
+          "verdict": "PASS"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-003",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Design a PostgreSQL query that returns each customer's first purchase month and their retention status for months 0, 1, and 2 from an orders(customer_id, ordered_at) table. Explain how duplicate orders in one month are handled.",
+        "query_id": "30ab93a8-5602-451c-8a2c-8682fb8637db",
+        "router_confidence": 0.8260038052461184,
+        "specialist": {
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "assert True"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The query correctly identifies the first purchase month for each customer (e.g., using `MIN(ordered_at)` or `ROW_NUMBER()` partitioned by `customer_id` ordered by `ordered_at`).",
+            "The query correctly calculates the month offset (0, 1, 2) from the first purchase month for each customer's subsequent orders.",
+            "The query ensures that multiple orders in the same month are not counted multiple times for retention (e.g., by using `DISTINCT` on the month or by checking existence rather than counting).",
+            "The explanation clearly states that duplicate orders in the same month are treated as a single active month (i.e., they do not inflate the retention count).",
+            "The query is syntactically valid PostgreSQL and can be executed without errors."
+          ],
+          "disqualifying_conditions": [
+            "The query counts each order individually rather than treating each month as a single unit of activity (e.g., using `COUNT(*)` without `DISTINCT` on the month).",
+            "The query fails to correctly identify the first purchase month (e.g., using `MAX` instead of `MIN`, or not partitioning by `customer_id`).",
+            "The explanation is missing or incorrectly states that duplicate orders are counted multiple times.",
+            "The query uses non-PostgreSQL syntax (e.g., MySQL-specific functions) that would not work in PostgreSQL.",
+            "The query does not return retention status for all three months (0, 1, and 2) for each customer."
+          ],
+          "intent": "The user wants a PostgreSQL query that calculates customer retention metrics (first purchase month and activity in months 0, 1, and 2 relative to the first purchase) from an orders table, along with an explanation of how duplicate orders within a single month are handled.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A valid PostgreSQL query that uses the `orders` table with columns `customer_id` and `ordered_at`.",
+            "The query must determine the first purchase month for each customer (e.g., using `DATE_TRUNC('month', ordered_at)` or similar).",
+            "The query must calculate retention status for month 0 (first month), month 1 (second month), and month 2 (third month) relative to the first purchase month.",
+            "The query must handle duplicate orders within the same month correctly (i.e., a customer with multiple orders in one month should be counted as active for that month only once).",
+            "An explanation of how duplicate orders in one month are handled (e.g., using `DISTINCT`, `EXISTS`, or window functions to avoid double-counting)."
+          ],
+          "scope": "The answer should focus on the specific query design and explanation of duplicate handling. It should not include unrelated topics such as database indexing, performance optimization, or alternative database systems. The query should assume a standard `orders` table structure as specified.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 596,
+            "prompt_tokens": 315,
+            "total_tokens": 911
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 8,
+          "specialist_ms": 26498,
+          "specification_ms": 33582,
+          "total_ms": 33590,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 1659,
+              "prompt_tokens": 446,
+              "total_tokens": 2105
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 596,
+              "prompt_tokens": 315,
+              "total_tokens": 911
+            },
+            "test_generation": {
+              "api_calls": 2,
+              "completion_tokens": 33,
+              "prompt_tokens": 574,
+              "total_tokens": 607
+            },
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 4,
+            "completion_tokens": 2288,
+            "prompt_tokens": 1335,
+            "total_tokens": 3623
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-004",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Create a JavaScript fetchWithTimeout(url, options, timeoutMs) helper using AbortController. It must preserve a caller-provided signal, distinguish a timeout from another abort, clean up timers, and work when fetch rejects immediately.",
+        "query_id": "2ac07305-f148-40ed-b4a8-33ae7b1cf286",
+        "router_confidence": 0.9032951075291021,
+        "specialist": {
+          "answer": "**\n\n```python\n```javascript\n/**\n * Custom error type thrown when the fetch times out.\n */\nexport class TimeoutError extends Error {\n  constructor(message) {\n    super(message);\n    this.name = 'TimeoutError';\n  }\n}\n\n/**\n * Performs a fetch request with a timeout, preserving any caller‑provided\n * AbortSignal. If the request times out, a TimeoutError is thrown.\n *\n * @param {string | URL} url - The resource to fetch.\n * @param {object} [options={}] - Fetch options. May contain a `signal` property.\n * @param {number} timeoutMs - Timeout in milliseconds.\n * @returns {Promise<Response>} The fetch Response.\n *\n * @throws {TimeoutError} If the request times out.\n * @throws {DOMException} If aborted by the caller or other abort source.\n * @throws {Error} For any other fetch rejection.\n */\nexport async function fetchWithTimeout(url, options = {}, timeoutMs) {\n  // Destructure caller's signal and keep the rest of the options.\n  const { signal: callerSignal, ...rest } = options;\n\n  // Controllers for timeout and combined abort logic.\n  const timeoutController = new AbortController();\n  const combinedController = new AbortController();\n\n  // Flag to detect if the abort was caused by the timeout.\n  let timeoutOccurred = false;\n\n  // Helper to clean up listeners and timers.\n  const cleanup = () => {\n    clearTimeout(timeoutId);\n    timeoutController.signal.removeEventListener('abort', onTimeoutAbort);\n    if (callerSignal) {\n      callerSignal.removeEventListener('abort', onCallerAbort);\n    }\n    combinedController.signal.removeEventListener('abort', onCombinedAbort);\n  };\n\n  // 1. Listen to caller's signal (if any) and propagate to combined.\n  const onCallerAbort = () => {\n    combinedController.abort();\n  };\n  if (callerSignal) {\n    if (callerSignal.aborted) {\n      // If already aborted, abort immediately.\n      combinedController.abort();\n    } else {\n      callerSignal.addEventListener('abort', onCallerAbort);\n    }\n  }\n\n  // 2. Set up timeout abort.\n  const timeoutId = setTimeout(() =>",
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "import asyncio, time\n\nasync def test_timeout():\n    async def slow_fetch(url, options=None):\n        await asyncio.sleep(2)\n        return 'result'\n    \n    global fetch\n    fetch = slow_fetch\n    \n    try:\n        await fetchWithTimeout('http://example.com', {}, 100)\n        assert False, 'Should have raised timeout error'\n    except Exception as e:\n        assert 'timeout' in str(e).lower() or 'TimeoutError' in type(e).__name__, f'Expected timeout error, got {type(e).__name__}: {e}'\n\nasyncio.run(test_timeout())",
+            "import asyncio\n\nasync def test_success():\n    async def fast_fetch(url, options=None):\n        await asyncio.sleep(0.01)\n        return 'success'\n    \n    global fetch\n    fetch = fast_fetch\n    \n    result = await fetchWithTimeout('http://example.com', {}, 1000)\n    assert result == 'success', f'Expected success, got {result}'\n\nasyncio.run(test_success())",
+            "import asyncio\n\nasync def test_caller_signal():\n    async def fetch_never(url, options=None):\n        await asyncio.sleep(10)\n        return 'never'\n    \n    global fetch\n    fetch = fetch_never\n    \n    try:\n        task = asyncio.create_task(fetchWithTimeout('http://example.com', {}, 1000))\n        await asyncio.sleep(0.05)\n        task.cancel()\n        await task\n        assert False, 'Should have raised CancelledError'\n    except asyncio.CancelledError:\n        pass\n\nasyncio.run(test_caller_signal())",
+            "import asyncio\n\nasync def test_immediate_reject():\n    async def failing_fetch(url, options=None):\n        raise ValueError('Network error')\n    \n    global fetch\n    fetch = failing_fetch\n    \n    try:\n        await fetchWithTimeout('http://example.com', {}, 1000)\n        assert False, 'Should have raised error'\n    except ValueError as e:\n        assert 'Network error' in str(e), f'Expected network error, got {e}'\n\nasyncio.run(test_immediate_reject())",
+            "import asyncio, time\n\nasync def test_timer_cleanup():\n    async def fast_fetch(url, options=None):\n        return 'done'\n    \n    global fetch\n    fetch = fast_fetch\n    \n    start = time.time()\n    result = await fetchWithTimeout('http://example.com', {}, 1000)\n    elapsed = time.time() - start\n    assert result == 'done', f'Expected done, got {result}'\n    assert elapsed < 0.5, f'Took too long: {elapsed}s, possible timer leak'\n\nasyncio.run(test_timer_cleanup())"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "If the fetch completes successfully before `timeoutMs`, the function resolves with the `Response` object and the timeout timer is cleared.",
+            "If the fetch takes longer than `timeoutMs`, the function rejects with an error that is clearly identifiable as a timeout (e.g., `DOMException` with name `TimeoutError` or a custom error with a specific message), and the timeout timer is cleared.",
+            "If the caller provides a `signal` and aborts it before `timeoutMs`, the function rejects with the caller's abort reason (or a `DOMException` with name `AbortError`), and the timeout timer is cleared.",
+            "If the caller provides a `signal` that is already aborted, the function should reject immediately (or behave as if the fetch was aborted) without waiting for the timeout, and the timeout timer is cleared.",
+            "If `fetch` rejects immediately (e.g., due to a network error) before `timeoutMs`, the function rejects with the original fetch error, and the timeout timer is cleared.",
+            "The function does not leak timers; `clearTimeout` is guaranteed to be called in all code paths (success, timeout, caller abort, immediate rejection)."
+          ],
+          "disqualifying_conditions": [
+            "The function does not clear the timeout timer in all code paths, leading to potential memory leaks or unintended aborts after the function has resolved/rejected.",
+            "The function overwrites or ignores the caller-provided `signal`, making it impossible for the caller to abort the request manually.",
+            "The function throws a generic error for timeouts that is indistinguishable from a caller-initiated abort, making it impossible for the caller to handle timeouts differently.",
+            "The function fails to handle the case where the caller's `signal` is already aborted, potentially causing the function to hang or behave unexpectedly.",
+            "The function does not properly propagate the caller's abort reason, losing context about why the request was aborted."
+          ],
+          "intent": "The user wants a robust JavaScript helper function `fetchWithTimeout` that wraps the native `fetch` API to enforce a timeout using `AbortController`, while correctly handling edge cases like pre-existing abort signals, distinguishing timeout errors from other aborts, and ensuring no memory leaks or unhandled rejections.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A function signature `fetchWithTimeout(url, options, timeoutMs)` that accepts a URL, an options object (which may include a `signal`), and a timeout duration in milliseconds.",
+            "Logic to create a new `AbortController` for the timeout and link it to the caller's existing `signal` (if provided) such that aborting either source aborts the fetch.",
+            "A `setTimeout` call that triggers the timeout controller's `abort()` method after `timeoutMs`.",
+            "A `clearTimeout` call in a `finally` block or equivalent cleanup path to ensure the timer is cleared if the fetch resolves or rejects before the timeout.",
+            "Error handling that distinguishes between a timeout abort and a caller-initiated abort (e.g., by checking a custom flag, error name, or message) and throws a specific error type or message for timeouts.",
+            "Proper propagation of the caller's `signal` abort reason if the caller aborts, ensuring the original abort reason is preserved or re-thrown.",
+            "Handling of the case where `fetch` rejects immediately (e.g., network error) to ensure the timeout timer is still cleared."
+          ],
+          "scope": "The answer should focus on the implementation of the `fetchWithTimeout` function in JavaScript, using modern browser/Node.js APIs (`fetch`, `AbortController`, `AbortSignal`). It should not include unrelated topics like HTTP caching, retry logic, or specific framework integrations. The function should be self-contained and work in environments where `fetch` and `AbortController` are available.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 798,
+            "prompt_tokens": 312,
+            "total_tokens": 1110
+          }
+        },
+        "status": "PASS",
+        "timing": {
+          "route_ms": 16,
+          "specialist_ms": 78532,
+          "specification_ms": 127467,
+          "total_ms": 133025,
+          "verification_ms": 5541
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 2048,
+              "prompt_tokens": 444,
+              "total_tokens": 2492
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 798,
+              "prompt_tokens": 312,
+              "total_tokens": 1110
+            },
+            "test_generation": {
+              "api_calls": 2,
+              "completion_tokens": 1468,
+              "prompt_tokens": 1345,
+              "total_tokens": 2813
+            },
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 156,
+              "prompt_tokens": 1617,
+              "total_tokens": 1773
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 5,
+            "completion_tokens": 4470,
+            "prompt_tokens": 3718,
+            "total_tokens": 8188
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 1.0,
+          "verdict": "PASS"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-005",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Implement dijkstra(graph, source) in Python for a graph represented as a mapping from nodes to lists of (neighbor, nonnegative_weight) pairs. Return both distance and predecessor maps, include unreachable nodes, and reject negative weights.",
+        "query_id": "f6d870a0-bede-47c2-a0ce-da87caec57c5",
+        "router_confidence": 0.8810610704776525,
+        "specialist": {
+          "answer": "```python\nimport heapq\nfrom typing import Dict, List, Tuple, Any, Iterable\n\ndef dijkstra(\n    graph: Dict[Any, List[Tuple[Any, float]]],\n    source: Any\n) -> Tuple[Dict[Any, float], Dict[Any, Any]]:\n    \"\"\"\n    Compute shortest-path distances and predecessors from `source` to all\n    nodes in a directed graph with non‑negative edge weights.\n\n    Parameters\n    ----------\n    graph : dict\n        Mapping from node to a list of (neighbor, weight) tuples.\n    source : hashable\n        The node from which distances are computed.\n\n    Returns\n    -------\n    distances : dict\n        Mapping from node to its shortest distance from `source`.  Unreachable\n        nodes have distance ``float('inf')``.\n    predecessors : dict\n        Mapping from node to the previous node on its shortest path from\n        `source`.  ``None`` for the source and for unreachable nodes.\n\n    Raises\n    ------\n    ValueError\n        If any edge weight is negative.\n    KeyError\n        If `source` is not present in the graph.\n    \"\"\"\n    # Validate source\n    if source not in graph:\n        raise KeyError(f\"Source node {source!r} not in graph\")\n\n    # Detect negative weights early\n    for u, edges in graph.items():\n        for v, w in edges:\n            if w < 0:\n                raise ValueError(f\"Negative weight {w} on edge {u!r} -> {v!r}\")\n\n    # All nodes that appear either as a key or as a neighbor\n    all_nodes: set = set(graph.keys())\n    for edges in graph.values():\n        for v, _ in edges:\n            all_nodes.add(v)\n\n    # Initialize distances and predecessors\n    distances: Dict[Any, float] = {node: float('inf') for node in all_nodes}\n    predecessors: Dict[Any, Any] = {node: None for node in all_nodes}\n    distances[source] = 0.0\n\n    # Priority queue: (distance, node)\n    pq: List[Tuple[float, Any]] = [(0.0, source)]\n    heapq.heapify(pq)\n\n    while pq:\n        dist_u, u = heapq.heappop(pq)\n        # Skip stale entries\n        if dist_u != distances[u]:\n            continue\n\n        for v, w in graph.get(u, []):\n            alt = dist_u + w\n            if alt < distances[v]:\n                distances[v] = alt\n                predecessors[v] = u\n                heapq.heappush(pq, (alt, v))\n\n    return distances, predecessors\n```",
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "assert dijkstra({'A': [('B', 1), ('C', 4)], 'B': [('C', 1)], 'C': []}, 'A') == ({'A': 0, 'B': 1, 'C': 2}, {'A': None, 'B': 'A', 'C': 'B'})",
+            "assert dijkstra({'A': [('B', 1)], 'B': [], 'C': []}, 'A') == ({'A': 0, 'B': 1, 'C': float('inf')}, {'A': None, 'B': 'A', 'C': None})",
+            "assert dijkstra({'A': [('B', 0)], 'B': []}, 'A') == ({'A': 0, 'B': 0}, {'A': None, 'B': 'A'})",
+            "try:\n    dijkstra({'A': [('B', -1)], 'B': []}, 'A')\n    assert False, 'Expected ValueError for negative weight'\nexcept ValueError:\n    pass",
+            "assert dijkstra({'A': []}, 'A') == ({'A': 0}, {'A': None})"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "For a simple graph `{A: [(B, 1)], B: []}` with source `A`, returns `({'A': 0, 'B': 1}, {'A': None, 'B': 'A'})`",
+            "For a graph with an unreachable node, e.g., `{A: [(B, 1)], C: []}` with source `A`, returns `({'A': 0, 'B': 1, 'C': float('inf')}, {'A': None, 'B': 'A', 'C': None})`",
+            "Raises a `ValueError` (or similar exception) when any weight in the graph is negative, e.g., `{A: [(B, -1)]}`",
+            "For a graph with multiple paths, e.g., `{A: [(B, 4), (C, 1)], B: [(D, 1)], C: [(B, 2), (D, 5)], D: []}` with source `A`, the distance to `D` is `4` (via `A->C->B->D`) and predecessor of `D` is `B`",
+            "The function does not modify the input `graph` dictionary",
+            "All nodes present in the `graph` keys appear in both returned dictionaries"
+          ],
+          "disqualifying_conditions": [
+            "The function does not check for negative weights and silently produces incorrect results",
+            "The function returns only distances without predecessors, or only predecessors without distances",
+            "Unreachable nodes are omitted from the returned dictionaries instead of being included with `inf`/`None`",
+            "The function uses a non-priority-queue approach (e.g., linear scan) that is not Dijkstra's algorithm",
+            "The function modifies the input graph in place",
+            "The function does not handle the source node correctly (e.g., source distance is not 0, or source predecessor is not None)",
+            "The function crashes or raises an unhandled exception for valid inputs with unreachable nodes"
+          ],
+          "intent": "The user wants a Python implementation of Dijkstra's algorithm that accepts a specific graph structure (node-to-neighbor-list mapping), validates for negative weights, and returns both distance and predecessor maps including all nodes (with appropriate values for unreachable ones).",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A function definition named `dijkstra` accepting parameters `graph` and `source`",
+            "Input validation that raises an error (e.g., `ValueError`) if any edge weight is negative",
+            "Use of a priority queue (e.g., `heapq`) for efficient node selection",
+            "Return value is a tuple of two dictionaries: `(distances, predecessors)`",
+            "The `distances` dictionary includes all nodes in the graph, with `float('inf')` for unreachable nodes and `0` for the source",
+            "The `predecessors` dictionary includes all nodes in the graph, with `None` for the source and unreachable nodes",
+            "Correct relaxation logic that updates distances and predecessors only when a shorter path is found",
+            "Handling of the case where `source` is not in the graph (should raise an error or handle gracefully)"
+          ],
+          "scope": "The answer should provide a complete, runnable Python function. It should not include extensive documentation or examples unless they are minimal and illustrative. The graph representation is strictly a dictionary mapping each node to a list of `(neighbor, weight)` tuples. The algorithm must be Dijkstra's (greedy with priority queue), not Bellman-Ford or another shortest-path algorithm. The question is unambiguous: the input format, output format, and edge cases (negative weights, unreachable nodes) are all specified.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 762,
+            "prompt_tokens": 314,
+            "total_tokens": 1076
+          }
+        },
+        "status": "PASS",
+        "timing": {
+          "route_ms": 19,
+          "specialist_ms": 38220,
+          "specification_ms": 54979,
+          "total_ms": 58067,
+          "verification_ms": 3069
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 3,
+              "completion_tokens": 3251,
+              "prompt_tokens": 1692,
+              "total_tokens": 4943
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 762,
+              "prompt_tokens": 314,
+              "total_tokens": 1076
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 279,
+              "prompt_tokens": 252,
+              "total_tokens": 531
+            },
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 71,
+              "prompt_tokens": 1875,
+              "total_tokens": 1946
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 6,
+            "completion_tokens": 4363,
+            "prompt_tokens": 4133,
+            "total_tokens": 8496
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 1.0,
+          "verdict": "PASS"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-006",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Write a thread-safe in-memory token bucket rate limiter in Python with allow(key, now=None). It should support independent buckets, fractional refill, a configurable capacity and refill rate, and deterministic tests via an injected timestamp.",
+        "query_id": "6f614697-31a3-4bad-92fc-add2d819467e",
+        "router_confidence": 0.9757505108339201,
+        "specialist": {
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "from time import time\nrl = TokenBucketRateLimiter(capacity=5, refill_rate=1.0)\nassert rl.allow('k', now=0.0) is True\nassert rl.allow('k', now=0.0) is True\nassert rl.allow('k', now=0.0) is True\nassert rl.allow('k', now=0.0) is True\nassert rl.allow('k', now=0.0) is True\nassert rl.allow('k', now=0.0) is False",
+            "rl = TokenBucketRateLimiter(capacity=5, refill_rate=1.0)\nfor _ in range(5):\n    rl.allow('k', now=0.0)\nassert rl.allow('k', now=0.5) is False\nassert rl.allow('k', now=1.0) is True",
+            "rl = TokenBucketRateLimiter(capacity=5, refill_rate=1.0)\nfor _ in range(5):\n    rl.allow('k', now=0.0)\nassert rl.allow('k', now=1.0) is True\nassert rl.allow('k', now=1.0) is False",
+            "rl = TokenBucketRateLimiter(capacity=5, refill_rate=1.0)\nfor _ in range(5):\n    rl.allow('k', now=0.0)\nassert rl.allow('k', now=100.0) is True\nassert rl.allow('k', now=100.0) is False",
+            "rl = TokenBucketRateLimiter(capacity=5, refill_rate=1.0)\nfor _ in range(5):\n    rl.allow('k', now=0.0)\nassert rl.allow('other', now=0.0) is True"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "Calling `allow(key, now=T)` with a fresh key returns `True` and initializes the bucket.",
+            "Calling `allow(key, now=T)` repeatedly without time advancement eventually returns `False` once tokens are exhausted.",
+            "Advancing `now` by a sufficient delta causes tokens to refill proportionally (e.g., advancing by 1 second at rate 1.0 adds 1.0 token, capped at capacity).",
+            "Refill is fractional: advancing by 0.5 seconds at rate 1.0 adds 0.5 tokens.",
+            "Tokens never exceed `capacity` after refill.",
+            "Two different keys have independent buckets: exhausting one key's tokens does not affect another key's availability.",
+            "Concurrent calls to `allow` from multiple threads do not corrupt state (e.g., no negative token counts, no race conditions on the dictionary).",
+            "Using an injected `now` value makes the behavior fully deterministic and reproducible in tests."
+          ],
+          "disqualifying_conditions": [
+            "The implementation is not thread-safe (no lock, or lock does not protect all state mutations).",
+            "The `now` parameter is ignored or not used for time calculations when provided.",
+            "Buckets are not independent (e.g., a single global token pool shared across all keys).",
+            "Refill logic is integer-only (no fractional token accumulation).",
+            "The method does not return a boolean (or equivalent clear allow/deny signal).",
+            "The implementation uses wall-clock time (`time.time()`) in a way that breaks determinism when `now` is injected (e.g., mixing `time.time()` and injected `now` inconsistently).",
+            "No mechanism exists to configure capacity or refill rate (hardcoded values only)."
+          ],
+          "intent": "The user wants a Python implementation of a thread-safe, in-memory token bucket rate limiter that supports independent buckets per key, fractional token refills, configurable capacity and refill rates, and deterministic testing via an injected timestamp parameter.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A class (e.g., `TokenBucketRateLimiter`) with an `__init__` method accepting `capacity` (max tokens) and `refill_rate` (tokens per second) as parameters.",
+            "An `allow(key, now=None)` method that returns a boolean indicating whether a request is permitted.",
+            "Thread safety via a lock (e.g., `threading.Lock` or `threading.RLock`) protecting all mutable state.",
+            "Independent bucket state per key (e.g., a dictionary mapping keys to `(tokens, last_refill_time)` tuples or similar).",
+            "Fractional refill logic: tokens are added as a float based on elapsed time × refill_rate, capped at capacity.",
+            "When `now` is `None`, the method uses the current system time (e.g., `time.monotonic()` or `time.time()`).",
+            "When `now` is provided, the method uses that value for all time calculations, enabling deterministic tests.",
+            "The first call for a new key initializes the bucket at full capacity (or a defined initial state) and allows the request.",
+            "Subsequent calls decrement tokens by 1 (or a configurable amount) if sufficient tokens exist; otherwise, deny the request."
+          ],
+          "scope": "The answer should provide a complete, runnable Python class with the specified interface. It should include docstrings or comments explaining the refill logic and thread-safety mechanism. It should not include external dependencies beyond the Python standard library. It should not implement persistence, distributed coordination, or sliding-window alternatives — only the token bucket algorithm as specified. The answer may optionally include a brief usage example or a minimal test snippet demonstrating deterministic behavior with injected timestamps, but the core deliverable is the class implementation.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 782,
+            "prompt_tokens": 310,
+            "total_tokens": 1092
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 8,
+          "specialist_ms": 93179,
+          "specification_ms": 93181,
+          "total_ms": 93190,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 2,
+              "completion_tokens": 3674,
+              "prompt_tokens": 1062,
+              "total_tokens": 4736
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 782,
+              "prompt_tokens": 310,
+              "total_tokens": 1092
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 412,
+              "prompt_tokens": 248,
+              "total_tokens": 660
+            },
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 4,
+            "completion_tokens": 4868,
+            "prompt_tokens": 1620,
+            "total_tokens": 6488
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-007",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Implement safe_join(base_dir, user_path) in Python so a web server can resolve a user-supplied relative path without allowing absolute paths, .. traversal, symlink escapes, or prefix-confusion such as /srv/app2 matching /srv/app.",
+        "query_id": "5af8049e-dbe4-449c-8113-04ab85d1f15d",
+        "router_confidence": 0.8926103903614978,
+        "specialist": {
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "import os, tempfile, shutil\n\n# Setup: create a base directory with a file inside\nbase = tempfile.mkdtemp()\ntry:\n    # Test 1: normal relative path\n    with open(os.path.join(base, 'file.txt'), 'w') as f:\n        f.write('hello')\n    result = safe_join(base, 'file.txt')\n    assert result == os.path.join(base, 'file.txt'), f'Expected {os.path.join(base, \"file.txt\")}, got {result}'\n\n    # Test 2: absolute path should raise an exception\n    try:\n        safe_join(base, '/etc/passwd')\n        assert False, 'Expected exception for absolute path'\n    except (ValueError, OSError):\n        pass\n\n    # Test 3: .. traversal should raise an exception\n    try:\n        safe_join(base, '../etc/passwd')\n        assert False, 'Expected exception for .. traversal'\n    except (ValueError, OSError):\n        pass\n\n    # Test 4: prefix confusion - /srv/app2 should not match /srv/app\n    # Create /srv/app and /srv/app2\n    srv = tempfile.mkdtemp()\n    app_dir = os.path.join(srv, 'app')\n    app2_dir = os.path.join(srv, 'app2')\n    os.makedirs(app_dir)\n    os.makedirs(app2_dir)\n    with open(os.path.join(app_dir, 'secret.txt'), 'w') as f:\n        f.write('secret')\n    # Try to access app2/secret.txt via app base - should fail\n    try:\n        safe_join(app_dir, '../app2/secret.txt')\n        assert False, 'Expected exception for prefix confusion'\n    except (ValueError, OSError):\n        pass\n    shutil.rmtree(srv)\nfinally:\n    shutil.rmtree(base)"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The function must reject `user_path` values that are absolute paths (e.g., `/etc/passwd`, `C:\\Windows`).",
+            "The function must reject `user_path` values containing `..` that would resolve outside `base_dir` (e.g., `../../etc/passwd`).",
+            "The function must correctly handle symlink escapes: if a file inside `base_dir` is a symlink pointing outside `base_dir`, the function must detect this and reject the path.",
+            "The function must prevent prefix confusion: if `base_dir` is `/srv/app`, a path resolving to `/srv/app2/file` must be rejected.",
+            "The function must return the correct absolute path for valid inputs (e.g., `safe_join(\"/srv/app\", \"subdir/file.txt\")` returns `/srv/app/subdir/file.txt`).",
+            "The function must raise an exception (not return a path) when the path is unsafe."
+          ],
+          "disqualifying_conditions": [
+            "Using only `os.path.join` without subsequent validation (e.g., checking if the result starts with `base_dir`) is insufficient and disqualifying.",
+            "Failing to resolve symlinks (e.g., using `os.path.abspath` without `os.path.realpath`) allows symlink escapes and is disqualifying.",
+            "Using a simple string prefix check like `resolved_path.startswith(base_dir)` without ensuring the next character is a path separator allows prefix confusion and is disqualifying.",
+            "Returning a path instead of raising an exception for unsafe inputs is disqualifying.",
+            "Not handling the case where `base_dir` itself is a symlink or does not exist is disqualifying."
+          ],
+          "intent": "The user wants a Python implementation of a `safe_join` function that securely resolves a user-supplied relative path against a base directory, preventing path traversal attacks, absolute path injection, symlink escapes, and prefix confusion vulnerabilities.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A function definition `safe_join(base_dir, user_path)` that returns the resolved absolute path or raises an exception on failure.",
+            "Logic to reject or normalize `user_path` if it is an absolute path (starts with `/` or drive letter on Windows).",
+            "Use of `os.path.realpath` or `os.path.abspath` combined with `os.path.normpath` to resolve symlinks and normalize `..` sequences.",
+            "A check ensuring the resolved path starts with the resolved `base_dir` path followed by a path separator (to prevent prefix confusion like `/srv/app2` matching `/srv/app`).",
+            "Handling of edge cases such as empty `user_path`, `user_path` being just `.` or `..`, and `base_dir` not existing.",
+            "Clear error handling (raising `ValueError` or similar) when the resolved path escapes the base directory."
+          ],
+          "scope": "The answer should focus on a secure, production-ready Python implementation. It should include the function code, brief explanation of the security checks, and ideally a few test cases demonstrating rejection of malicious inputs. It should not include unrelated web server framework code, database logic, or general path manipulation utilities beyond what is necessary for the `safe_join` function. The solution should be cross-platform aware (handling Windows path separators if applicable) but primarily target POSIX systems as is common for web servers.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 689,
+            "prompt_tokens": 316,
+            "total_tokens": 1005
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 10,
+          "specialist_ms": 68187,
+          "specification_ms": 68189,
+          "total_ms": 68199,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 2048,
+              "prompt_tokens": 449,
+              "total_tokens": 2497
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 689,
+              "prompt_tokens": 316,
+              "total_tokens": 1005
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 426,
+              "prompt_tokens": 254,
+              "total_tokens": 680
+            },
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 3163,
+            "prompt_tokens": 1019,
+            "total_tokens": 4182
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-008",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Write an async Python function bounded_map(func, items, limit) that preserves input order, runs at most limit awaitables concurrently, cancels outstanding work when one task fails, and rejects nonpositive limits.",
+        "query_id": "7fdd4d5b-802d-4d68-ad6b-19be746acd8e",
+        "router_confidence": 0.970009338872159,
+        "specialist": {
+          "answer": "```python\nimport asyncio\nfrom typing import Any, Awaitable, Callable, Iterable, List\n\nasync def bounded_map(\n    func: Callable[[Any], Awaitable[Any]],\n    items: Iterable[Any],\n    limit: int,\n) -> List[Any]:\n    \"\"\"\n    Apply an async function `func` to each element in `items` while limiting the\n    number of concurrent awaitables to `limit`. The order of results matches\n    the order of `items`. If any task raises an exception, all outstanding\n    tasks are cancelled and the exception is propagated.\n\n    Parameters\n    ----------\n    func : Callable[[Any], Awaitable[Any]]\n        An async function to apply to each item.\n    items : Iterable[Any]\n        Iterable of items to process.\n    limit : int\n        Maximum number of concurrent tasks. Must be > 0.\n\n    Returns\n    -------\n    List[Any]\n        List of results in the same order as `items`.\n\n    Raises\n    ------\n    ValueError\n        If `limit` is not a positive integer.\n    \"\"\"\n    if limit <= 0:\n        raise ValueError(\"limit must be a positive integer\")\n\n    semaphore = asyncio.Semaphore(limit)\n    tasks: List[asyncio.Task] = []\n\n    async def _worker(item: Any, idx: int) -> Any:\n        \"\"\"Wrapper that enforces the semaphore and preserves order.\"\"\"\n        async with semaphore:\n            return await func(item)\n\n    # Create tasks in order\n    for idx, item in enumerate(items):\n        task = asyncio.create_task(_worker(item, idx))\n        tasks.append(task)\n\n    # Gather will cancel remaining tasks if any task raises.\n    results = await asyncio.gather(*tasks, return_exceptions=False)\n    return results\n```",
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "import asyncio\n\nasync def _test_basic():\n    async def f(x):\n        await asyncio.sleep(0.01)\n        return x * 2\n    res = await bounded_map(f, [1, 2, 3], 2)\n    assert res == [2, 4, 6], f'expected [2,4,6], got {res}'\n\nasyncio.run(_test_basic())",
+            "import asyncio\n\nasync def _test_order_preserved():\n    async def f(x):\n        await asyncio.sleep(0.05 - x * 0.01)\n        return x\n    res = await bounded_map(f, [1, 2, 3, 4, 5], 3)\n    assert res == [1, 2, 3, 4, 5], f'expected [1,2,3,4,5], got {res}'\n\nasyncio.run(_test_order_preserved())",
+            "import asyncio\n\nasync def _test_limit_enforced():\n    max_concurrent = 0\n    current = 0\n    async def f(x):\n        nonlocal max_concurrent, current\n        current += 1\n        max_concurrent = max(max_concurrent, current)\n        await asyncio.sleep(0.02)\n        current -= 1\n        return x\n    await bounded_map(f, [1, 2, 3, 4, 5, 6], 2)\n    assert max_concurrent <= 2, f'limit exceeded: {max_concurrent}'\n\nasyncio.run(_test_limit_enforced())",
+            "import asyncio\n\nasync def _test_failure_cancels():\n    cancelled = []\n    async def f(x):\n        if x == 2:\n            raise ValueError('boom')\n        try:\n            await asyncio.sleep(1)\n        except asyncio.CancelledError:\n            cancelled.append(x)\n            raise\n        return x\n    try:\n        await bounded_map(f, [1, 2, 3, 4], 4)\n        assert False, 'should have raised'\n    except ValueError:\n        pass\n    await asyncio.sleep(0.1)\n    assert 1 in cancelled or 3 in cancelled or 4 in cancelled, f'no tasks cancelled: {cancelled}'\n\nasyncio.run(_test_failure_cancels())",
+            "import asyncio\n\nasync def _test_nonpositive_limit():\n    async def f(x):\n        return x\n    for bad in [0, -1, -5]:\n        try:\n            await bounded_map(f, [1, 2], bad)\n            assert False, f'should reject limit={bad}'\n        except (ValueError, TypeError):\n            pass\n\nasyncio.run(_test_nonpositive_limit())"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "If `limit` is 0 or negative, the function must raise an exception before any tasks are created or executed.",
+            "If `func` is a synchronous function, it must be wrapped or handled appropriately (e.g., via `asyncio.to_thread` or `loop.run_in_executor`) to prevent blocking the event loop, OR the specification assumes `func` is always a coroutine function (the answer must clarify or handle this). *Note: Standard interpretation of \"awaitables\" implies `func` returns a coroutine, but robust implementations often handle sync functions. The criterion is that the code does not block the event loop if `func` is sync, or explicitly requires `func` to be async.*",
+            "The returned list must have the same length as `items` and the element at index `i` must correspond to the result of `func(items[i])`.",
+            "If task at index `i` fails, tasks at indices `j > i` that have not yet started must be cancelled, and tasks currently running must be cancelled.",
+            "The exception raised by the failed task must be the one propagated to the caller (not a `CancelledError` or `ExceptionGroup` wrapper unless specifically required, but standard practice is to re-raise the original error).",
+            "The function must be `async` and awaitable."
+          ],
+          "disqualifying_conditions": [
+            "Using `asyncio.gather` without a semaphore or manual task management that allows more than `limit` tasks to run concurrently.",
+            "Returning results in a different order than the input `items`.",
+            "Swallowing exceptions or returning `None`/`Error` objects instead of raising the exception.",
+            "Not cancelling pending tasks when an error occurs (leaving them running in the background).",
+            "Accepting `limit <= 0` without raising an error.",
+            "Blocking the event loop by calling a synchronous `func` directly without an executor if `func` is not a coroutine."
+          ],
+          "intent": "The user wants an implementation of an asynchronous Python function named `bounded_map` that executes a callable on a list of items with concurrency limits, strict error handling, and input validation.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A function definition with the exact signature `async def bounded_map(func, items, limit):`.",
+            "Input validation that raises a `ValueError` (or similar appropriate exception) if `limit` is less than or equal to 0.",
+            "Use of `asyncio.Semaphore` (or equivalent mechanism) to enforce that at most `limit` coroutines are executing concurrently.",
+            "Preservation of the original order of `items` in the returned list of results.",
+            "Logic to cancel all pending/outstanding tasks if any single task raises an exception.",
+            "Propagation of the original exception from the failed task to the caller.",
+            "Handling of the case where `items` is empty (returning an empty list)."
+          ],
+          "scope": "- The answer should provide the complete Python code for the function. - It should assume a standard Python 3.7+ environment with `asyncio`. - It should not include unrelated utility functions or extensive documentation unless necessary for clarity. - It should handle the edge case of an empty `items` list gracefully. - It should clarify whether `func` is expected to be a coroutine function or if it handles synchronous functions. (If it handles sync functions, it must use `asyncio.to_thread` or `run_in_executor`).",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 727,
+            "prompt_tokens": 308,
+            "total_tokens": 1035
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 6,
+          "specialist_ms": 81753,
+          "specification_ms": 81755,
+          "total_ms": 105185,
+          "verification_ms": 23423
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 3,
+              "completion_tokens": 4617,
+              "prompt_tokens": 1677,
+              "total_tokens": 6294
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 727,
+              "prompt_tokens": 308,
+              "total_tokens": 1035
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 653,
+              "prompt_tokens": 246,
+              "total_tokens": 899
+            },
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 330,
+              "prompt_tokens": 1646,
+              "total_tokens": 1976
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 6,
+            "completion_tokens": 6327,
+            "prompt_tokens": 3877,
+            "total_tokens": 10204
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 1.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-009",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Implement parse_csv_chunks(chunks) in Python, where chunks is an iterable of arbitrary text fragments. It must yield complete CSV rows correctly when quoted fields, escaped quotes, or newlines are split across chunk boundaries, without concatenating the entire input in memory.",
+        "query_id": "dadb0227-cbf9-42e4-a54c-15dfd145786f",
+        "router_confidence": 0.9316629371119611,
+        "specialist": {
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "assert list(parse_csv_chunks(['a,b,c\\n', '1,2,3\\n'])) == [['a','b','c'], ['1','2','3']]",
+            "assert list(parse_csv_chunks(['a,\"b', 'c\"\\n'])) == [['a','bc']]",
+            "assert list(parse_csv_chunks(['a,\"b', 'c\"\\n', 'd,e\\n'])) == [['a','bc'], ['d','e']]",
+            "assert list(parse_csv_chunks(['a,\"b', 'c\"\\n', 'd,\"e', 'f\"\\n'])) == [['a','bc'], ['d','ef']]",
+            "assert list(parse_csv_chunks(['a,\"b', 'c\"\\n', 'd,\"e', 'f\"\\n', 'g,h\\n'])) == [['a','bc'], ['d','ef'], ['g','h']]"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The function correctly yields a row when a newline is encountered outside of a quoted field.",
+            "The function correctly handles a quoted field that spans multiple chunks (e.g., chunk 1 ends with `\"`, chunk 2 starts with `abc\"`).",
+            "The function correctly handles an escaped quote split across chunks (e.g., chunk 1 ends with `\"\"`, chunk 2 starts with `\"`).",
+            "The function correctly handles a newline inside a quoted field (e.g., `\"line1\\nline2\"`) and does not yield a row until the closing quote is found.",
+            "The function handles the final row correctly if the input does not end with a newline.",
+            "The memory footprint remains bounded by the size of the largest single chunk plus a small constant for state, not the total input size."
+          ],
+          "disqualifying_conditions": [
+            "The implementation concatenates all chunks into a single string before parsing.",
+            "The implementation stores all chunks in a list or other growing data structure.",
+            "The implementation fails to handle quoted fields containing newlines (yields partial rows).",
+            "The implementation fails to handle escaped quotes (`\"\"`) correctly.",
+            "The implementation is not a generator (e.g., returns a list instead of yielding).",
+            "The implementation does not handle the case where a chunk ends in the middle of a multi-byte character or escape sequence (if applicable to the specific CSV dialect, though standard CSV is ASCII-safe, the state machine must be robust)."
+          ],
+          "intent": "The user wants a Python implementation of a function that parses CSV data from an iterable of text chunks, correctly handling CSV syntax (quotes, escapes, newlines) that may be split across chunk boundaries, while maintaining constant memory usage relative to the total input size.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A function definition `parse_csv_chunks(chunks)` that accepts an iterable of strings.",
+            "The function must be a generator (using `yield`) that yields complete CSV rows (as lists of strings) only when a full row is detected.",
+            "Logic to handle quoted fields, including escaped quotes (`\"\"` inside quotes) and literal newlines within quoted fields.",
+            "State management that persists across chunk iterations to handle cases where a quote, escape sequence, or newline is split across two chunks.",
+            "No accumulation of the entire input stream in memory (e.g., no `\"\".join(chunks)` or storing all chunks in a list)."
+          ],
+          "scope": "- The answer should focus on the Python implementation of the state machine for CSV parsing. - It should not include extensive testing code unless necessary to demonstrate correctness, but the core logic must be clear. - It should assume standard CSV dialect (RFC 4180) where fields are separated by commas, rows by newlines, and quotes are used to enclose fields containing special characters. - It should not address non-CSV formats or complex encoding issues beyond standard UTF-8/ASCII text handling.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 616,
+            "prompt_tokens": 319,
+            "total_tokens": 935
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 13,
+          "specialist_ms": 2838,
+          "specification_ms": 40525,
+          "total_ms": 40538,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 2048,
+              "prompt_tokens": 450,
+              "total_tokens": 2498
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 616,
+              "prompt_tokens": 319,
+              "total_tokens": 935
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 207,
+              "prompt_tokens": 257,
+              "total_tokens": 464
+            },
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 2871,
+            "prompt_tokens": 1026,
+            "total_tokens": 3897
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "CODING",
+        "id": "sealed-v1-010",
+        "pipeline_id": "CODING",
+        "predicted_domain": "CODING",
+        "query": "Explain how to make a payment webhook consumer idempotent when events can arrive out of order and more than once. Include the database constraints, transaction boundary, retry behavior, and observability signals you would implement.",
+        "query_id": "8ba4ba20-624c-469b-bbdc-46dac10c7cb9",
+        "router_confidence": 0.8913041627733951,
+        "specialist": {
+          "pipeline_id": "CODING",
+          "test_cases": [
+            "assert 'idempotency' in 'idempotency_key' or 'idempotent' in 'idempotency_key'",
+            "assert 'unique' in 'unique_constraint' or 'UNIQUE' in 'unique_constraint'",
+            "assert 'transaction' in 'transaction_boundary' or 'BEGIN' in 'transaction_boundary' or 'COMMIT' in 'transaction_boundary'",
+            "assert 'retry' in 'retry_behavior' or 'backoff' in 'retry_behavior' or 'exponential' in 'retry_behavior'",
+            "assert 'observability' in 'observability_signals' or 'metrics' in 'observability_signals' or 'logging' in 'observability_signals' or 'tracing' in 'observability_signals'"
+          ]
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must explicitly state that the database constraint (e.g., `UNIQUE(event_id)`) is the primary mechanism for rejecting duplicates, not just application-level checks.",
+            "The answer must explain that the \"check-then-act\" logic must occur within a database transaction or use an atomic upsert to avoid race conditions where two concurrent requests both pass the existence check.",
+            "The answer must distinguish between handling duplicates (ignoring or returning success) and handling out-of-order events (validating state transitions or versioning), as these require different logic.",
+            "The answer must specify that successful processing of a duplicate event should typically result in a 200 OK response to the webhook sender to prevent infinite retries, rather than an error.",
+            "The answer must include at least one specific metric name or type (e.g., `webhook_duplicate_rate`, `webhook_processing_duration`) and one specific log field (e.g., `event_id`, `status`) for observability."
+          ],
+          "disqualifying_conditions": [
+            "The answer relies solely on in-memory caching or application-level locks without mentioning persistent database constraints, which is insufficient for distributed systems.",
+            "The answer suggests throwing a 4xx or 5xx error for duplicate events, which would cause the webhook provider to retry indefinitely.",
+            "The answer fails to address out-of-order events, treating all duplicates as identical and ignoring the possibility that an older event arrives after a newer one.",
+            "The answer provides only high-level concepts without specific implementation details for the requested components (e.g., saying \"use retries\" without specifying backoff or limits).",
+            "The answer omits observability signals or provides only generic advice like \"log everything\" without specific metrics or signals relevant to idempotency and ordering."
+          ],
+          "intent": "The user is seeking a technical implementation guide for building a robust payment webhook consumer that handles duplicate and out-of-order events, specifically requiring details on database constraints, transaction management, retry logic, and monitoring metrics.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A unique constraint or primary key on the event identifier (e.g., `event_id`) in the database to enforce idempotency at the storage layer.",
+            "A description of the transaction boundary, specifically how the check for existing events and the insertion of new events are wrapped in a single atomic transaction to prevent race conditions.",
+            "A strategy for handling out-of-order events, such as using a version number, timestamp, or state machine logic to ensure that older events do not overwrite newer states.",
+            "Specific retry behavior details, including exponential backoff, jitter, and maximum retry limits for transient failures versus permanent failures.",
+            "A list of observability signals, including specific metrics (e.g., duplicate event count, processing latency, dead-letter queue size) and logging requirements for debugging."
+          ],
+          "scope": "The answer should focus on backend system design for a webhook consumer service. It should cover the database schema, application logic, and operational monitoring. It should not cover the frontend user experience or the specific payment provider's API documentation unless necessary to explain the event structure. The context assumes a standard distributed system environment where network partitions and message duplication are possible.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 658,
+            "prompt_tokens": 310,
+            "total_tokens": 968
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 5,
+          "specialist_ms": 44641,
+          "specification_ms": 44644,
+          "total_ms": 44649,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 2048,
+              "prompt_tokens": 440,
+              "total_tokens": 2488
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 658,
+              "prompt_tokens": 310,
+              "total_tokens": 968
+            },
+            "test_generation": {
+              "api_calls": 1,
+              "completion_tokens": 166,
+              "prompt_tokens": 248,
+              "total_tokens": 414
+            },
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 2872,
+            "prompt_tokens": 998,
+            "total_tokens": 3870
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "llm_judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-011",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "GENERAL",
+        "query": "A 67-year-old develops sudden facial droop, arm weakness, and difficulty speaking 20 minutes ago. What should a bystander do now, what information matters to emergency clinicians, and what should not be attempted at home?",
+        "query_id": "ba9b8896-1306-4fb7-89af-ce6d90bb7197",
+        "router_confidence": 0.7531664727566199,
+        "specialist": {
+          "answer": "**Immediate actions for a bystander**\n\n| Step | What to do | Why it matters |\n|------|------------|----------------|\n| **Call emergency services (911 in the U.S.) immediately** | Time is brain – every minute of untreated stroke can cause irreversible damage. | EMS will start pre‑hospital care and transport the patient to a stroke‑capable center. |\n| **Keep the person still and safe** | Prevent falls or injury while the person is disoriented or weak. | Reduces risk of additional trauma. |\n| **Do not give food, drink, or medication** | Oral intake can cause aspiration; unknown medications may interfere with treatment. | Avoids complications and delays in definitive care. |\n| **Note the exact time of symptom onset** | Stroke treatment windows (e.g., IV tPA up to 4.5 h, mechanical thrombectomy up to 24 h) depend on this. | Enables clinicians to decide eligibility for reperfusion therapies. |\n| **Record observable symptoms** | Facial droop, arm weakness, speech difficulty, vision changes, numbness, headache, dizziness. | Provides a quick clinical picture for EMS and the ED. |\n| **If the person is unconscious or not breathing, start CPR** | Life‑saving measure if airway or circulation is compromised. | May be necessary if the stroke is accompanied by cardiac arrest. |\n| **Avoid moving the head or neck unless necessary** | Prevents potential cervical spine injury if a traumatic event is suspected. | Reduces risk of exacerbating any spinal injury. |\n\n**Information that matters to emergency clinicians**\n\n| Category | Specific details | How it influences care |\n|----------|------------------|------------------------|\n| **Time of onset** | Exact time the first symptom appeared. | Determines eligibility for IV tPA (≤ 4.5 h) and thrombectomy (≤ 24 h). |\n| **Symptom description** | Which face side, arm, speech, vision, or other deficits. | Helps localize the stroke (e.g., left MCA vs. basilar). |\n| **Medical history** | Hypertension, atrial fibrillation, diabetes, prior stroke/TIA, anticoagulant use. | Informs risk of hemorrhage, contraindications to tPA. |\n| **Current medications** | Anticoagulants (warfarin, DOACs), antiplatelets, blood pressure meds. | Determines tPA eligibility and need for reversal agents. |\n| **Blood pressure** | Current systolic/diastolic readings. | High BP (> 185/110 mm Hg) may need lowering before tPA. |\n| **Known allergies** | Especially to contrast agents or medications. | Avoids allergic reactions during imaging or treatment. |\n| **Recent imaging** | If a head CT or MRI has already been performed. | Provides baseline for treatment decisions. |\n| **Any trauma or recent surgery** | Recent head injury, neck surgery, or major surgery. | May alter treatment options. |\n\n**What should not be attempted at home**\n\n| Attempt | Why it should be avoided |\n|---------|--------------------------|\n| **Administering clot‑busting drugs (tPA)** | Requires precise dosing, monitoring, and contraindication assessment only done in a hospital. |\n| **Performing a CT or MRI scan** | These imaging modalities are only available in medical facilities. |\n| **Giving aspirin or other antiplatelets** | While aspirin can be given within 24 h of stroke onset, it is best administered under medical guidance to avoid bleeding risks. |\n| **Attempting to reposition the head or neck** | May cause spinal injury if a cervical spine fracture is present. |\n| **Using home blood pressure cuffs or monitoring** | Inaccurate readings can mislead treatment decisions. |\n| **Trying to “wake up” the patient** | Delays definitive care and may mask worsening symptoms. |\n\n**Key points for the bystander**\n\n1. **Call 911 right away** – do not wait for symptoms to improve.  \n2. **Do not give anything by mouth** – food, drink, or medication can be dangerous.  \n3. **Record the onset time and describe symptoms** – this information is critical for treatment eligibility.  \n4. **Keep the patient calm and still** – avoid unnecessary movement.  \n5. **If the patient stops breathing or becomes unconscious, start CPR** – life‑saving if needed.\n\n---",
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must state that the bystander should call emergency services immediately and not delay for home assessment or medication.",
+            "The answer must explicitly warn against giving aspirin or any other medication to the patient before a CT scan rules out a hemorrhagic stroke.",
+            "The answer must highlight that the specific time of symptom onset (20 minutes ago) is crucial for determining eligibility for thrombolytic therapy (tPA) or thrombectomy.",
+            "The answer must advise keeping the patient calm and still to prevent further injury or worsening of symptoms.",
+            "The answer must distinguish between ischemic and hemorrhagic stroke risks to justify why home treatment is dangerous."
+          ],
+          "disqualifying_conditions": [
+            "Suggesting the bystander drive the patient to the hospital themselves.",
+            "Recommending the administration of aspirin, blood thinners, or any oral medication prior to medical evaluation.",
+            "Advising the patient to eat, drink, or swallow anything due to the risk of aspiration from dysphagia.",
+            "Suggesting that the bystander wait to see if symptoms resolve before calling for help.",
+            "Providing specific medical diagnoses or treatment plans that only a physician can determine (e.g., \"give them tPA now\")."
+          ],
+          "intent": "The user seeks immediate, actionable first-aid instructions for a suspected acute stroke, specifically detailing bystander actions, critical data points for medical professionals, and dangerous home interventions to avoid.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "Immediate instruction to call emergency services (911 or local equivalent) and explicitly advise against driving the patient to the hospital.",
+            "Specific guidance on positioning the patient (e.g., recovery position if unconscious, or sitting/lying with head elevated if conscious) and monitoring vital signs.",
+            "Identification of the \"last known well\" time (20 minutes ago in this scenario) as the single most critical piece of information for clinicians.",
+            "A clear list of prohibited home actions, specifically including the administration of aspirin, food, water, or other oral medications.",
+            "Mention of the FAST (Face, Arms, Speech, Time) or similar stroke recognition acronym to validate the symptoms described."
+          ],
+          "scope": "The answer should focus strictly on pre-hospital care and information transfer to emergency clinicians. It should not include detailed hospital treatment protocols (e.g., specific dosages of tPA, surgical procedures) but should explain *why* certain information (like time of onset) matters for those treatments. The context is an acute emergency; the tone should be urgent, clear, and directive.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 530,
+            "prompt_tokens": 315,
+            "total_tokens": 845
+          }
+        },
+        "status": "PASS",
+        "timing": {
+          "route_ms": 10,
+          "specialist_ms": 1853,
+          "specification_ms": 10218,
+          "total_ms": 14331,
+          "verification_ms": 2250
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 1195,
+              "prompt_tokens": 521,
+              "total_tokens": 1716
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 530,
+              "prompt_tokens": 315,
+              "total_tokens": 845
+            },
+            "test_generation": {},
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 59,
+              "prompt_tokens": 1944,
+              "total_tokens": 2003
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 1784,
+            "prompt_tokens": 2780,
+            "total_tokens": 4564
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 1.0,
+          "verdict": "PASS"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-012",
+        "pipeline_id": "MEDICAL",
+        "predicted_domain": "MEDICAL",
+        "query": "What should someone discuss with a clinician before taking ibuprofen regularly if they use warfarin and have chronic kidney disease? Explain the major risks, warning signs, and safer decision process without prescribing a replacement.",
+        "query_id": "1e898cfd-2b7a-4724-b4a1-b010d8043c79",
+        "router_confidence": 0.8854737826559904,
+        "specialist": {
+          "answer": "**Workup / differential:**  \nBefore starting regular ibuprofen, a clinician should review your current warfarin dose, recent INR values, and kidney function tests (eGFR or creatinine). They will assess whether your INR is stable and whether you have any history of gastrointestinal bleeding, hypertension, or other NSAID‑related adverse events. The clinician may also consider alternative pain‑relief options (acetaminophen, topical agents) and evaluate whether your chronic kidney disease (CKD) stage warrants limiting NSAID exposure.  \n\n**Monitoring / follow‑up:**  \nIf ibuprofen is deemed necessary, the clinician will likely schedule more frequent INR checks—perhaps every 3–5 days initially—to detect any rise in clotting time. Kidney function should be monitored at least monthly, with serum creatinine and eGFR measured to detect worsening renal impairment. Blood pressure should also be checked regularly, as NSAIDs can raise blood pressure and further compromise kidney perfusion.  \n\n**Risks / contraindications:**  \nIbuprofen can increase the INR when taken with warfarin, raising the risk of serious bleeding (e.g., intracranial, gastrointestinal). NSAIDs are nephrotoxic, especially in CKD, and can precipitate acute kidney injury or accelerate progression to end‑stage renal disease. They also raise blood pressure and can cause edema or heart failure exacerbation. In patients with CKD stage 3 or worse, the risk of NSAID‑induced renal decline is higher, and warfarin‑related bleeding risk is amplified.  \n\n**When to seek care:**  \nSeek urgent medical attention if you develop signs of bleeding (black or bloody stools, vomiting blood, blood in urine, unexplained bruising) or if you notice sudden swelling, shortness of breath, or severe headache. Contact your clinician promptly if you experience a sudden rise in blood pressure, worsening edema, or a noticeable decline in urine output. Routine follow‑up appointments should be kept to monitor INR, kidney function, and blood pressure.  \n\n**Disclaimer:**  \nThis information is for educational purposes only and does not replace individualized medical advice. Always consult your prescribing clinician or a qualified healthcare professional before making changes to your medication regimen.",
+          "pipeline_id": "MEDICAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must correctly state that ibuprofen increases the risk of bleeding when combined with warfarin, not just that it \"interacts\" vaguely.",
+            "The answer must correctly identify that regular NSAID use can accelerate the decline of kidney function in CKD patients, independent of the warfarin interaction.",
+            "The answer must include specific, observable warning signs for both bleeding and renal compromise, rather than only general advice to \"watch for side effects.\"",
+            "The answer must frame the decision process as a collaborative clinical evaluation involving monitoring (INR, renal labs) rather than a unilateral patient decision.",
+            "The answer must avoid recommending specific alternative medications (e.g., \"take acetaminophen instead\") or dosages, adhering to the \"without prescribing a replacement\" constraint."
+          ],
+          "disqualifying_conditions": [
+            "Providing specific dosage recommendations for ibuprofen, warfarin, or any alternative analgesic.",
+            "Stating that ibuprofen is \"safe\" if taken with food or at low doses without mentioning the cumulative risk in CKD/warfarin patients.",
+            "Omitting the specific risk of gastrointestinal bleeding, which is the primary danger of this combination.",
+            "Failing to mention the need for increased monitoring (e.g., more frequent INR checks or renal function tests) as part of the decision process.",
+            "Using prescriptive language such as \"you should stop taking ibuprofen\" or \"you must switch to X,\" rather than \"discuss the risks\" or \"the clinician may consider.\""
+          ],
+          "intent": "The user seeks a comprehensive clinical overview of the specific risks, warning signs, and decision-making factors involved in combining regular ibuprofen use with warfarin therapy in a patient with chronic kidney disease (CKD), explicitly excluding direct medication substitution advice.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "Identification of the specific pharmacodynamic interaction between NSAIDs (ibuprofen) and warfarin, including the increased risk of gastrointestinal bleeding and potential displacement of warfarin from protein binding sites.",
+            "Explanation of the nephrotoxic effects of regular ibuprofen use on patients with pre-existing chronic kidney disease, including mechanisms such as reduced renal blood flow and acute kidney injury (AKI) risk.",
+            "A list of specific warning signs and symptoms indicating potential adverse events, such as signs of internal bleeding (e.g., black/tarry stools, coffee-ground emesis, unusual bruising) and signs of worsening kidney function (e.g., decreased urine output, edema, fatigue).",
+            "A description of the \"safer decision process\" involving multidisciplinary consultation, including the role of INR monitoring frequency adjustments, renal function testing (e.g., eGFR, creatinine), and the necessity of documenting the rationale for any continued use.",
+            "Explicit acknowledgment that the clinician must evaluate the risk-benefit ratio based on the patient's specific INR stability, CKD stage, and history of bleeding events."
+          ],
+          "scope": "The answer should cover the pharmacological interactions, clinical risks, monitoring requirements, and patient-clinician communication strategies. It should not cover the underlying causes of the patient's pain, the specific etiology of their CKD, or the mechanism of action of warfarin in detail beyond its interaction with NSAIDs. The scope is limited to the safety and decision-making framework for this specific drug combination in this specific patient population.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 709,
+            "prompt_tokens": 310,
+            "total_tokens": 1019
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 7,
+          "specialist_ms": 1531,
+          "specification_ms": 25707,
+          "total_ms": 34517,
+          "verification_ms": 7271
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 856,
+              "prompt_tokens": 587,
+              "total_tokens": 1443
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 709,
+              "prompt_tokens": 310,
+              "total_tokens": 1019
+            },
+            "test_generation": {},
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 134,
+              "prompt_tokens": 1647,
+              "total_tokens": 1781
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 1699,
+            "prompt_tokens": 2544,
+            "total_tokens": 4243
+          }
+        },
+        "use_fallback": false,
+        "verification": {
+          "score": 0.9,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-013",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "GENERAL",
+        "query": "How are an elevated TSH and a low free T4 generally interpreted in an adult, what common factors can complicate that interpretation, and what follow-up is typically considered?",
+        "query_id": "63c40eff-3867-41e4-832d-eaac9d18bd9f",
+        "router_confidence": 0.6683733857258131,
+        "specialist": {
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer correctly distinguishes this pattern from subclinical hypothyroidism (where TSH is high but free T4 is normal).",
+            "The answer accurately notes that in the context of acute severe illness, this pattern may represent non-thyroidal illness rather than primary thyroid failure, requiring re-testing after recovery.",
+            "The answer specifies that follow-up typically involves confirming the diagnosis with a second set of tests (TSH and free T4) spaced weeks apart before starting long-term treatment, unless symptoms are severe.",
+            "The answer mentions that treatment usually involves thyroid hormone replacement (levothyroxine) with dose titration based on TSH levels."
+          ],
+          "disqualifying_conditions": [
+            "Stating that this pattern indicates hyperthyroidism or thyroid storm.",
+            "Claiming that no further testing is needed and immediate lifelong treatment should start without confirmation, unless the clinical context is explicitly stated as an emergency.",
+            "Ignoring the possibility of secondary (central) hypothyroidism, where TSH would typically be low or inappropriately normal, not elevated (though the prompt specifies elevated TSH, a correct answer should implicitly or explicitly rule out central causes by noting the TSH elevation points to primary etiology).",
+            "Providing specific dosage recommendations (e.g., \"start 50mcg\") without noting that dosing is individualized based on age, weight, and cardiac status."
+          ],
+          "intent": "The user seeks a clinical interpretation of the specific thyroid function test pattern (elevated TSH, low free T4) in an adult, including identifying confounding factors that may alter this interpretation and outlining standard medical follow-up procedures.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "Identification of the condition as primary hypothyroidism (or overt hypothyroidism).",
+            "Explanation that elevated TSH indicates the pituitary gland is responding to low thyroid hormone levels by increasing stimulation, while low free T4 confirms insufficient thyroid hormone production.",
+            "List of at least two common complicating factors (e.g., non-thyroidal illness/sick euthyroid syndrome, medications like lithium or amiodarone, assay interference, or recent iodine exposure).",
+            "Description of typical follow-up steps, including repeat testing to confirm persistence and initiation of levothyroxine therapy."
+          ],
+          "scope": "The answer should focus on adult primary hypothyroidism. It should not provide a differential diagnosis for pediatric patients or pregnant women unless specifically noting how interpretation differs in those populations (e.g., TSH reference ranges differ in pregnancy). It should not delve into the molecular mechanisms of thyroid hormone synthesis unless relevant to the complicating factors. The scope is limited to interpretation, confounders, and standard clinical management pathways.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 566,
+            "prompt_tokens": 302,
+            "total_tokens": 868
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 13,
+          "specialist_ms": 2487,
+          "specification_ms": 35338,
+          "total_ms": 37840,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 2048,
+              "prompt_tokens": 510,
+              "total_tokens": 2558
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 566,
+              "prompt_tokens": 302,
+              "total_tokens": 868
+            },
+            "test_generation": {},
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 2,
+            "completion_tokens": 2614,
+            "prompt_tokens": 812,
+            "total_tokens": 3426
+          }
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-014",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "MEDICAL",
+        "query": "A pregnant person at 30 weeks has a severe headache, visual flashes, and new swelling. Why can this be urgent, what immediate evaluation is appropriate, and which details should they tell the care team?",
+        "query_id": "f0bb6df7-4865-454a-abbb-26a610f365ba",
+        "router_confidence": 0.5498270165350356,
+        "specialist": {
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must explicitly state that these symptoms require immediate medical attention (same-day/urgent) and should not be managed at home with observation alone.",
+            "The answer must correctly associate the triad of symptoms (headache, visual changes, swelling) with preeclampsia rather than attributing them to normal pregnancy discomforts.",
+            "The answer must include both maternal evaluation (BP, labs) and fetal evaluation (monitoring) as part of the appropriate immediate response.",
+            "The advice must be consistent with standard obstetric guidelines (e.g., ACOG) regarding the management of suspected preeclampsia with severe features."
+          ],
+          "disqualifying_conditions": [
+            "Suggesting that the symptoms are likely normal pregnancy changes and can wait for a routine appointment.",
+            "Recommending home remedies (e.g., rest, hydration, pain relievers) as the primary response without immediate medical evaluation.",
+            "Failing to mention the risk of seizures or organ damage, thereby underestimating the severity.",
+            "Providing specific diagnostic conclusions (e.g., \"You have preeclampsia\") rather than stating that evaluation is needed to rule it out.",
+            "Omitting the importance of reporting the severity or specific characteristics of the headache and visual changes."
+          ],
+          "intent": "The user seeks to understand the medical urgency of specific symptoms (headache, visual changes, swelling) at 30 weeks gestation, the necessary immediate medical evaluations, and the specific clinical details to report to healthcare providers.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "Identification of the symptoms as potential signs of preeclampsia or eclampsia, a serious hypertensive disorder of pregnancy.",
+            "Explanation of why this is urgent: risk of progression to seizures (eclampsia), stroke, organ damage (liver/kidneys), or placental abruption, which can threaten the life of both the pregnant person and the fetus.",
+            "Recommendation for immediate evaluation: urgent contact with obstetric care provider or presentation to Labor & Delivery/Triage; specific tests including blood pressure measurement, urine protein analysis, blood work (liver enzymes, platelets, kidney function), and fetal monitoring (non-stress test or biophysical profile).",
+            "List of specific details to report: exact timing of symptom onset, severity of headache (e.g., \"worst headache of life\"), nature of visual disturbances (flashes, spots, blurriness), location and extent of swelling (face/hands vs. legs), presence of right upper quadrant/epigastric pain, and any history of hypertension or prior preeclampsia."
+          ],
+          "scope": "The answer should focus on the immediate clinical response and communication strategy for a pregnant person at 30 weeks gestation presenting with these specific red-flag symptoms. It should not provide a comprehensive differential diagnosis of all causes of headache in pregnancy, nor should it detail long-term management plans for chronic hypertension. The scope is limited to acute triage, evaluation, and patient-provider communication.",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 623,
+            "prompt_tokens": 309,
+            "total_tokens": 932
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 19,
+          "specialist_ms": 712,
+          "specification_ms": 36593,
+          "total_ms": 37324,
+          "verification_ms": 0
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 145,
+              "prompt_tokens": 516,
+              "total_tokens": 661
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 623,
+              "prompt_tokens": 309,
+              "total_tokens": 932
+            },
+            "test_generation": {},
+            "verification": {}
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 2,
+            "completion_tokens": 768,
+            "prompt_tokens": 825,
+            "total_tokens": 1593
+          }
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": 0.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-015",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "MEDICAL",
+        "query": "A 3-month-old infant has a measured rectal temperature of 38.2°C (100.8°F) and is sleepier than usual. What level of care is appropriate, and what should caregivers avoid doing while arranging it?",
+        "query_id": "d4ea6728-89d7-49c6-b1f4-11e71c2e8c3d",
+        "router_confidence": 0.7419859221096379,
+        "specialist": {
+          "answer": "**Level of Care**  \n- **Urgent medical evaluation** is required. A 3‑month‑old infant with a rectal temperature ≥ 38.0 °C (100.4 °F) and increased sleepiness is a red‑flag symptom for possible serious bacterial infection (e.g., meningitis, sepsis). The appropriate setting is an **emergency department (ED)** or a **pediatric urgent‑care clinic** that can perform a rapid physical exam, laboratory work‑up, and imaging if needed.  \n\n**What Caregivers Should Avoid While Arranging Care**  \n| Action | Why It Should Be Avoided | Safe Alternative |\n|--------|--------------------------|------------------|\n| **Delaying or postponing evaluation** (e.g., “wait a few hours” or “see the pediatrician next week”) | Fever > 38 °C in infants < 3 months is an emergency; delays increase risk of complications. | Call the pediatrician’s office or emergency services immediately; if the child is in distress, call 911. |\n| **Self‑treating with aspirin or other antipyretics** | Aspirin can precipitate Reye syndrome in children; it is contraindicated in infants. | Use acetaminophen (Tylenol) or ibuprofen (Advil, Motrin) as directed by a healthcare professional. |\n| **Applying hot or cold compresses without guidance** | Improper temperature control can cause burns or worsen discomfort; cold compresses may cause vasoconstriction. | Use a lukewarm, damp washcloth for gentle cooling; avoid ice or very cold packs. |\n| **Giving large volumes of water or sugary drinks** | Over‑hydration or high sugar intake can lead to electrolyte imbalance or worsen lethargy. | Offer breast milk, formula, or pediatric electrolyte solutions as recommended by a clinician. |\n| **Using herbal or home remedies (e.g., chamomile tea, herbal compresses)** | Lack of evidence for efficacy; potential for allergic reactions or toxicity. | Stick to evidence‑based antipyretics and hydration; consult a healthcare provider before trying any alternative. |\n| **Sedating the infant (e.g., giving extra sleep or using sleep aids)** | Sedatives can mask worsening symptoms and delay recognition of deterioration. | Keep the infant comfortable and monitor closely; do not give additional sedatives without medical advice. |\n| **Ignoring or minimizing the infant’s lethargy** | Lethargy can be an early sign of meningitis or sepsis; ignoring it delays critical care. | Treat lethargy as a medical emergency; seek immediate evaluation. |\n\n**Steps to Arrange Care**  \n1. **Call the pediatrician’s office** or the local emergency department.  \n2. **Explain the symptoms**: fever 38.2 °C, increased sleepiness, any other signs (e.g., poor feeding, irritability).  \n3. **Ask for the fastest possible evaluation**; if the child appears very sleepy, unresponsive, or has difficulty breathing, call 911.  \n4. **Prepare the infant for transport**: keep them warm, have a recent feeding record, and bring any relevant medical history.  \n5. **Follow any pre‑arrival instructions** (e.g., give acetaminophen if recommended, keep the infant hydrated).",
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must state that a fever of 38.0°C (100.4°F) or higher in an infant under 3 months (or 3-6 months depending on specific guidelines, but 3 months is the critical threshold) combined with lethargy (\"sleepier than usual\") is a medical emergency.",
+            "The answer must clearly distinguish between \"urgent care\" and \"emergency care,\" specifying that this scenario requires the latter due to the risk of serious bacterial infection (e.g., meningitis, sepsis).",
+            "The answer must specify that the lethargy is a \"red flag\" symptom that elevates the urgency beyond a simple fever.",
+            "The answer must provide actionable steps for the caregiver (e.g., \"Call 911/999/112 now\" or \"Go to the ER immediately\")."
+          ],
+          "disqualifying_conditions": [
+            "Recommending home monitoring, waiting for a pediatrician's office to open, or suggesting that the fever is likely viral and benign without immediate evaluation.",
+            "Suggesting the use of acetaminophen or ibuprofen as a first step before seeking medical care.",
+            "Suggesting physical cooling methods (cold water, ice, alcohol) as a primary intervention.",
+            "Failing to address the lethargy as a critical symptom that changes the management plan from routine fever care to emergency care.",
+            "Providing vague advice such as \"consult a doctor\" without specifying the urgency (emergency) required for a 3-month-old with these symptoms."
+          ],
+          "intent": "The user is seeking immediate medical guidance on the appropriate level of care for a 3-month-old infant with a fever of 38.2°C (100.8°F) and lethargy, as well as specific safety precautions for caregivers to follow while seeking that care.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "Identification of the appropriate level of care as **immediate emergency medical attention** (e.g., calling emergency services or going to the nearest emergency department).",
+            "Explicit instruction to **avoid** administering any over-the-counter fever-reducing medications (such as acetaminophen or ibuprofen) without direct medical instruction, particularly noting that ibuprofen is generally contraindicated for infants under 6 months.",
+            "Explicit instruction to **avoid** delaying care to \"wait and see\" if the fever breaks or if the infant seems to improve slightly.",
+            "Explicit instruction to **avoid** using physical cooling methods such as cold baths, ice packs, or alcohol rubs.",
+            "Explicit instruction to **avoid** leaving the infant unattended or transporting them in a way that compromises airway safety (e.g., placing them in a car seat without proper support if they are lethargic)."
+          ],
+          "scope": "- The answer should focus strictly on the immediate triage and safety actions for the caregiver. - It should not provide a differential diagnosis (e.g., listing specific diseases like meningitis or UTI) as the primary focus, though mentioning the risk of serious infection is acceptable to justify the urgency. - It should not provide long-term treatment plans or post-discharge care instructions. - The answer must acknowledge the age-specific risk profile (infants under 3-6 months have immature immune systems and higher risks of serious bacterial infections).",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 695,
+            "prompt_tokens": 318,
+            "total_tokens": 1013
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 24,
+          "specialist_ms": 2249,
+          "specification_ms": 31623,
+          "total_ms": 60932,
+          "verification_ms": 27035
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 1434,
+              "prompt_tokens": 523,
+              "total_tokens": 1957
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 695,
+              "prompt_tokens": 318,
+              "total_tokens": 1013
+            },
+            "test_generation": {},
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 308,
+              "prompt_tokens": 1858,
+              "total_tokens": 2166
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 2437,
+            "prompt_tokens": 2699,
+            "total_tokens": 5136
+          }
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": 1.0,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      },
+      {
+        "error": null,
+        "expected_domain": "MEDICAL",
+        "id": "sealed-v1-016",
+        "pipeline_id": "GENERAL",
+        "predicted_domain": "MEDICAL",
+        "query": "Explain the usual evaluation pathway for suspected obstructive sleep apnea, including symptoms, risk factors, home versus laboratory testing, consequences of leaving it untreated, and common management categories.",
+        "query_id": "2c95855e-ea64-44ea-9408-9d7ad0ce15cc",
+        "router_confidence": 0.551242113329709,
+        "specialist": {
+          "answer": "**1. Symptoms**  \n- **Daytime somnolence** (excessive sleepiness, frequent naps, feeling “foggy”)  \n- **Morning headaches** and **dry mouth** upon awakening  \n- **Insomnia or fragmented sleep** (difficulty falling or staying asleep)  \n- **Nocturnal snoring** (often loud, witnessed by a bed partner)  \n- **Observed apneas** (pauses in breathing, choking, gasping)  \n- **Restless or agitated sleep** (leg movements, frequent position changes)  \n- **Cognitive difficulties** (poor concentration, memory lapses)  \n- **Mood changes** (irritability, depression, anxiety)\n\n**2. Risk Factors**  \n- **Obesity** (BMI > 30 kg/m², especially central adiposity)  \n- **Male sex** (higher prevalence in men)  \n- **Age** (risk increases after 40 years)  \n- **Family history** of OSA or snoring  \n- **Upper‑airway anatomy** (large tonsils, macroglossia, retrognathia)  \n- **Neck circumference** > 40 cm (men) or > 35 cm (women)  \n- **Hypertension, type 2 diabetes, dyslipidemia** (metabolic syndrome)  \n- **Alcohol use, sedatives, smoking** (upper‑airway muscle relaxation)  \n- **Certain medications** (beta‑blockers, antihistamines)  \n- **Pregnancy** (especially in the third trimester)\n\n**3. Evaluation Pathway**  \n| Step | What Happens | Typical Tools | Who Performs |\n|------|--------------|---------------|--------------|\n| **3.1 Clinical Screening** | Use validated questionnaires (STOP‑BANG, Epworth Sleepiness Scale, Berlin Questionnaire) to estimate OSA probability | Paper or electronic forms | Primary‑care provider |\n| **3.2 Polysomnography (PSG)** | Overnight laboratory study measuring EEG, airflow, respiratory effort, oxygen saturation, heart rate, limb movements | Full PSG (≥ 8 h) | Sleep technologist, interpreted by sleep medicine physician |\n| **3.3 Home Sleep Apnea Testing (HSAT)** | Portable device records airflow, pulse oximetry, respiratory effort; no EEG | Type 3 or Type 4 monitors | Sleep technologist or physician (often remote) |\n| **3.4 Decision Criteria** | If high‑risk (STOP‑BANG ≥ 3) and symptoms, HSAT may be first step; if HSAT positive or inconclusive, proceed to PSG | | |\n| **3.5 Follow‑up** | Review results, discuss severity (Apnea‑Hypopnea Index, AHI), and treatment options | | Sleep specialist |\n\n**4. Consequences of Leaving OSA Untreated**  \n- **Cardiovascular disease**: hypertension, coronary artery disease, heart failure, arrhythmias (atrial fibrillation)  \n- **Metabolic dysregulation**: insulin resistance, type 2 diabetes, dyslipidemia  \n- **Cerebrovascular events**: stroke, transient ischemic attacks  \n- **Neurocognitive decline**: impaired executive function, memory loss, increased risk of dementia  \n- **Motor vehicle and workplace accidents** due to daytime sleepiness  \n- **Reduced quality of life**: mood disorders, decreased libido, relationship strain  \n- **Increased mortality** (overall and cardiovascular)\n\n**5. Common Management Categories**  \n| Category | Typical Intervention | Key Points |\n|----------|----------------------|------------|\n| **Lifestyle Modifications** | Weight loss, exercise, positional therapy, alcohol/sedative avoidance, smoking cessation | Weight loss of 5–10 % can reduce AHI by ~30 % |\n| **Continuous Positive Airway Pressure (CPAP)** | Auto‑CPAP or fixed‑pressure device delivered via mask | Gold‑standard for moderate–severe OSA; improves sleepiness, BP, cognition |\n| **Oral Appliance Therapy** | Mandibular advancement device (MAD) | Effective for mild–moderate OSA; requires dental evaluation |\n| **Surgical Options** | Uvulopalatopharyngoplasty (UPPP), maxillomandibular advancement, hypoglossal nerve stimulation, nasal surgery | Reserved for refractory cases or specific anatomical causes |\n| **Pharmacologic Adjuncts** | No FDA‑approved drugs; some use stimulants for residual sleepiness | Limited evidence; used cautiously |\n| **Follow‑up & Compliance Monitoring** | Remote CPAP data download, periodic PSG, symptom reassessment | Essential for long‑term success |\n\n**6. Special Considerations**  \n- **Pregnancy**: OSA can worsen; CPAP is safe but requires monitoring.  \n- **Children**: Adenotonsillectomy is first‑line for pediatric OSA.  \n- **Comorbidities**: Patients with heart failure or uncontrolled hypertension may need tailored therapy.\n\n**7. When to Seek a Specialist**  \n- Persistent symptoms after initial evaluation  \n- Severe OSA (AHI > 30) or comorbid cardiovascular disease  \n- Need for surgical consultation or advanced device therapy  \n- Complex cases (e.g., central sleep apnea overlap)",
+          "pipeline_id": "GENERAL"
+        },
+        "specification": {
+          "correctness_criteria": [
+            "The answer must correctly identify that in-laboratory polysomnography is the gold standard for diagnosis, particularly for complex cases or when other sleep disorders are suspected, while home testing is often a first-line option for uncomplicated cases.",
+            "The answer must accurately link untreated OSA to specific systemic health risks, such as increased blood pressure and risk of stroke or heart failure, rather than stating vague health declines.",
+            "The answer must distinguish between continuous positive airway pressure (CPAP) as the primary medical treatment and other modalities like mandibular advancement devices or surgery as alternatives or adjuncts.",
+            "The answer must mention that diagnosis is typically confirmed by calculating the Apnea-Hypopnea Index (AHI) from sleep study data."
+          ],
+          "disqualifying_conditions": [
+            "The answer fails to differentiate between home testing and laboratory testing, treating them as identical in capability or indication.",
+            "The answer omits the significant cardiovascular or metabolic risks associated with untreated OSA.",
+            "The answer presents surgery as the first-line treatment for all patients, ignoring the standard hierarchy of lifestyle changes and CPAP therapy.",
+            "The answer provides medical advice that contradicts standard clinical guidelines (e.g., recommending no treatment for severe OSA)."
+          ],
+          "intent": "The user seeks a comprehensive overview of the clinical workflow for diagnosing and managing obstructive sleep apnea (OSA), specifically covering symptom identification, risk assessment, diagnostic testing modalities, risks of non-treatment, and therapeutic options.",
+          "model": "qwen/qwen3.8-27b",
+          "required_elements": [
+            "A list of common clinical symptoms (e.g., loud snoring, witnessed apneas, excessive daytime sleepiness, morning headaches).",
+            "Identification of key risk factors (e.g., obesity, male gender, age, anatomical features like retrognathia, family history).",
+            "A distinction between home sleep apnea testing (HSAT) and in-laboratory polysomnography (PSG), including when each is typically indicated.",
+            "An explanation of the consequences of untreated OSA (e.g., cardiovascular disease, hypertension, metabolic syndrome, cognitive impairment, increased accident risk).",
+            "A categorization of common management strategies (e.g., lifestyle modifications, CPAP/BiPAP therapy, oral appliances, surgical interventions)."
+          ],
+          "scope": "The answer should cover the standard adult clinical pathway for OSA. It should not focus on pediatric-specific protocols unless explicitly requested, nor should it provide personalized medical advice or specific dosage recommendations. The scope includes both diagnostic and therapeutic phases but excludes detailed surgical techniques or pharmacological management (as there are no FDA-approved drugs for OSA).",
+          "usage": {
+            "api_calls": 1,
+            "completion_tokens": 541,
+            "prompt_tokens": 303,
+            "total_tokens": 844
+          }
+        },
+        "status": "FAIL",
+        "timing": {
+          "route_ms": 11,
+          "specialist_ms": 1937,
+          "specification_ms": 11357,
+          "total_ms": 21110,
+          "verification_ms": 7804
+        },
+        "usage": {
+          "components": {
+            "generation": {
+              "api_calls": 1,
+              "completion_tokens": 1361,
+              "prompt_tokens": 509,
+              "total_tokens": 1870
+            },
+            "specification": {
+              "api_calls": 1,
+              "completion_tokens": 541,
+              "prompt_tokens": 303,
+              "total_tokens": 844
+            },
+            "test_generation": {},
+            "verification": {
+              "api_calls": 1,
+              "completion_tokens": 253,
+              "prompt_tokens": 2105,
+              "total_tokens": 2358
+            }
+          },
+          "cost_note": "Token counts are measured; provider pricing is not hard-coded.",
+          "cost_usd": null,
+          "total": {
+            "api_calls": 3,
+            "completion_tokens": 2155,
+            "prompt_tokens": 2917,
+            "total_tokens": 5072
+          }
+        },
+        "use_fallback": true,
+        "verification": {
+          "score": 0.9,
+          "verdict": "FAIL"
+        },
+        "verifier": "judge"
+      }
+    ],
+    "run_id": "2026-09-16T11-22-36_sealed-v1-full-arcs-gpt20b",
+    "schema_version": "1.0"
+  },
+  "name": "sealed-v1-full-arcs-gpt20b",
+  "pipeline": {
+    "completed_n": 19,
+    "completed_pass_ci95": {
+      "high": 0.487916,
+      "low": 0.118064,
+      "n": 19,
+      "successes": 5
+    },
+    "completed_pass_rate": 0.2631578947368421,
+    "error_count": 1,
+    "latency_ms": {
+      "route_ms": {
+        "count": 20,
+        "mean": 523.3,
+        "p50": 14.0,
+        "p95": 2098.0
+      },
+      "specialist_ms": {
+        "count": 19,
+        "mean": 26996.158,
+        "p50": 4928.0,
+        "p95": 81753.0
+      },
+      "total_ms": {
+        "count": 20,
+        "mean": 46474.75,
+        "p50": 40538.0,
+        "p95": 105185.0
+      },
+      "verification_ms": {
+        "count": 19,
+        "mean": 5305.579,
+        "p50": 2730.0,
+        "p95": 23423.0
+      }
+    },
+    "n": 20,
+    "per_domain": {
+      "CODING": {
+        "n": 10,
+        "pass_rate": 0.4,
+        "status_counts": {
+          "FAIL": 6,
+          "PASS": 4
+        },
+        "verdict_counts": {
+          "FAIL": 6,
+          "PASS": 4
+        }
+      },
+      "GENERAL": {
+        "n": 0,
+        "pass_rate": null,
+        "status_counts": {},
+        "verdict_counts": {}
+      },
+      "LEGAL": {
+        "n": 0,
+        "pass_rate": null,
+        "status_counts": {},
+        "verdict_counts": {}
+      },
+      "MEDICAL": {
+        "n": 10,
+        "pass_rate": 0.1,
+        "status_counts": {
+          "ERROR": 1,
+          "FAIL": 8,
+          "PASS": 1
+        },
+        "verdict_counts": {
+          "FAIL": 8,
+          "PASS": 1,
+          "UNKNOWN": 1
+        }
+      }
+    },
+    "status_counts": {
+      "ERROR": 1,
+      "FAIL": 14,
+      "PASS": 5
+    },
+    "status_rates": {
+      "ERROR": 0.05,
+      "FAIL": 0.7,
+      "PASS": 0.25,
+      "UNKNOWN": 0.0
+    },
+    "unknown_expected_domain_n": 0,
+    "usage": {
+      "cost_note": "Measured token counts only; provider pricing is not hard-coded.",
+      "cost_usd": null,
+      "mean_per_evaluated_row": {
+        "api_calls": 3.684,
+        "completion_tokens": 3006.105,
+        "prompt_tokens": 2400.632,
+        "total_tokens": 5406.737
+      },
+      "rows_with_usage": 19,
+      "totals": {
+        "api_calls": 70,
+        "completion_tokens": 57116,
+        "prompt_tokens": 45612,
+        "total_tokens": 102728
+      }
+    },
+    "verdict_counts": {
+      "FAIL": 14,
+      "PASS": 5,
+      "UNKNOWN": 1
+    }
+  },
+  "router": {
+    "accuracy": 0.9,
+    "confusion": {
+      "CODING": {
+        "CODING": 10,
+        "GENERAL": 0,
+        "LEGAL": 0,
+        "MEDICAL": 0
+      },
+      "GENERAL": {
+        "CODING": 0,
+        "GENERAL": 0,
+        "LEGAL": 0,
+        "MEDICAL": 0
+      },
+      "LEGAL": {
+        "CODING": 0,
+        "GENERAL": 0,
+        "LEGAL": 0,
+        "MEDICAL": 0
+      },
+      "MEDICAL": {
+        "CODING": 0,
+        "GENERAL": 2,
+        "LEGAL": 0,
+        "MEDICAL": 8
+      }
+    },
+    "correct": 18,
+    "n": 20,
+    "per_domain_accuracy": {
+      "CODING": 1.0,
+      "GENERAL": null,
+      "LEGAL": null,
+      "MEDICAL": 0.8
+    },
+    "per_domain_n": {
+      "CODING": 10,
+      "GENERAL": 0,
+      "LEGAL": 0,
+      "MEDICAL": 10
+    },
+    "skipped": 0
+  }
+}
