@@ -6,7 +6,34 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-3d9b7a.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776ab.svg)](pyproject.toml)
 
-**One-liner architecture:** `route (DistilBERT) → resolve domain pipeline → generate answer → build spec → verify (sandbox for code, LLM judge for prose) → deliver → attribute feedback`.
+**One-liner architecture:** `route (deterministic sklearn; optional torch/ONNX) → resolve domain pipeline → generate answer → build spec → verify (sandbox for code, LLM judge for prose) → deliver → attribute feedback`.
+
+---
+
+## Sealed pilot status
+
+ARCS now has a frozen 40-query pilot benchmark with 10 queries each for
+CODING, MEDICAL, LEGAL, and GENERAL. It was hashed before the first model run:
+`a66c29c07a601f559c205ff5950d3b51789960a2922c5a77230bc38a397ae8f3`.
+
+| Condition | Rows observed | PASS | FAIL | ERROR | PASS rate over completed rows |
+|---|---:|---:|---:|---:|---:|
+| Naive single-LLM baseline | 40/40 | 13 | 27 | 0 | 32.5% |
+| ARCS without runtime verification | 40/40 | 11 | 29 | 0 | 27.5% |
+| Full ARCS | 22/40 | 6 | 15 | 1 | 28.6% |
+
+All three matched pilot conditions used `openai/gpt-oss-20b` as the generator,
+Qwen 3.8 27B for specifications/tests, and NVIDIA Llama 3.2 11B as the judge.
+The full-ARCS condition is **incomplete**: Groq's 200,000-token daily quota
+stopped the run after 21 completed rows plus one quota error. Its 28.6% figure
+must not be presented as a result for the complete 40-query set, and the pilot
+does not currently establish that ARCS outperforms the naive baseline.
+
+Redacted row-level artifacts, checksums, provenance, and the exact limitation
+are published in [`results/`](results/README.md). A blinded pilot packet has
+also been prepared for two independent reviewers using the seven queries for
+which all three systems produced answers; human ratings have not yet been
+collected.
 
 ---
 
@@ -49,7 +76,7 @@ The underlying LLM is **interchangeable** — one general generator today, a het
 User query
    │
    ▼
-Router (DistilBERT) ── domain + confidence  (< 0.75 → GENERAL)
+Router (sklearn default; optional torch/ONNX) ── domain + confidence (< 0.75 → GENERAL)
    │
    ▼
 Resolve domain Pipeline ── prompt · contract · verifier · tools
@@ -68,7 +95,11 @@ Answer delivered
 Feedback + Attribution ── ROUTER · VERIFIER · SPECIALIST · AMBIGUOUS
 ```
 
-Default model families are deliberately mixed so verification is a real cross-check: generator **Llama 3.3 70B** (Groq), spec + coding tests **Qwen3 32B** (Groq), judge **Llama 3.1 8B** (NVIDIA). All overridable by env (`ARCS_GENERATOR_MODEL`, `ARCS_SPEC_MODEL`, `NVIDIA_JUDGE_MODEL`, …) with no code changes.
+Default model families are deliberately mixed so verification is a real
+cross-check: generator **GPT-OSS 120B** (Groq), spec + coding tests
+**Qwen 3.8 27B** (Groq), and judge **Llama 3.2 11B Vision Instruct** (NVIDIA).
+All are overridable by env (`ARCS_GENERATOR_MODEL`, `ARCS_SPEC_MODEL`,
+`ARCS_TEST_GENERATOR_MODEL`, `NVIDIA_JUDGE_MODEL`, …) with no code changes.
 
 ---
 
@@ -120,7 +151,7 @@ details, non-secret model configuration, dataset SHA-256 hashes, latency, and a
 python scripts/eval_pipeline.py --dry-run
 
 # Run and save locally
-python scripts/eval_pipeline.py --execute --name sealed-test-v1
+python scripts/eval_pipeline.py --name sealed-test-v1
 
 # Create a redacted, checksummed bundle suitable for review/commit
 python scripts/publish_experiment.py artifacts/experiments/<run-id>
@@ -143,7 +174,7 @@ ARCS/
 ├── main.py                 # CLI shim → arcs.main
 ├── arcs/
 │   ├── main.py             # orchestrator
-│   ├── router/             # DistilBERT classifier (torch / ONNX)
+│   ├── router/             # deterministic sklearn default; optional torch / ONNX
 │   ├── pipelines/          # domain registry + specialists
 │   ├── verification/       # judge, sandbox, spec/test generators
 │   ├── post/               # feedback, attribution, logger
@@ -178,7 +209,9 @@ The full operator playbook — evaluation harness, resume/merge after Groq quota
 - Feedback is currently explicit/interactive only; RQ1 v2 needs real accumulated 👎 signal.
 - Verifier miscalibration is the most dangerous failure mode — recalibrate against human labels periodically.
 - Single-run eval at *n* = 48 is sensitive to judge variance; treat point PASS rates as directional.
-- The 48-query set is now a development set because its failures informed system changes; a larger sealed test and blinded human review are still required.
+- The sealed pilot has only 40 queries, its full-ARCS condition is incomplete,
+  and its blinded packet is not yet rated; a larger completed sealed test and
+  two-reviewer study are still required for a general performance claim.
 
 ---
 
