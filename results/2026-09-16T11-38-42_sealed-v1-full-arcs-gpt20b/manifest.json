@@ -1,0 +1,11 @@
+{
+  "evidence_note": "Contains redacted row-level evidence.",
+  "experiment_sha256": "91f38ffbf995ec14940d9c92610596d16d88e62ba684934a1c5bf9843a8ca000",
+  "published_at": "2026-09-16T11:38:59.593578+00:00",
+  "report_sha256": "a982490ed8c4adba8cdc1904cd226716d76e5f0753654091cde6d0333cff5c30",
+  "row_count": 22,
+  "row_level_evidence": true,
+  "run_id": "2026-09-16T11-38-42_sealed-v1-full-arcs-gpt20b",
+  "schema_version": "1.0",
+  "source_sha256": "6d277ea23e1c8e544e00f61c371cf1ffc1e89320af081d34d54473a8bb6f7c42"
+}
