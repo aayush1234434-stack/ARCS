@@ -4,11 +4,9 @@
 #   cp .env.example .env
 #   # Edit .env with GROQ_API_KEY and NVIDIA_API_KEY
 #
-# Ensure the router checkpoint exists on the host:
-#   artifacts/router-model/  (train locally or copy from backup)
-# Optional ONNX export for faster startup:
-#   python scripts/export_router_onnx.py
-#   ARCS_ROUTER_BACKEND=onnx in .env
+# The default sklearn router is trained deterministically from committed data
+# and needs no external checkpoint. Optional torch/ONNX backends still require
+# artifacts/router-model.
 #
 # Public demo hardening (optional):
 #   ARCS_DEMO_PUBLIC=1
@@ -24,7 +22,7 @@ services:
     env_file:
       - .env
     environment:
-      ARCS_ROUTER_BACKEND: ${ARCS_ROUTER_BACKEND:-onnx}
+      ARCS_ROUTER_BACKEND: ${ARCS_ROUTER_BACKEND:-sklearn}
       ARCS_DEMO_PUBLIC: ${ARCS_DEMO_PUBLIC:-0}
       ARCS_DEMO_RATE_LIMIT: ${ARCS_DEMO_RATE_LIMIT:-8}
       ARCS_DEMO_RATE_WINDOW: ${ARCS_DEMO_RATE_WINDOW:-60}
@@ -36,7 +34,6 @@ services:
       PORT: "8000"
       ARCS_DEMO_HOST: "0.0.0.0"
     volumes:
-      - ./artifacts/router-model:/app/artifacts/router-model:ro
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:

@@ -79,11 +79,14 @@ def sha256_file(path: Path) -> str:
 
 def _data_manifest() -> list[dict[str, Any]]:
     """Fingerprint the canonical evaluation inputs when present."""
-    candidates = (
+    candidates = [
         config.DATA_DIR / "eval_queries.jsonl",
         config.ROUTER_DATA_DIR / "router_train.csv",
         config.ROUTER_DATA_DIR / "router_test.csv",
-    )
+    ]
+    sealed_dir = config.DATA_DIR / "sealed"
+    if sealed_dir.is_dir():
+        candidates.extend(sorted(sealed_dir.glob("*.jsonl")))
     manifest: list[dict[str, Any]] = []
     for path in candidates:
         if not path.is_file():

@@ -80,7 +80,15 @@ def test_run_one_uses_naive_answer_spec_and_judge(monkeypatch) -> None:
     """_run_one should skip routing and call the naive answer + shared spec/judge."""
     import scripts.eval_naive_baseline as mod
 
-    monkeypatch.setattr(mod, "_naive_answer", lambda query, *, model: "42 is the answer")
+    monkeypatch.setattr(
+        mod,
+        "_naive_answer",
+        lambda query, *, model: (
+            "42 is the answer",
+            {"api_calls": 1, "total_tokens": 12},
+            model,
+        ),
+    )
 
     fake_spec = {
         "intent": "answer",
@@ -112,6 +120,8 @@ def test_run_one_uses_naive_answer_spec_and_judge(monkeypatch) -> None:
     assert result["pipeline_id"] == "NAIVE"
     assert result["verification"]["score"] == 0.9
     assert result["answer"] == "42 is the answer"
+    assert result["usage"]["total"]["api_calls"] == 1
+    assert result["usage"]["evaluation"]["total"] == {}
 
 
 def test_compare_only_prints_delta(capsys) -> None:

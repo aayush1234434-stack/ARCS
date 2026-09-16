@@ -1,8 +1,9 @@
 """
 Domain router: classify user queries into CODING, MEDICAL, LEGAL, or GENERAL.
 
-Backend is selected by ``ARCS_ROUTER_BACKEND`` (``torch`` default for dev, ``onnx``
-for production). Explicit ``backend=`` on ``route()`` overrides the env default.
+Backend is selected by ``ARCS_ROUTER_BACKEND`` (``sklearn`` by default).
+``torch`` and ``onnx`` support optional exported DistilBERT checkpoints.
+Explicit ``backend=`` on ``route()`` overrides the environment default.
 
 Usage:
     python router.py
@@ -14,6 +15,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import csv
+import hashlib
 import json
 import math
 import shutil
@@ -38,16 +41,109 @@ _model = None
 _device = None
 _loaded_model_dir: str | None = None
 
+# Artifact-free sklearn backend state. It is fitted deterministically from the
+# committed training split on first use and then cached for the process.
+_sklearn_pipeline = None
+_sklearn_train_fingerprint: str | None = None
+
 
 def clear_cache() -> None:
     """Drop cached tokenizer/model so the next ``route()`` loads a new checkpoint."""
     global _onnx_session, _tokenizer, _id2label, _model, _device, _loaded_model_dir
+    global _sklearn_pipeline, _sklearn_train_fingerprint
     _onnx_session = None
     _tokenizer = None
     _id2label = None
     _model = None
     _device = None
     _loaded_model_dir = None
+    _sklearn_pipeline = None
+    _sklearn_train_fingerprint = None
+
+
+def _load_sklearn():
+    """Fit the deterministic artifact-free router from the committed train split."""
+    global _sklearn_pipeline, _sklearn_train_fingerprint
+    if _sklearn_pipeline is not None:
+        return _sklearn_pipeline, _sklearn_train_fingerprint
+
+    train_path = config.ROUTER_DATA_DIR / "router_train.csv"
+    if not train_path.is_file():
+        raise FileNotFoundError(f"router training split not found: {train_path}")
+
+    texts: list[str] = []
+    labels: list[str] = []
+    with train_path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            text = str(row.get("text") or "").strip()
+            label = str(row.get("label") or "").strip().upper()
+            if text and label:
+                texts.append(text)
+                labels.append(label)
+    if not texts:
+        raise ValueError(f"router training split is empty: {train_path}")
+
+    progress.log(f"  Fitting sklearn router from {len(texts)} committed examples...")
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import FeatureUnion, Pipeline as SklearnPipeline
+
+    _sklearn_pipeline = SklearnPipeline(
+        [
+            (
+                "features",
+                FeatureUnion(
+                    [
+                        (
+                            "word",
+                            TfidfVectorizer(
+                                ngram_range=(1, 3),
+                                sublinear_tf=True,
+                            ),
+                        ),
+                        (
+                            "char",
+                            TfidfVectorizer(
+                                analyzer="char_wb",
+                                ngram_range=(2, 5),
+                                sublinear_tf=True,
+                            ),
+                        ),
+                    ]
+                ),
+            ),
+            (
+                "classifier",
+                LogisticRegression(
+                    C=64.0,
+                    max_iter=2000,
+                    random_state=42,
+                ),
+            ),
+        ]
+    )
+    _sklearn_pipeline.fit(texts, labels)
+    _sklearn_train_fingerprint = hashlib.sha256(train_path.read_bytes()).hexdigest()
+    return _sklearn_pipeline, _sklearn_train_fingerprint
+
+
+def _route_sklearn(query: str) -> dict:
+    pipeline, fingerprint = _load_sklearn()
+    probabilities = pipeline.predict_proba([query])[0]
+    classes = [str(label) for label in pipeline.classes_]
+    pred_id = max(range(len(probabilities)), key=probabilities.__getitem__)
+    domain = classes[pred_id]
+    confidence = float(probabilities[pred_id])
+    return {
+        "domain": domain,
+        "confidence": confidence,
+        "all_scores": {
+            label: float(probabilities[index]) for index, label in enumerate(classes)
+        },
+        "use_fallback": confidence < CONFIDENCE_THRESHOLD,
+        "model": f"tfidf-logreg-c64 train={fingerprint[:12]}",
+        "backend": "sklearn",
+    }
 
 
 def _warn_if_disk_full() -> None:
@@ -227,8 +323,11 @@ def _route_torch(query: str, model_dir: str) -> dict:
 
 def _resolve_backend(backend: str | None, model_dir: str) -> str:
     resolved = (backend or config.ROUTER_BACKEND).strip().lower()
-    if resolved not in ("torch", "onnx"):
-        raise ValueError(f"Router backend must be 'torch' or 'onnx', got {resolved!r}")
+    if resolved not in ("sklearn", "torch", "onnx"):
+        raise ValueError(
+            "Router backend must be 'sklearn', 'torch', or 'onnx', "
+            f"got {resolved!r}"
+        )
 
     if resolved == "onnx" and not (Path(model_dir) / ONNX_FILENAME).exists():
         raise FileNotFoundError(
@@ -245,6 +344,8 @@ def route(
     backend: str | None = None,
 ) -> dict:
     resolved = _resolve_backend(backend, model_dir)
+    if resolved == "sklearn":
+        return _route_sklearn(query)
     if resolved == "onnx":
         return _route_onnx(query, model_dir)
     return _route_torch(query, model_dir)
@@ -256,7 +357,7 @@ def main():
     parser.add_argument("--model-dir", default=DEFAULT_MODEL_DIR, help="Path to saved model")
     parser.add_argument(
         "--backend",
-        choices=("torch", "onnx"),
+        choices=("sklearn", "torch", "onnx"),
         default=None,
         help=(
             "Inference backend (default: ARCS_ROUTER_BACKEND env, else torch). "
@@ -281,7 +382,12 @@ def main():
             sys.exit(1)
 
     backend = _resolve_backend(args.backend, args.model_dir)
-    label = "ONNX" if backend == "onnx" else "PyTorch + DistilBERT"
+    labels = {
+        "sklearn": "TF-IDF + logistic regression",
+        "onnx": "ONNX",
+        "torch": "PyTorch + DistilBERT",
+    }
+    label = labels[backend]
 
     with progress.step(f"Classify query ({label})"):
         result = route(query, model_dir=args.model_dir, backend=args.backend)

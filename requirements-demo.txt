@@ -1,15 +1,11 @@
-# Slim runtime deps for the public demo image (ONNX router, no training/DSPy).
-# Keep torch out — it pulls multi‑GB CUDA wheels and breaks Railway/local disk builds.
+# Slim runtime deps for the public demo image (artifact-free sklearn router).
+# Keep torch/transformers out — they pull large wheels and are optional backends.
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 python-dotenv
 groq
 openai
 numpy
-onnxruntime
-transformers>=4.0
-tokenizers
-huggingface-hub
-safetensors
+scikit-learn>=1.4
 pydantic
 httpx

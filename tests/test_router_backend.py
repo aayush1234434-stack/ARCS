@@ -16,8 +16,12 @@ SKIP_NO_ONNX = pytest.mark.skipif(
 
 
 def test_resolve_backend_defaults_to_config(monkeypatch):
-    monkeypatch.setattr(config, "ROUTER_BACKEND", "torch", raising=False)
-    assert _resolve_backend(None, str(ROUTER_MODEL_DIR)) == "torch"
+    monkeypatch.setattr(config, "ROUTER_BACKEND", "sklearn", raising=False)
+    assert _resolve_backend(None, str(ROUTER_MODEL_DIR)) == "sklearn"
+
+
+def test_sklearn_backend_needs_no_checkpoint(tmp_path):
+    assert _resolve_backend("sklearn", str(tmp_path)) == "sklearn"
 
 
 def test_resolve_backend_onnx_missing_file(tmp_path):
@@ -26,7 +30,7 @@ def test_resolve_backend_onnx_missing_file(tmp_path):
 
 
 def test_resolve_backend_invalid():
-    with pytest.raises(ValueError, match="must be 'torch' or 'onnx'"):
+    with pytest.raises(ValueError, match="must be 'sklearn', 'torch', or 'onnx'"):
         _resolve_backend("auto", str(ROUTER_MODEL_DIR))
 
 

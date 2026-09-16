@@ -39,6 +39,7 @@ if str(_ROOT) not in sys.path:
 
 from arcs import config
 from arcs.clients.rate_limit import is_groq_tpd_exhausted
+from arcs.clients.usage import combine_usage, response_usage
 from arcs.eval.compare import format_orchestration_comparison, pass_stats
 from arcs.eval.experiments import latest_experiment, load_experiment, save_experiment
 from arcs.eval.metrics import (
@@ -128,7 +129,7 @@ def _elapsed_ms(started: float) -> int:
     return int(round((time.perf_counter() - started) * 1000))
 
 
-def _naive_answer(query: str, *, model: str) -> str:
+def _naive_answer(query: str, *, model: str) -> tuple[str, dict[str, int], str]:
     """Single Groq call — no router, no specialist pipeline, no tools."""
     from arcs.clients.groq import get_client
 
@@ -137,7 +138,11 @@ def _naive_answer(query: str, *, model: str) -> str:
         messages=[{"role": "user", "content": NAIVE_PROMPT.format(query=query)}],
         temperature=0.1,
     )
-    return response.choices[0].message.content or ""
+    return (
+        response.choices[0].message.content or "",
+        response_usage(response),
+        str(response.model),
+    )
 
 
 def _verdict_to_status(verification: dict[str, Any]) -> str:
@@ -171,9 +176,18 @@ def _run_one(row: dict[str, Any], *, model: str) -> dict[str, Any]:
     started = time.perf_counter()
 
     answer_start = time.perf_counter()
-    answer = _naive_answer(query, model=model).strip()
+    answer_raw, generation_usage, response_model = _naive_answer(query, model=model)
+    answer = answer_raw.strip()
     timing["answer_ms"] = _elapsed_ms(answer_start)
     result["answer"] = answer
+    result["generator_model"] = response_model
+    result["usage"] = {
+        "total": generation_usage,
+        "components": {"generation": generation_usage},
+        "evaluation": {},
+        "cost_usd": None,
+        "cost_note": "Runtime usage excludes the post-hoc benchmark evaluator.",
+    }
 
     if not answer:
         result["status"] = "FAIL"
@@ -208,6 +222,19 @@ def _run_one(row: dict[str, Any], *, model: str) -> dict[str, Any]:
         "explanation": verification.get("explanation", ""),
     }
     result["status"] = _verdict_to_status(verification)
+    result["usage"]["evaluation"] = {
+        "total": combine_usage(
+            (specification.get("usage", {}), verification.get("usage", {}))
+        ),
+        "components": {
+            "specification": specification.get("usage", {}),
+            "judge": verification.get("usage", {}),
+        },
+    }
+    timing["runtime_total_ms"] = timing["answer_ms"]
+    timing["evaluation_ms"] = (
+        timing["specification_ms"] + timing["verification_ms"]
+    )
     result["timing"] = timing
     return result
 

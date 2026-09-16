@@ -2,13 +2,12 @@
 #
 # Build:  docker build -t arcs-demo .
 # Run:    docker run --rm -p 8000:8000 --env-file .env \
-#           -e ARCS_ROUTER_BACKEND=onnx \
+#           -e ARCS_ROUTER_BACKEND=sklearn \
 #           -e ARCS_DEMO_HOST=0.0.0.0 \
-#           -v "$(pwd)/artifacts/router-model:/app/artifacts/router-model:ro" \
 #           -v "$(pwd)/logs:/app/logs" arcs-demo
 #
-# Cloud (Railway/Render/Fly): bake or mount router weights; set secrets via
-# platform env vars; prefer ARCS_ROUTER_BACKEND=onnx. See docs/DEPLOY.md.
+# Cloud (Railway/Render/Fly): set secrets via platform env vars. The default
+# sklearn router trains deterministically from the committed training split.
 
 FROM python:3.12-slim-bookworm AS builder
 
@@ -40,7 +39,7 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    ARCS_ROUTER_BACKEND=onnx \
+    ARCS_ROUTER_BACKEND=sklearn \
     ARCS_ALLOW_UNSAFE_SUBPROCESS=0 \
     ARCS_DEMO_HOST=0.0.0.0 \
     PORT=8000
@@ -51,11 +50,6 @@ COPY scripts/ scripts/
 COPY data/ data/
 COPY requirements-demo.txt .
 COPY requirements.txt .
-
-# Bake DistilBERT router for cloud deploys (ONNX + tokenizer; no volume required).
-# Local Compose still mounts ./artifacts/router-model over this path.
-# Requires model.onnx — run: python scripts/export_router_onnx.py
-COPY artifacts/router-model/ artifacts/router-model/
 
 EXPOSE 8000
 

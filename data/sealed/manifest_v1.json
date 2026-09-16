@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "benchmark_id": "arcs-sealed-pilot-v1",
+  "path": "data/sealed/arcs_sealed_pilot_v1.jsonl",
+  "sealed_at": "2026-09-16T07:35:49Z",
+  "sealed_before_first_model_run": true,
+  "sha256": "a66c29c07a601f559c205ff5950d3b51789960a2922c5a77230bc38a397ae8f3",
+  "bytes": 14522,
+  "rows": 40,
+  "domain_counts": {
+    "CODING": 10,
+    "MEDICAL": 10,
+    "LEGAL": 10,
+    "GENERAL": 10
+  },
+  "base_git_commit": "2e2636b6d35167a9655b5a177932d1abfa0188da",
+  "provenance": {
+    "method": "AI-assisted authoring with maintainer review",
+    "source": "New synthetic prompts authored for ARCS; no external proprietary dataset",
+    "personal_data": false,
+    "license": "MIT"
+  },
+  "protocol": {
+    "conditions": [
+      "naive single-model baseline",
+      "routed specialist without runtime verification",
+      "full ARCS"
+    ],
+    "primary_proxy_outcome": "completed PASS rate from the configured judge or sandbox",
+    "primary_human_outcome": "blinded reviewer correctness score",
+    "no_tuning_rule": "Do not change prompts, models, routing, thresholds, or verification based on sealed-v1 outputs.",
+    "interpretation": "Small sealed pilot; not a definitive general-capability benchmark."
+  }
+}

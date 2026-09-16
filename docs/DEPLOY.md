@@ -9,7 +9,7 @@ Production-style deployment for the **demo UI** (`scripts/run_demo.py` → FastA
 | Requirement | Notes |
 |---|---|
 | Docker + Docker Compose | Local or server |
-| Router checkpoint | `artifacts/router-model/` on the **host** (gitignored; train or copy locally) |
+| Router data | Committed `data/router/router_train.csv`; no checkpoint needed for the default backend |
 | API keys | `GROQ_API_KEY`, `NVIDIA_API_KEY` — **never commit** real values |
 
 ---
@@ -21,12 +21,8 @@ Production-style deployment for the **demo UI** (`scripts/run_demo.py` → FastA
 cp .env.example .env
 # Edit .env — paste real keys; do not commit .env
 
-# Router weights must exist on the host (mounted read-only)
-ls artifacts/router-model/config.json
-
-# Recommended for containers: ONNX (faster cold start, no PyTorch at inference)
-python scripts/export_router_onnx.py
-# Set in .env: ARCS_ROUTER_BACKEND=onnx
+# The default artifact-free sklearn router requires no preparation.
+# Optional checkpoint users may set ARCS_ROUTER_BACKEND=torch or onnx.
 
 docker compose up --build
 ```
@@ -44,9 +40,8 @@ docker build -t arcs-demo .
 
 docker run --rm -p 8000:8000 \
   --env-file .env \
-  -e ARCS_ROUTER_BACKEND=onnx \
+  -e ARCS_ROUTER_BACKEND=sklearn \
   -e ARCS_DEMO_HOST=0.0.0.0 \
-  -v "$(pwd)/artifacts/router-model:/app/artifacts/router-model:ro" \
   -v "$(pwd)/logs:/app/logs" \
   arcs-demo
 ```
@@ -61,13 +56,13 @@ Copy from `.env.example`. **Do not commit `.env`** with real secrets.
 |---|---|---|---|
 | `GROQ_API_KEY` | Yes (for queries) | — | Generator + spec models |
 | `NVIDIA_API_KEY` | Yes (for queries) | — | LLM judge |
-| `ARCS_ROUTER_BACKEND` | No | `torch` | **`onnx` recommended in Docker/cloud** |
+| `ARCS_ROUTER_BACKEND` | No | `sklearn` | Artifact-free default; optional `torch` / `onnx` checkpoints supported |
 | `ARCS_ROUTER_CONFIDENCE` | No | `0.75` | Router fallback threshold |
 | `ARCS_ALLOW_UNSAFE_SUBPROCESS` | No | `0` | Developer-only host execution override; never enable in deployment |
 | `ARCS_DEMO_OFFLINE` | No | `0` | Deterministic product tour with no external model calls |
 | `ARCS_TRUST_PROXY_HEADERS` | No | `0` | Trust `X-Forwarded-For` only behind a proxy that overwrites it |
-| `ARCS_GENERATOR_MODEL` | No | `llama-3.3-70b-versatile` | Default Groq model |
-| `NVIDIA_JUDGE_MODEL` | No | `meta/llama-3.1-8b-instruct` | Judge model |
+| `ARCS_GENERATOR_MODEL` | No | `openai/gpt-oss-120b` | Default Groq-hosted generator |
+| `NVIDIA_JUDGE_MODEL` | No | `meta/llama-3.2-11b-vision-instruct` | Judge model |
 | `PORT` | No | `8000` | Listen port (Railway/Render/Fly set this) |
 | `ARCS_DEMO_PUBLIC` | No | `0` | `1` shows public-demo disclaimer banner |
 | `ARCS_DEMO_RATE_LIMIT` | No | `8` | Max `/api/query` requests per IP per window (`0` = off) |
@@ -92,7 +87,7 @@ Example response:
   "status": "ok",
   "groq_configured": true,
   "nvidia_configured": true,
-  "router_backend": "onnx",
+  "router_backend": "sklearn",
   "public_demo": false,
   "disclaimer": null
 }
@@ -165,7 +160,7 @@ Required files for `ARCS_ROUTER_BACKEND=onnx`: `config.json`, `model.onnx`, `tok
 |---|---|
 | `GROQ_API_KEY` | your Groq secret |
 | `NVIDIA_API_KEY` | your NVIDIA secret |
-| `ARCS_ROUTER_BACKEND` | `onnx` |
+| `ARCS_ROUTER_BACKEND` | `sklearn` |
 | `ARCS_DEMO_PUBLIC` | `1` (recommended for public URL) |
 
 Optional: `ARCS_DEMO_RATE_LIMIT=8`, `ARCS_DEMO_PIPELINE_TIMEOUT=180`.
@@ -215,7 +210,7 @@ Optional: `ARCS_DEMO_RATE_LIMIT=8`, `ARCS_DEMO_PIPELINE_TIMEOUT=180`.
      ```
      GROQ_API_KEY=...
      NVIDIA_API_KEY=...
-     ARCS_ROUTER_BACKEND=onnx
+     ARCS_ROUTER_BACKEND=sklearn
      ARCS_DEMO_PUBLIC=1
      ```
 
@@ -255,7 +250,7 @@ Click path:
 1. [https://dashboard.render.com](https://dashboard.render.com) → **New +** → **Web Service**
 2. **Existing Image** → `YOUR_DOCKERHUB_USER/arcs-demo:onnx`
 3. Instance: free/starter is fine for demos
-4. **Environment** → add `GROQ_API_KEY`, `NVIDIA_API_KEY`, `ARCS_ROUTER_BACKEND=onnx`, `ARCS_DEMO_PUBLIC=1`
+4. **Environment** → add `GROQ_API_KEY`, `NVIDIA_API_KEY`, `ARCS_ROUTER_BACKEND=sklearn`, `ARCS_DEMO_PUBLIC=1`
 5. Health check path: `/health`
 6. **Create Web Service**
 
@@ -317,7 +312,7 @@ See [README — ONNX router deployment](../README.md#onnx-router-deployment).
 Multi-stage **Dockerfile**:
 
 1. **builder** — creates `/opt/venv`, installs `requirements.txt`
-2. **runtime** — copies venv + `arcs/`, `scripts/`, `data/`; defaults `ARCS_ROUTER_BACKEND=onnx`; exposes 8000; runs:
+2. **runtime** — copies venv + `arcs/`, `scripts/`, `data/`; defaults `ARCS_ROUTER_BACKEND=sklearn`; exposes 8000; runs:
    ```bash
    python scripts/run_demo.py --host 0.0.0.0 --port ${PORT:-8000}
    ```
@@ -342,7 +337,7 @@ Multi-stage **Dockerfile**:
 | `503` API keys not configured | Set keys in `.env` / platform secrets; restart |
 | `503` Pipeline timed out | Raise `ARCS_DEMO_PIPELINE_TIMEOUT` or retry; check Groq/NVIDIA status |
 | `429` Rate limit exceeded | Wait for the window; raise `ARCS_DEMO_RATE_LIMIT` if needed |
-| Router `FileNotFoundError` | Mount or bake `artifacts/router-model` |
-| ONNX `model.onnx not found` | Run `export_router_onnx.py` or set `ARCS_ROUTER_BACKEND=torch` |
-| Slow container start | Use ONNX backend; PyTorch import is heavy |
+| Router training split missing | Restore `data/router/router_train.csv` from the repository |
+| ONNX `model.onnx not found` | Run `export_router_onnx.py` or use the default `sklearn` backend |
+| Slow container start | Use the default sklearn backend; PyTorch import is heavy |
 | Health check fails during start | Wait for `start_period` (60s); first load can be slow |

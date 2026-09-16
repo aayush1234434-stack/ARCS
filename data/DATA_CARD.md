@@ -7,10 +7,16 @@
 | `eval_queries.jsonl` | 48 | Development benchmark only | `75b8b14778beb19e9d65897267a178e6ea446508f064c92d64bf94353b73b89f` |
 | `router/router_train.csv` | 800 | Router training | `b9b165833e9f114d8476330aa7c81a932bb00a603b3bf49ff88bdeba3b400b31` |
 | `router/router_test.csv` | 200 | Frozen router-only test | `f4a2e80dd5fbcb2f04be2a6e566e69742a89bebf256ff716accb8642e0aa0c1d` |
+| `sealed/arcs_sealed_pilot_v1.jsonl` | 40 | Sealed pilot; no tuning | `a66c29c07a601f559c205ff5950d3b51789960a2922c5a77230bc38a397ae8f3` |
 
 The 48-query file is not a sealed test set. Its failures have already informed
 prompt, routing, and verification changes. It is suitable for debugging and
 regression checks, not for a final generalization claim.
+
+The 40-query sealed pilot was frozen before its first model run. It is balanced
+across the four domains and has prompt-level difficulty and risk tags. Because
+it is small, synthetic, English-only, and author-curated, report it as a pilot
+and pair all automatic scores with blinded human review.
 
 ## Composition
 

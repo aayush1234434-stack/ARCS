@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke-test router inference for torch or ONNX backend."""
+"""Smoke-test router inference for sklearn, torch, or ONNX backend."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from arcs.router.classifier import clear_cache, route
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Smoke-test the domain router (torch or ONNX backend).",
+        description="Smoke-test the domain router (sklearn, torch, or ONNX backend).",
     )
     parser.add_argument(
         "--query",
@@ -27,10 +27,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--backend",
-        choices=("torch", "onnx"),
+        choices=("sklearn", "torch", "onnx"),
         default=None,
         help=(
-            "Inference backend (default: ARCS_ROUTER_BACKEND env, else torch)"
+            "Inference backend (default: ARCS_ROUTER_BACKEND env, else sklearn)"
         ),
     )
     parser.add_argument(
