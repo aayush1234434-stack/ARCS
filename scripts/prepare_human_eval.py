@@ -44,6 +44,7 @@ def prepare(
     output_dir: Path,
     *,
     seed: int,
+    row_ids: set[str] | None = None,
 ) -> Path:
     """Write reviewer packet, private answer key, and provenance manifest."""
     items: list[dict[str, str]] = []
@@ -54,6 +55,12 @@ def prepare(
         source_json = path / "experiment.json" if path.is_dir() else path
         experiment = load_experiment(path)
         run_rows = _rows(experiment)
+        if row_ids is not None:
+            run_rows = [
+                row
+                for row in run_rows
+                if str(row.get("id") or row.get("query_id") or "") in row_ids
+            ]
         if not run_rows:
             raise ValueError(f"experiment has no row-level evidence: {path}")
         sources.append(
@@ -142,11 +149,23 @@ def main(argv: list[str] | None = None) -> None:
         help="Blinded system input as LABEL=/path/to/experiment (repeatable)",
     )
     parser.add_argument("--seed", type=int, default=20260916)
+    parser.add_argument(
+        "--row-ids",
+        help=(
+            "Optional comma-separated row IDs to include from every system. "
+            "Use this to create a paired packet from a common completed subset."
+        ),
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S")
     output = args.output or config.ARTIFACTS_DIR / "human-eval" / stamp
-    print(prepare(args.system, output, seed=args.seed))
+    row_ids = None
+    if args.row_ids:
+        row_ids = {value.strip() for value in args.row_ids.split(",") if value.strip()}
+        if not row_ids:
+            parser.error("--row-ids must contain at least one non-empty ID")
+    print(prepare(args.system, output, seed=args.seed, row_ids=row_ids))
 
 
 if __name__ == "__main__":
